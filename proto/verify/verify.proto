@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package verify;
+
+service Verify{
+     rpc VerifyPhoneCode(PhoneRequest) returns (VerifyReply) {}
+}
+
+message PhoneRequest {
+    string phone = 1;
+    int32 code = 2;
+}
+
+message TokenRequest {
+    int32 uid = 1;
+    string token = 2;
+}
+
+message VerifyReply {
+    bool result = 1;
+}
