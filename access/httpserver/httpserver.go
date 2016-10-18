@@ -56,7 +56,7 @@ func checkPhoneCode(phone string, code int32) (bool, error) {
 
 	r, err := c.VerifyPhoneCode(context.Background(), &verify.PhoneRequest{Phone: phone, Code: code})
 	if err != nil {
-		log.Printf("could not greet: %v", err)
+		log.Printf("could not verify phone code: %v", err)
 		return false, err
 	}
 
@@ -79,9 +79,50 @@ func login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"errno":0}`))
 }
 
+func getCode(phone string, ctype int32) (bool, error) {
+	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return false, err
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	r, err := c.GetPhoneCode(context.Background(), &verify.CodeRequest{Phone: phone, Ctype: ctype})
+	if err != nil {
+		log.Printf("could not get phone code: %v", err)
+		return false, err
+	}
+
+	return r.Result, nil
+}
+
+func getPhoneCode(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	phone := r.FormValue("phone")
+	ctype, _ := strconv.Atoi(r.FormValue("type"))
+	flag, err := getCode(phone, int32(ctype))
+	if err != nil {
+		log.Printf("get code failed: %v", err)
+		w.Write([]byte(`{"errno":103,"desc":"get code failed"}`))
+		return
+	}
+	if !flag {
+		log.Printf("get code failed")
+		w.Write([]byte(`{"errno":103,"desc":"get code failed"}`))
+		return
+	}
+	w.Write([]byte(`{"errno":0}`))
+}
+
 func Serve() {
 	http.HandleFunc("/", welcome)
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/login", login)
+	http.HandleFunc("/phonecode", getPhoneCode)
 	http.ListenAndServe(":80", nil)
 }

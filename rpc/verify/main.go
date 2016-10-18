@@ -6,6 +6,9 @@ import (
 	"net"
 
 	"database/sql"
+	"math/rand"
+
+	"../../util"
 
 	verify "../../proto/verify"
 	_ "github.com/go-sql-driver/mysql"
@@ -51,6 +54,57 @@ func checkPhoneCode(phone string, code int32) (bool, error) {
 
 func (s *server) VerifyPhoneCode(ctx context.Context, in *verify.PhoneRequest) (*verify.VerifyReply, error) {
 	flag, err := checkPhoneCode(in.Phone, in.Code)
+	if err != nil {
+		return &verify.VerifyReply{Result: false}, err
+	}
+
+	return &verify.VerifyReply{Result: flag}, nil
+}
+
+func getPhoneCode(phone string, ctype int32) (bool, error) {
+	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	if err != nil {
+		return false, err
+	}
+	flag := util.ExistPhone(db, phone)
+	if ctype == 0 && !flag {
+		return false, errors.New("phone not exist")
+	} else if ctype == 1 && flag {
+		return false, errors.New("phone already exist")
+	}
+
+	var code int
+	err = db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1", phone).Scan(&code)
+	if err != nil {
+		r := rand.New(rand.NewSource(99))
+		code := r.Int31n(1000000)
+		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))", phone, code)
+		if err != nil {
+			log.Printf("insert into phone_code failed:%v", err)
+			return false, err
+		}
+		ret := util.SendSMS(phone, int(code))
+		if ret != 0 {
+			log.Printf("send sms failed:%d", ret)
+			return false, errors.New("send sms failed")
+		}
+		return true, nil
+	}
+
+	if code > 0 {
+		ret := util.SendSMS(phone, int(code))
+		if ret != 0 {
+			log.Printf("send sms failed:%d", ret)
+			return false, errors.New("send sms failed")
+		}
+		return true, nil
+	}
+
+	return false, errors.New("failed to send sms")
+}
+
+func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*verify.VerifyReply, error) {
+	flag, err := getPhoneCode(in.Phone, in.Ctype)
 	if err != nil {
 		return &verify.VerifyReply{Result: false}, err
 	}
