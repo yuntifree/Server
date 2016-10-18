@@ -1,27 +1,46 @@
 syntax = "proto3";
 
+import "common/common.proto";
+
 package verify;
 
 service Verify{
      rpc VerifyPhoneCode(PhoneRequest) returns (VerifyReply) {}
      rpc GetPhoneCode(CodeRequest) returns (VerifyReply) {}
+     rpc Login(LoginRequest) returns (LoginReply) {}
 }
 
 message PhoneRequest {
-    string phone = 1;
-    int32 code = 2;
+    common.Head head = 1;
+    string phone = 2;
+    int32 code = 3;
 }
 
 message TokenRequest {
-    int32 uid = 1;
+    common.Head head = 1;
     string token = 2;
 }
 
 message CodeRequest {
-    string phone = 1;
-    int32 ctype = 2;
+    common.Head head = 1;
+    string phone = 2;
+    int32 ctype = 3;
+}
+
+message LoginRequest {
+    common.Head head = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message LoginReply {
+    common.Head head = 1;
+    string token = 2;
+    string privdata = 3;
+    int32 expire = 4;
 }
 
 message VerifyReply {
-    bool result = 1;
+    common.Head head = 1;
+    bool result = 2;
 }

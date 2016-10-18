@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS user (
     uid     bigint unsigned NOT NULL AUTO_INCREMENT,
     username    varchar(32) NOT NULL,
     phone   varchar(16) NOT NULL DEFAULT '',
+    password    varchar(32) NOT NULL,
+    salt        varchar(32) NOT NULL,
     -- term 0: android 1:ios
     term    tinyint unsigned NOT NULL DEFAULT 0,
     version int unsigned NOT NULL DEFAULT 0,

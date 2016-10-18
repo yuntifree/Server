@@ -10,6 +10,7 @@ import (
 
 	"../../util"
 
+	common "../../proto/common"
 	verify "../../proto/verify"
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
@@ -110,6 +111,35 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 	}
 
 	return &verify.VerifyReply{Result: flag}, nil
+}
+
+func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	var uid int32
+	var epass string
+	var salt string
+	err = db.QueryRow("SELECT uid, password, salt FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
+	}
+	pass := util.GenSaltPasswd(in.Password, salt)
+	if pass != epass {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 3}}, errors.New("verify password failed")
+	}
+
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE uid = ?", token, privdata, uid)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
+	}
+
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: 3600}, nil
 }
 
 func main() {

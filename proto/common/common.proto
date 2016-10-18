@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package common;
+
+message Head {
+    int32 uid = 1;
+    int32 retcode = 2;
+    int32 timecost = 3;
+    int64 ts = 4;
+    string sid = 5;
+}
