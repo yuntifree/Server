@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+service Hot {
+    rpc GetNews(NewsRequest) returns (NewsReply) {}
+}
+
+message NewsRequest {
+    common.Head head = 1;
+    int32 seq = 2;
+}
+
+message NewsInfo {
+    string title = 1;
+    repeated string images = 2;
+    string source = 3;
+    string dst = 4;
+    string ctime = 5;
+    int32 stype = 6;
+}
+
+message NewsReply {
+    common.Head head = 1;
+    repeated NewsInfo infos = 2;
+}
