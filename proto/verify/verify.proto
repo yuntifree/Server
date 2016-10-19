@@ -8,6 +8,7 @@ service Verify{
      rpc GetPhoneCode(CodeRequest) returns (VerifyReply) {}
      rpc Login(LoginRequest) returns (LoginReply) {}
      rpc Register(RegisterRequest) returns (RegisterReply) {}
+     rpc Logout(LogoutRequest) returns (LogoutReply) {}
 }
 
 message TokenRequest {
@@ -32,6 +33,7 @@ message LoginReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
+    string wifipass = 5;
 }
 
 message VerifyReply {
@@ -51,4 +53,13 @@ message RegisterReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
+}
+
+message LogoutRequest {
+    common.Head head = 1;
+    string token = 2;
+}
+
+message LogoutReply {
+    common.Head head = 1;
 }

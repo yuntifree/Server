@@ -51,6 +51,7 @@ func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 func getPhoneCode(phone string, ctype int32) (bool, error) {
 	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
 	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
 		return false, err
 	}
 	log.Printf("request phone:%s, ctype:%d", phone, ctype)
@@ -103,13 +104,15 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
 	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
 	var uid int64
 	var epass string
 	var salt string
-	err = db.QueryRow("SELECT uid, password, salt FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
+	var wifipass string
+	err = db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt, &wifipass)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -126,12 +129,13 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: 3600}, nil
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: 3600, Wifipass: wifipass}, nil
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
 	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
 	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	flag := util.ExistPhone(db, in.Username)
@@ -164,6 +168,21 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: 86400}, nil
+}
+
+func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
+	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	flag := util.CheckToken(db, in.Head.Uid, in.Token)
+	if !flag {
+		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
+		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	util.ClearToken(db, in.Head.Uid)
+	return &verify.LogoutReply{Head: &common.Head{Retcode: 0}}, err
 }
 
 func main() {
