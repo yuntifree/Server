@@ -23,15 +23,10 @@ const (
 
 type server struct{}
 
-func checkPhoneCode(phone string, code int32) (bool, error) {
-	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
-	if err != nil {
-		return false, err
-	}
-
+func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 	var realcode int32
 	var pid int32
-	err = db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1", phone).Scan(&realcode, &pid)
+	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1", phone).Scan(&realcode, &pid)
 	if err != nil {
 		return false, err
 	}
@@ -53,24 +48,16 @@ func checkPhoneCode(phone string, code int32) (bool, error) {
 	return false, errors.New("code not match")
 }
 
-func (s *server) VerifyPhoneCode(ctx context.Context, in *verify.PhoneRequest) (*verify.VerifyReply, error) {
-	flag, err := checkPhoneCode(in.Phone, in.Code)
-	if err != nil {
-		return &verify.VerifyReply{Result: false}, err
-	}
-
-	return &verify.VerifyReply{Result: flag}, nil
-}
-
 func getPhoneCode(phone string, ctype int32) (bool, error) {
 	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
 	if err != nil {
 		return false, err
 	}
+	log.Printf("request phone:%s, ctype:%d", phone, ctype)
 	flag := util.ExistPhone(db, phone)
-	if ctype == 0 && !flag {
+	if ctype == 1 && !flag {
 		return false, errors.New("phone not exist")
-	} else if ctype == 1 && flag {
+	} else if ctype == 0 && flag {
 		return false, errors.New("phone already exist")
 	}
 
@@ -119,7 +106,7 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	var uid int32
+	var uid int64
 	var epass string
 	var salt string
 	err = db.QueryRow("SELECT uid, password, salt FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
@@ -140,6 +127,43 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	}
 
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: 3600}, nil
+}
+
+func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
+	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	if err != nil {
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	flag := util.ExistPhone(db, in.Username)
+	if flag {
+		log.Printf("used phone:%v", in.Username)
+		return &verify.RegisterReply{Head: &common.Head{Retcode: common.ErrCode_USED_PHONE}}, nil
+	}
+	flag, err = checkPhoneCode(db, in.Username, in.Code)
+	if err != nil {
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	if !flag {
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	salt := util.GenSalt()
+	epass := util.GenSaltPasswd(in.Password, salt)
+	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 1 DAY))", in.Username, in.Username, epass, salt, in.Password, token, privdata)
+	if err != nil {
+		log.Printf("add user failed:%v", err)
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	uid, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("add user failed:%v", err)
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: 86400}, nil
 }
 
 func main() {

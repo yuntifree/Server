@@ -2,9 +2,17 @@ syntax = "proto3";
 
 package common;
 
+enum ErrCode{
+    SUCC = 0;
+    CONN_SQL = 10001;
+    EXEC_SQL = 10002;
+    USED_PHONE = 10003;
+    NOT_EXIST  = 10004;
+}
+
 message Head {
-    int32 uid = 1;
-    int32 retcode = 2;
+    int64 uid = 1;
+    ErrCode retcode = 2;
     int32 timecost = 3;
     int64 ts = 4;
     string sid = 5;
