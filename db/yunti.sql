@@ -36,3 +36,29 @@ CREATE TABLE IF NOT EXISTS phone_code (
     PRIMARY KEY(pid),
     KEY(phone, uid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS news (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    img1    varchar(256) NOT NULL DEFAULT '',
+    img2    varchar(256) NOT NULL DEFAULT '',
+    img3    varchar(256) NOT NULL DEFAULT '',
+    source  varchar(128) NOT NULL DEFAULT '',
+    dst     varchar(256) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS video (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    img     varchar(256) NOT NULL DEFAULT '',
+    vid     varchar(256) NOT NULL DEFAULT '',
+    source  varchar(256) NOT NULL DEFAULT '',
+    dst     varchar(256) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ad LIKE news;
+
