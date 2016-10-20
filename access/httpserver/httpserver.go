@@ -311,7 +311,9 @@ func getHot(w http.ResponseWriter, r *http.Request) {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("seq", res.Infos[i].Seq)
 		json.Set("title", res.Infos[i].Title)
-		json.Set("images", res.Infos[i].Images)
+		if len(res.Infos[i].Images) > 0 {
+			json.Set("images", res.Infos[i].Images)
+		}
 		json.Set("source", res.Infos[i].Source)
 		json.Set("dst", res.Infos[i].Dst)
 		json.Set("ctime", res.Infos[i].Ctime)

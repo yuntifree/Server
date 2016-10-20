@@ -47,29 +47,25 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 	infos := make([]*hot.HotsInfo, 20)
 	i := 0
 	for rows.Next() {
-		var img1 string
-		var img2 string
-		var img3 string
+		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img1, &img2, &img3, &info.Video, &info.Source, &info.Dst, &info.Ctime)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Video, &info.Source, &info.Dst, &info.Ctime)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		images := make([]string, 3)
-		images[0] = img1
-		images[1] = img2
-		images[2] = img3
-		info.Images = images
+		j := 0
+		for ; j < 3; j++ {
+			if img[j] == "" {
+				break
+			}
+		}
+		info.Images = img[:j]
 		infos[i] = &info
 		i++
 		log.Printf("title:%s source:%s", info.Title, info.Source)
 	}
-	realInfos := make([]*hot.HotsInfo, i)
-	for j := 0; j < i; j++ {
-		realInfos[j] = infos[j]
-	}
-	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: realInfos}, nil
+	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos[:i]}, nil
 }
 
 func main() {
