@@ -5,10 +5,9 @@ import (
 	"net"
 	"strconv"
 
-	"database/sql"
-
 	common "../../proto/common"
 	hot "../../proto/hot"
+	util "../../util"
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -21,7 +20,7 @@ const (
 type server struct{}
 
 func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
-	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	db, err := util.InitDB()
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err

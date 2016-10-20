@@ -46,3 +46,8 @@ func ClearToken(db *sql.DB, uid int64) {
 		log.Printf("query failed:%v", err)
 	}
 }
+
+//InitDB connect to rds
+func InitDB() (*sql.DB, error) {
+	return sql.Open("mysql", "access:^yunti9df3b01c$@tcp(rm-wz9sb2613092ki9xn.mysql.rds.aliyuncs.com:3306)/yunxing?charset=utf8")
+}
