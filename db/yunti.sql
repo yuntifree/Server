@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS news (
     vid     varchar(256) NOT NULL DEFAULT '',
     source  varchar(128) NOT NULL DEFAULT '',
     dst     varchar(256) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;

@@ -32,11 +32,11 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 	} else {
 		table = "video"
 	}
-	query := "SELECT title, img1, img2, img3, vid, source, dst, ctime FROM " + table + " WHERE 1 = 1 "
+	query := "SELECT id, title, img1, img2, img3, vid, source, dst, ctime FROM " + table + " WHERE 1 = 1 "
 	if in.Seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(in.Seq))
 	}
-	query += " ORDER BY id DESC LIMIT 20"
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(util.MaxListSize)
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -51,7 +51,7 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 		var img2 string
 		var img3 string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Title, &img1, &img2, &img3, &info.Video, &info.Source, &info.Dst, &info.Ctime)
+		err = rows.Scan(&info.Seq, &info.Title, &img1, &img2, &img3, &info.Video, &info.Source, &info.Dst, &info.Ctime)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err

@@ -5,6 +5,11 @@ import (
 	"log"
 )
 
+const (
+	//MaxListSize for page
+	MaxListSize = 20
+)
+
 //ExistPhone return whether phone exist
 func ExistPhone(db *sql.DB, phone string) bool {
 	var cnt int
