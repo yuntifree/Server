@@ -182,7 +182,21 @@ func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.
 		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	util.ClearToken(db, in.Head.Uid)
-	return &verify.LogoutReply{Head: &common.Head{Retcode: 0}}, err
+	return &verify.LogoutReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
+func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*verify.TokenReply, error) {
+	db, err := sql.Open("mysql", "root:@/yunti?charset=utf8")
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	flag := util.CheckToken(db, in.Head.Uid, in.Token)
+	if !flag {
+		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
+		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	return &verify.TokenReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
 func main() {

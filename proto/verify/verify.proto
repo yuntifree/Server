@@ -9,11 +9,16 @@ service Verify{
      rpc Login(LoginRequest) returns (LoginReply) {}
      rpc Register(RegisterRequest) returns (RegisterReply) {}
      rpc Logout(LogoutRequest) returns (LogoutReply) {}
+     rpc CheckToken(TokenRequest) returns (TokenReply) {}
 }
 
 message TokenRequest {
     common.Head head = 1;
     string token = 2;
+}
+
+message TokenReply {
+    common.Head head = 1;
 }
 
 message CodeRequest {

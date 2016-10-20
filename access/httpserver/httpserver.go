@@ -6,6 +6,7 @@ import (
 
 	common "../../proto/common"
 	helloworld "../../proto/hello"
+	hot "../../proto/hot"
 	verify "../../proto/verify"
 	util "../../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -16,6 +17,7 @@ import (
 const (
 	helloAddress  = "localhost:50051"
 	verifyAddress = "localhost:50052"
+	hotAddress    = "localhost:50053"
 	defaultName   = "world"
 )
 
@@ -210,6 +212,122 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func checkToken(uid int64, token string) bool {
+	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return false
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.CheckToken(context.Background(), &verify.TokenRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
+	if err != nil {
+		log.Printf("failed: %v", err)
+		return false
+	}
+
+	if res.Head.Retcode != 0 {
+		log.Printf("check token failed")
+		return false
+	}
+
+	return true
+}
+
+func getHot(w http.ResponseWriter, r *http.Request) {
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		log.Printf("parse request body failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	uid, err := post.Get("uid").Int64()
+	if err != nil {
+		log.Printf("get uid failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	token, err := post.Get("token").String()
+	if err != nil {
+		log.Printf("get uid failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	flag := checkToken(uid, token)
+	if !flag {
+		log.Printf("get uid failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	ctype, err := post.Get("data").Get("type").Int()
+	if err != nil {
+		log.Printf("get type failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	seq, err := post.Get("data").Get("seq").Int()
+	if err != nil {
+		log.Printf("get seq failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetHots(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Type: int32(ctype), Seq: int32(seq)})
+	if err != nil {
+		log.Printf("failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	if res.Head.Retcode != 0 {
+		log.Printf("get hots failed errcode:%d", res.Head.Retcode)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		log.Printf("NewJson failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("title", res.Infos[i].Title)
+		json.Set("images", res.Infos[i].Images)
+		json.Set("source", res.Infos[i].Source)
+		json.Set("dst", res.Infos[i].Dst)
+		json.Set("ctime", res.Infos[i].Ctime)
+		json.Set("video", res.Infos[i].Video)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		log.Printf("MarshalJSON failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	w.Write(body)
+}
+
 func register(w http.ResponseWriter, r *http.Request) {
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
@@ -289,5 +407,6 @@ func Serve() {
 	http.HandleFunc("/get_phone_code", getPhoneCode)
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/logout", logout)
+	http.HandleFunc("/hot", getHot)
 	http.ListenAndServe(":80", nil)
 }

@@ -3,24 +3,26 @@ syntax = "proto3";
 import "common/common.proto";
 
 service Hot {
-    rpc GetNews(NewsRequest) returns (NewsReply) {}
+    rpc GetHots(HotsRequest) returns (HotsReply) {}
 }
 
-message NewsRequest {
+message HotsRequest {
     common.Head head = 1;
-    int32 seq = 2;
+    int32 type = 2;
+    int32 seq = 3;
 }
 
-message NewsInfo {
+message HotsInfo {
     string title = 1;
     repeated string images = 2;
     string source = 3;
     string dst = 4;
     string ctime = 5;
     int32 stype = 6;
+    string video = 7;
 }
 
-message NewsReply {
+message HotsReply {
     common.Head head = 1;
-    repeated NewsInfo infos = 2;
+    repeated HotsInfo infos = 2;
 }
