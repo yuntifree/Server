@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	common "../../proto/common"
+	discover "../../proto/discover"
 	helloworld "../../proto/hello"
 	hot "../../proto/hot"
 	verify "../../proto/verify"
@@ -15,10 +16,11 @@ import (
 )
 
 const (
-	helloAddress  = "localhost:50051"
-	verifyAddress = "localhost:50052"
-	hotAddress    = "localhost:50053"
-	defaultName   = "world"
+	helloAddress    = "localhost:50051"
+	verifyAddress   = "localhost:50052"
+	hotAddress      = "localhost:50053"
+	discoverAddress = "localhost:50054"
+	defaultName     = "world"
 )
 
 func getMessage(name string) string {
@@ -474,6 +476,62 @@ func register(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+func discoverServer(w http.ResponseWriter, r *http.Request) {
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		log.Printf("parse request body failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	name, err := post.Get("name").String()
+	if err != nil {
+		log.Printf("get name failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	conn, err := grpc.Dial(discoverAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	defer conn.Close()
+	c := discover.NewDiscoverClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.Resolve(context.Background(), &discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
+	if err != nil {
+		log.Printf("Login failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	if res.Head.Retcode == common.ErrCode_USED_PHONE {
+		w.Write([]byte(`{"errno":104,"desc":"该手机号已注册，请直接登录"}`))
+		return
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		log.Printf("NewJson failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	js.SetPath([]string{"data", "host"}, res.Host)
+	js.SetPath([]string{"data", "port"}, res.Port)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		log.Printf("MarshalJSON failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	w.Write(body)
+
+}
+
 //Serve do server work
 func Serve() {
 	http.HandleFunc("/", welcome)
@@ -484,5 +542,6 @@ func Serve() {
 	http.HandleFunc("/logout", logout)
 	http.HandleFunc("/hot", getHot)
 	http.HandleFunc("/auto_login", autoLogin)
+	http.HandleFunc("/discover", discoverServer)
 	http.ListenAndServe(":80", nil)
 }

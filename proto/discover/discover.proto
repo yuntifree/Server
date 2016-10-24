@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package discover;
+
+service Discover{
+    rpc Resolve(ServerRequest) returns (ServerReply) {}
+}
+
+message ServerRequest {
+    common.Head head = 1;
+    string sname = 2;
+}
+
+message ServerReply {
+    common.Head head = 1;
+    string host = 2;
+    int32 port = 3;
+}
