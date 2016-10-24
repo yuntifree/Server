@@ -10,6 +10,7 @@ service Verify{
      rpc Register(RegisterRequest) returns (RegisterReply) {}
      rpc Logout(LogoutRequest) returns (LogoutReply) {}
      rpc CheckToken(TokenRequest) returns (TokenReply) {}
+     rpc AutoLogin(AutoRequest) returns (AutoReply) {}
 }
 
 message TokenRequest {
@@ -67,4 +68,17 @@ message LogoutRequest {
 
 message LogoutReply {
     common.Head head = 1;
+}
+
+message AutoRequest {
+    common.Head head = 1;
+    string token = 2;
+    string privdata = 3;
+}
+
+message AutoReply {
+    common.Head head = 1;
+    string token = 2;
+    string privdata = 3;
+    int32 expire = 4;
 }

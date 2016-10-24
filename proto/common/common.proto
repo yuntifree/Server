@@ -8,6 +8,7 @@ enum ErrCode{
     EXEC_SQL = 10002;
     USED_PHONE = 10003;
     NOT_EXIST  = 10004;
+    INVALID_TOKEN = 10005;
 }
 
 message Head {

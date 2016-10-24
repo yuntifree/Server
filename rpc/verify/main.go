@@ -199,6 +199,52 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*veri
 	return &verify.TokenReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
+func checkPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
+	var etoken string
+	var eprivdata string
+	var flag bool
+	err := db.QueryRow("SELECT token, private, IF(etime > NOW(), 1, 0) FROM user WHERE uid = ?", uid).Scan(&etoken, &eprivdata, &flag)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return false
+	}
+
+	if !flag {
+		log.Printf("token expire, uid:%d, token:%s, privdata:%s", uid, token, privdata)
+		return false
+	}
+
+	if etoken != token || eprivdata != privdata {
+		log.Printf("check privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
+		return false
+	}
+	return true
+}
+
+func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
+	_, err := db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE uid = ?",
+		token, privdata, uid)
+	return err
+}
+
+func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
+	db, err := util.InitDB()
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	flag := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
+	if !flag {
+		log.Printf("check privdata failed, uid:%d token:%s privdata:%s", in.Head.Uid, in.Token, in.Privdata)
+		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("check privdata failed")
+	}
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	updatePrivdata(db, in.Head.Uid, token, privdata)
+	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: 3600}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {

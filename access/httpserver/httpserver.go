@@ -333,6 +333,75 @@ func getHot(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(body)
 }
+func autoLogin(w http.ResponseWriter, r *http.Request) {
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		log.Printf("parse request body failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	uid, err := post.Get("uid").Int64()
+	if err != nil {
+		log.Printf("get uid failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	token, err := post.Get("token").String()
+	if err != nil {
+		log.Printf("get token failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	privdata, err := post.Get("data").Get("privdata").String()
+	if err != nil {
+		log.Printf("get privdata failed:%v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AutoLogin(context.Background(), &verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Token: token, Privdata: privdata})
+	if err != nil {
+		log.Printf("Login failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
+		w.Write([]byte(`{"errno":101,"desc":"token验证失败"}`))
+		return
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		log.Printf("NewJson failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	js.SetPath([]string{"data", "token"}, res.Token)
+	js.SetPath([]string{"data", "privdata"}, res.Privdata)
+	js.SetPath([]string{"data", "expire"}, res.Expire)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		log.Printf("MarshalJSON failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	w.Write(body)
+}
 
 func register(w http.ResponseWriter, r *http.Request) {
 	post, err := simplejson.NewFromReader(r.Body)
@@ -414,5 +483,6 @@ func Serve() {
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/logout", logout)
 	http.HandleFunc("/hot", getHot)
+	http.HandleFunc("/auto_login", autoLogin)
 	http.ListenAndServe(":80", nil)
 }
