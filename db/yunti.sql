@@ -56,3 +56,13 @@ CREATE TABLE IF NOT EXISTS video LIKE news;
 
 CREATE TABLE IF NOT EXISTS ad LIKE news;
 
+-- data from ZTE
+CREATE TABLE IF NOT EXISTS ap (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    ssid    varchar(128) NOT NULL,
+    longitude   double NOT NULL,
+    latitude    double NOT NULL,
+    address     varchar(256) NOT NULL,
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+

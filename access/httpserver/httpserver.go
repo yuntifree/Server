@@ -467,6 +467,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	js.SetPath([]string{"data", "token"}, res.Token)
 	js.SetPath([]string{"data", "privdata"}, res.Privdata)
 	js.SetPath([]string{"data", "expire"}, res.Expire)
+	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
 	body, err := js.MarshalJSON()
 	if err != nil {
 		log.Printf("MarshalJSON failed: %v", err)

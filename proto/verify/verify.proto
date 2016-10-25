@@ -59,6 +59,7 @@ message RegisterReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
+    string wifipass = 5;
 }
 
 message LogoutRequest {

