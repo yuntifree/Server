@@ -19,6 +19,7 @@ import (
 
 const (
 	port       = ":50052"
+	servername = "service:verify"
 	mastercode = 251653
 )
 
@@ -256,6 +257,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
+	go util.ReportHandler(servername, port)
 
 	s := grpc.NewServer()
 	verify.RegisterVerifyServer(s, &server{})
