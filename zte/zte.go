@@ -8,32 +8,35 @@ import (
 )
 
 const (
-	baseurl = "http://120.76.236.185"
+	baseurl = "http://120.234.130.195:19000"
 )
 
 //APInfo ap base information
 type APInfo struct {
-	aid, ssid, longitude, latitude, address string
+	Aid                 int
+	Address             string
+	Longitude, Latitude float64
 }
 
 //UserInfo online user information
 type UserInfo struct {
-	username, phone, mac string
+	Username, Phone, Mac string
 }
 
 //RealInfo realtime information
 type RealInfo struct {
-	bandwidth string
-	online    int
-	infos     []UserInfo
+	Bandwidth string
+	Online    int
+	Infos     []UserInfo
 }
 
 //OnlineRecord user online record
 type OnlineRecord struct {
-	aid, start, end string
+	Aid        int
+	Start, End string
 }
 
-func genReqbody(reqinfos map[string]string) (string, error) {
+func genReqbody(reqinfos map[string]interface{}) (string, error) {
 	js, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
 		log.Printf("new json failed:%v", err)
@@ -52,10 +55,10 @@ func genReqbody(reqinfos map[string]string) (string, error) {
 }
 
 //GetAPInfoList fetch ap info
-func GetAPInfoList(seq string) []APInfo {
+func GetAPInfoList(seq int) []APInfo {
 	infos := make([]APInfo, util.MaxListSize)
 	url := baseurl + "/apInfoList"
-	data, err := genReqbody(map[string]string{"seq": seq})
+	data, err := genReqbody(map[string]interface{}{"seq": seq})
 	rspbody, err := util.HTTPRequest(url, string(data))
 	if err != nil {
 		log.Printf("HTTPRequest failed:%v", err)
@@ -79,12 +82,12 @@ func GetAPInfoList(seq string) []APInfo {
 	arr, err := js.Get("data").Get("infos").Array()
 	for i := 0; i < len(arr); i++ {
 		var info APInfo
-		tmp := js.Get("infos").GetIndex(i)
-		info.aid, _ = tmp.Get("aid").String()
-		info.ssid, _ = tmp.Get("ssid").String()
-		info.longitude, _ = tmp.Get("longitude").String()
-		info.latitude, _ = tmp.Get("latitude").String()
-		info.address, _ = tmp.Get("address").String()
+		tmp := js.Get("data").Get("infos").GetIndex(i)
+		info.Aid, _ = tmp.Get("aid").Int()
+		info.Longitude, _ = tmp.Get("longitude").Float64()
+		info.Latitude, _ = tmp.Get("latitude").Float64()
+		info.Address, _ = tmp.Get("address").String()
+		log.Printf("get %d %f %f %s", info.Aid, info.Longitude, info.Latitude, info.Address)
 		infos[i] = info
 	}
 
@@ -95,7 +98,7 @@ func GetAPInfoList(seq string) []APInfo {
 func GetRealTimeInfo(aid string) (RealInfo, error) {
 	var realinfo RealInfo
 	infos := make([]UserInfo, util.MaxListSize)
-	data, err := genReqbody(map[string]string{"aid": aid})
+	data, err := genReqbody(map[string]interface{}{"aid": aid})
 
 	url := baseurl + "/apInfoList"
 	rspbody, err := util.HTTPRequest(url, string(data))
@@ -117,27 +120,27 @@ func GetRealTimeInfo(aid string) (RealInfo, error) {
 		log.Printf("get ap info failed:%s", errmsg)
 		return realinfo, err
 	}
-	realinfo.bandwidth, _ = js.Get("data").Get("bandwidth").String()
-	realinfo.online, _ = js.Get("data").Get("online").Int()
+	realinfo.Bandwidth, _ = js.Get("data").Get("bandwidth").String()
+	realinfo.Online, _ = js.Get("data").Get("online").Int()
 
 	arr, _ := js.Get("data").Get("users").Array()
 	i := 0
 	for ; i < len(arr); i++ {
 		tmp := js.Get("data").Get("users").GetIndex(i)
 		var info UserInfo
-		info.username, _ = tmp.Get("username").String()
-		info.phone, _ = tmp.Get("phone").String()
-		info.mac, _ = tmp.Get("mac").String()
+		info.Username, _ = tmp.Get("username").String()
+		info.Phone, _ = tmp.Get("phone").String()
+		info.Mac, _ = tmp.Get("mac").String()
 		infos[i] = info
 	}
-	realinfo.infos = infos[:i]
+	realinfo.Infos = infos[:i]
 
 	return realinfo, nil
 }
 
 //GetAPStat fetch ap stat info
-func GetAPStat(aid, start, end string) (count int, traffic string) {
-	data, err := genReqbody(map[string]string{"aid": aid, "start": start, "end": end})
+func GetAPStat(aid int, start string, end string) (count int, traffic string) {
+	data, err := genReqbody(map[string]interface{}{"aid": aid, "start": start, "end": end})
 
 	url := baseurl + "/statistics"
 	rspbody, err := util.HTTPRequest(url, string(data))
@@ -168,7 +171,7 @@ func GetAPStat(aid, start, end string) (count int, traffic string) {
 //GetOnlineRecords get user online records
 func GetOnlineRecords(username, start, end string) []OnlineRecord {
 	records := make([]OnlineRecord, util.MaxListSize)
-	data, err := genReqbody(map[string]string{"username": username, "start": start, "end": end})
+	data, err := genReqbody(map[string]interface{}{"username": username, "start": start, "end": end})
 
 	url := baseurl + "/onlineRecord"
 	rspbody, err := util.HTTPRequest(url, string(data))
@@ -196,9 +199,9 @@ func GetOnlineRecords(username, start, end string) []OnlineRecord {
 	for ; i < len(arr); i++ {
 		tmp := js.Get("data").Get("infos").GetIndex(i)
 		var rec OnlineRecord
-		rec.aid, _ = tmp.Get("aid").String()
-		rec.start, _ = tmp.Get("start").String()
-		rec.end, _ = tmp.Get("end").String()
+		rec.Aid, _ = tmp.Get("aid").Int()
+		rec.Start, _ = tmp.Get("start").String()
+		rec.End, _ = tmp.Get("end").String()
 		records[i] = rec
 	}
 

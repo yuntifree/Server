@@ -47,9 +47,13 @@ CREATE TABLE IF NOT EXISTS news (
     vid     varchar(256) NOT NULL DEFAULT '',
     source  varchar(128) NOT NULL DEFAULT '',
     dst     varchar(256) NOT NULL,
+    md5     varchar(32) NOT NULL,
+    stype   tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
-    PRIMARY KEY(id)
+    dtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(id),
+    UNIQUE KEY(md5)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS video LIKE news;
@@ -59,10 +63,32 @@ CREATE TABLE IF NOT EXISTS ad LIKE news;
 -- data from ZTE
 CREATE TABLE IF NOT EXISTS ap (
     id      int unsigned NOT NULL AUTO_INCREMENT,
-    ssid    varchar(128) NOT NULL,
     longitude   double NOT NULL,
     latitude    double NOT NULL,
     address     varchar(256) NOT NULL,
     PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ap_stat (
+    sid     bigint unsigned NOT NULL AUTO_INCREMENT,
+    aid     int unsigned NOT NULL,
+    stime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    count   int unsigned NOT NULL DEFAULT 0,
+    traffic int unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(sid),
+    KEY(aid),
+    KEY(stime)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_record (
+    rid     bigint unsigned NOT NULL AUTO_INCREMENT,
+    username    varchar(32) NOT NULL,
+    aid     int unsigned NOT NULL,
+    stime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(rid),
+    KEY(username),
+    KEY(aid)
 ) ENGINE = InnoDB;
 
