@@ -54,13 +54,16 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 			log.Printf("scan rows failed: %v", err)
 			return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		j := 0
+		var pics [3]string
+		j, k := 0, 0
 		for ; j < 3; j++ {
-			if img[j] == "" {
-				break
+			if img[j] != "" {
+				pics[k] = img[j]
+				log.Printf("k:%d pic:%s", k, pics[k])
+				k++
 			}
 		}
-		info.Images = img[:j]
+		info.Images = pics[:k]
 		infos[i] = &info
 		i++
 		log.Printf("title:%s source:%s", info.Title, info.Source)
