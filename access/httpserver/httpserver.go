@@ -23,6 +23,25 @@ const (
 	defaultName     = "world"
 )
 
+type appHandler func(http.ResponseWriter, *http.Request) *util.AppError
+
+func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if e := fn(w, r); e != nil {
+		log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
+
+		js, _ := simplejson.NewJson([]byte(`{}`))
+		js.Set("errcode", e.Code)
+		js.Set("desc", e.Msg)
+		body, err := js.MarshalJSON()
+		if err != nil {
+			log.Printf("MarshalJSON failed: %v", err)
+			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+			return
+		}
+		w.Write(body)
+	}
+}
+
 func getMessage(name string) string {
 	conn, err := grpc.Dial(helloAddress, grpc.WithInsecure())
 	if err != nil {
@@ -51,33 +70,25 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(message))
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) *util.AppError {
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		log.Printf("parse request body failed:%v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.JSONErr, 2, "", "invalid param"}
 	}
 
 	username, err := post.Get("data").Get("username").String()
 	if err != nil {
-		log.Printf("get username failed:%v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.ParamErr, 1, "username", "miss param"}
 	}
 
 	password, err := post.Get("data").Get("password").String()
 	if err != nil {
-		log.Printf("get password failed:%v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.ParamErr, 1, "password", "miss param"}
 	}
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("did not connect: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.RPCErr, 4, "", err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -85,16 +96,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 	uuid := util.GenUUID()
 	res, err := c.Login(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
 	if err != nil {
-		log.Printf("Login failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.RPCErr, 4, "", err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
 	if err != nil {
-		log.Printf("NewJson failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.JSONErr, 4, "", err.Error()}
 	}
 
 	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
@@ -104,12 +111,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		log.Printf("MarshalJSON failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
+		return &util.AppError{util.JSONErr, 4, "", err.Error()}
 	}
 	w.Write(body)
-
+	return nil
 }
 
 func getCode(phone string, ctype int32) (bool, error) {
@@ -537,7 +542,7 @@ func discoverServer(w http.ResponseWriter, r *http.Request) {
 func Serve() {
 	http.HandleFunc("/", welcome)
 	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/login", login)
+	http.Handle("/login", appHandler(login))
 	http.HandleFunc("/get_phone_code", getPhoneCode)
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/logout", logout)
