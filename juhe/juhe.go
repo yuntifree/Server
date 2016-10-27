@@ -6,6 +6,7 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 
 	util "../util"
+	"github.com/PuerkitoBio/goquery"
 )
 
 const (
@@ -91,13 +92,42 @@ func GetNews(stype int) []News {
 		ns.Md5 = util.GetMD5Hash(ns.Title)
 		ns.Date, _ = info.Get("date").String()
 		ns.URL, _ = info.Get("url").String()
-		ns.Pics[0], _ = info.Get("thumbnail_pic_s").String()
-		ns.Pics[1], _ = info.Get("thumbnail_pic_s02").String()
-		ns.Pics[2], _ = info.Get("thumbnail_pic_s03").String()
+		pics, err := GetImages(ns.URL)
+		if err != nil {
+			log.Printf("fetch images from url failed:%v", err)
+			ns.Pics[0], _ = info.Get("thumbnail_pic_s").String()
+		} else {
+			for i := 0; i < len(pics) && i < 3; i++ {
+				ns.Pics[i] = pics[i]
+			}
+		}
 		ns.Author, _ = info.Get("author_name").String()
 		news[i] = ns
 		log.Printf("title:%s", ns.Title)
 	}
 
 	return news[:i]
+}
+
+//GetImages extract images from url
+func GetImages(url string) ([]string, error) {
+	var images []string
+	d, err := goquery.NewDocument(url)
+	if err != nil {
+		log.Printf("fetch url failed:%v", err)
+		return images, err
+	}
+
+	sel := d.Find("a")
+	sel.Each(func(i int, n *goquery.Selection) {
+		if val, ok := n.Attr("class"); ok {
+			if val == "img-wrap" {
+				if href, ok := n.Attr("href"); ok {
+					images = append(images, href)
+				}
+			}
+		}
+	})
+
+	return images, nil
 }
