@@ -20,6 +20,7 @@ import (
 const (
 	port       = ":50052"
 	servername = "service:verify"
+	expiretime = 3600 * 24 * 30
 	mastercode = 251653
 )
 
@@ -130,12 +131,12 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 
-	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE uid = ?", token, privdata, uid)
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: 3600, Wifipass: wifipass}, nil
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
@@ -163,7 +164,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	wifipass := util.GenWifiPass()
-	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 1 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata)
+	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -174,7 +175,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: 86400, Wifipass: wifipass}, nil
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
@@ -229,7 +230,7 @@ func checkPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
 }
 
 func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
-	_, err := db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE uid = ?",
+	_, err := db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
 		token, privdata, uid)
 	return err
 }
@@ -249,7 +250,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	updatePrivdata(db, in.Head.Uid, token, privdata)
-	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: 3600}, nil
+	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
 }
 
 func main() {
