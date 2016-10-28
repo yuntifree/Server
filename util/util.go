@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	simplejson "github.com/bitly/go-simplejson"
 )
 
 //GenWifiPass gen 4-digit password
@@ -76,4 +78,40 @@ func GetInnerIP() string {
 	}
 
 	return ""
+}
+
+//GetJSONString get json value of string
+func GetJSONString(js *simplejson.Json, key string) string {
+	if val, err := js.Get(key).String(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).String(); err == nil {
+		return val
+	}
+	panic(ParamError{Val: key})
+}
+
+//GetJSONInt get json value of int
+func GetJSONInt(js *simplejson.Json, key string) int64 {
+	if val, err := js.Get(key).Int64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Int64(); err == nil {
+		return val
+	}
+	panic(ParamError{Val: key})
+}
+
+//GetJSONFloat get json value of float
+func GetJSONFloat(js *simplejson.Json, key string) float64 {
+	if val, err := js.Get(key).Float64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Float64(); err == nil {
+		return val
+	}
+	panic(ParamError{Val: key})
 }

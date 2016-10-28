@@ -20,14 +20,20 @@ const (
 type AppError struct {
 	Type ErrorType
 	Code int
-	Val  string
 	Msg  string
 }
 
 //Error return error message
 func (err *AppError) Error() string {
-	if err.Type == ParamErr {
-		return "get param:" + err.Val + " failed"
-	}
 	return err.Msg
+}
+
+//ParamError for input param error
+type ParamError struct {
+	Val string
+}
+
+//Error return error message
+func (err *ParamError) Error() string {
+	return "get param: " + err.Val + " failed"
 }

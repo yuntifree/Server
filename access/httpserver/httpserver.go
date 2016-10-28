@@ -70,25 +70,25 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(message))
 }
 
-func login(w http.ResponseWriter, r *http.Request) *util.AppError {
+func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "", "invalid param"}
+		return &util.AppError{util.JSONErr, 2, "invalid param"}
 	}
 
-	username, err := post.Get("data").Get("username").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 1, "username", "miss param"}
-	}
-
-	password, err := post.Get("data").Get("password").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 1, "password", "miss param"}
-	}
+	username := util.GetJSONString(post, "username")
+	password := util.GetJSONString(post, "password")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -96,16 +96,16 @@ func login(w http.ResponseWriter, r *http.Request) *util.AppError {
 	uuid := util.GenUUID()
 	res, err := c.Login(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "", "登录失败"}
+		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", err.Error()}
+		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
 
 	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
@@ -115,7 +115,7 @@ func login(w http.ResponseWriter, r *http.Request) *util.AppError {
 	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", err.Error()}
+		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
 	w.Write(body)
 	return nil
@@ -140,48 +140,49 @@ func getCode(phone string, ctype int32) (bool, error) {
 	return r.Result, nil
 }
 
-func getPhoneCode(w http.ResponseWriter, r *http.Request) *util.AppError {
+func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "invalid param"}
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 
-	phone, err := post.Get("data").Get("phone").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "phone", "invalid param"}
-	}
+	phone := util.GetJSONString(post, "phone")
+	ctype := util.GetJSONInt(post, "type")
 
-	ctype, err := post.Get("data").Get("type").Int()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "type", "invalid param"}
-	}
 	flag, err := getCode(phone, int32(ctype))
 	if err != nil || !flag {
-		return &util.AppError{util.LogicErr, 103, "", "获取验证码失败"}
+		return &util.AppError{util.LogicErr, 103, "获取验证码失败"}
 	}
 	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
-func logout(w http.ResponseWriter, r *http.Request) *util.AppError {
+func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "invalid param"}
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 
-	token, err := post.Get("token").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "", "invalid param"}
-	}
-
-	uid, err := post.Get("uid").Int64()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "", "invalid param"}
-	}
+	token := util.GetJSONString(post, "token")
+	uid := util.GetJSONInt(post, "uid")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -189,11 +190,11 @@ func logout(w http.ResponseWriter, r *http.Request) *util.AppError {
 	uuid := util.GenUUID()
 	res, err := c.Logout(context.Background(), &verify.LogoutRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "", "logout failed"}
+		return &util.AppError{util.LogicErr, 4, "logout failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -224,40 +225,33 @@ func checkToken(uid int64, token string) bool {
 	return true
 }
 
-func getHot(w http.ResponseWriter, r *http.Request) *util.AppError {
+func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "invalid param"}
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 
-	uid, err := post.Get("uid").Int64()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "uid", ""}
-	}
-
-	token, err := post.Get("token").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "token", ""}
-	}
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
 
 	flag := checkToken(uid, token)
 	if !flag {
-		return &util.AppError{util.LogicErr, 101, "", "token验证失败"}
+		return &util.AppError{util.LogicErr, 101, "token验证失败"}
 	}
 
-	ctype, err := post.Get("data").Get("type").Int()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "type", ""}
-	}
-
-	seq, err := post.Get("data").Get("seq").Int()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "seq", ""}
-	}
+	ctype := util.GetJSONInt(post, "type")
+	seq := util.GetJSONInt(post, "seq")
 
 	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -265,15 +259,15 @@ func getHot(w http.ResponseWriter, r *http.Request) *util.AppError {
 	uuid := util.GenUUID()
 	res, err := c.GetHots(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Type: int32(ctype), Seq: int32(seq)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "", "获取新闻失败"}
+		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "invalid param"}
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 	infos := make([]interface{}, len(res.Infos))
 	for i := 0; i < len(res.Infos); i++ {
@@ -296,36 +290,32 @@ func getHot(w http.ResponseWriter, r *http.Request) *util.AppError {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "marshal json failed"}
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
 }
 
-func autoLogin(w http.ResponseWriter, r *http.Request) *util.AppError {
+func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "parse input json failed"}
+		return &util.AppError{util.JSONErr, 4, "parse input json failed"}
 	}
 
-	uid, err := post.Get("uid").Int64()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "uid", ""}
-	}
-
-	token, err := post.Get("token").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "token", ""}
-	}
-
-	privdata, err := post.Get("data").Get("privdata").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "privdata", ""}
-	}
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
+	privdata := util.GetJSONString(post, "privdata")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -333,18 +323,18 @@ func autoLogin(w http.ResponseWriter, r *http.Request) *util.AppError {
 	uuid := util.GenUUID()
 	res, err := c.AutoLogin(context.Background(), &verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Token: token, Privdata: privdata})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
-		return &util.AppError{util.LogicErr, 4, "", "token验证失败"}
+		return &util.AppError{util.LogicErr, 4, "token验证失败"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "", "服务器又傲娇了"}
+		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "init json failed"}
+		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
 
 	js.SetPath([]string{"data", "token"}, res.Token)
@@ -352,36 +342,32 @@ func autoLogin(w http.ResponseWriter, r *http.Request) *util.AppError {
 	js.SetPath([]string{"data", "expire"}, res.Expire)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "marshal json failed"}
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
 }
 
-func register(w http.ResponseWriter, r *http.Request) *util.AppError {
+func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
 	post, err := simplejson.NewFromReader(r.Body)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "parse input json failed"}
+		return &util.AppError{util.JSONErr, 4, "parse input json failed"}
 	}
 
-	username, err := post.Get("data").Get("username").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "username", ""}
-	}
-
-	password, err := post.Get("data").Get("password").String()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "password", ""}
-	}
-
-	code, err := post.Get("data").Get("code").Int()
-	if err != nil {
-		return &util.AppError{util.ParamErr, 2, "password", ""}
-	}
+	username := util.GetJSONString(post, "username")
+	password := util.GetJSONString(post, "password")
+	code := util.GetJSONInt(post, "code")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -389,18 +375,18 @@ func register(w http.ResponseWriter, r *http.Request) *util.AppError {
 	uuid := util.GenUUID()
 	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Code: int32(code)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, "", err.Error()}
+		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_USED_PHONE {
-		return &util.AppError{util.LogicErr, 104, "", "该手机号已注册，请直接登录"}
+		return &util.AppError{util.LogicErr, 104, "该手机号已注册，请直接登录"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "", "服务器又傲娇了"}
+		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "init json failed"}
+		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
 
 	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
@@ -410,7 +396,7 @@ func register(w http.ResponseWriter, r *http.Request) *util.AppError {
 	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "", "marshal json failed"}
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
