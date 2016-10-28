@@ -1,10 +1,15 @@
 package juhe
 
 import (
+	"bytes"
+	"io"
 	"log"
+
+	"text/template"
 
 	simplejson "github.com/bitly/go-simplejson"
 
+	aliyun "../aliyun"
 	util "../util"
 	"github.com/PuerkitoBio/goquery"
 )
@@ -19,6 +24,11 @@ type News struct {
 	Title, Date, Author, URL, Md5 string
 	Pics                          [3]string
 	Stype                         int
+}
+
+//Page page info
+type Page struct {
+	Title, Content string
 }
 
 func getTypeStr(stype int) string {
@@ -47,8 +57,17 @@ func getTypeStr(stype int) string {
 
 }
 
+func initTemplate() *template.Template {
+	tpl, err := template.ParseFiles("templates/news.html")
+	if err != nil {
+		panic("parse template failed")
+	}
+	return tpl
+}
+
 //GetNews fetch news
 func GetNews(stype int) []News {
+	tpl := initTemplate()
 	news := make([]News, 50)
 	typeStr := getTypeStr(stype)
 	url := baseurl + "?type=" + typeStr + "&key=" + appkey
@@ -92,7 +111,13 @@ func GetNews(stype int) []News {
 		ns.Md5 = util.GetMD5Hash(ns.Title)
 		ns.Date, _ = info.Get("date").String()
 		ns.URL, _ = info.Get("url").String()
-		pics, err := GetImages(ns.URL)
+		d, err := goquery.NewDocument(ns.URL)
+		if err != nil {
+			log.Printf("fetch url failed:%v", err)
+			continue
+		}
+
+		pics, err := GetImages(d, ns.URL)
 		if err != nil {
 			log.Printf("fetch images from url failed:%v", err)
 			ns.Pics[0], _ = info.Get("thumbnail_pic_s").String()
@@ -101,6 +126,21 @@ func GetNews(stype int) []News {
 				ns.Pics[i] = pics[i]
 			}
 		}
+		title := d.Find("title").Text()
+		content, err := d.Find("article").Html()
+		if err != nil {
+			log.Printf("get article failed %s:%v", ns.URL, err)
+			continue
+		}
+		var buf bytes.Buffer
+		w := io.Writer(&buf)
+		err = tpl.Execute(w, &Page{Title: title, Content: content})
+		filename := util.GenSalt()
+		if flag := aliyun.UploadOssFile(filename, buf.String()); !flag {
+			log.Printf("UploadOssFile failed %s:%v", filename, err)
+			continue
+		}
+		ns.URL = aliyun.GenOssURL(filename)
 		ns.Author, _ = info.Get("author_name").String()
 		news[i] = ns
 		log.Printf("title:%s", ns.Title)
@@ -110,14 +150,8 @@ func GetNews(stype int) []News {
 }
 
 //GetImages extract images from url
-func GetImages(url string) ([]string, error) {
+func GetImages(d *goquery.Document, url string) ([]string, error) {
 	var images []string
-	d, err := goquery.NewDocument(url)
-	if err != nil {
-		log.Printf("fetch url failed:%v", err)
-		return images, err
-	}
-
 	sel := d.Find("a")
 	sel.Each(func(i int, n *goquery.Selection) {
 		if val, ok := n.Attr("class"); ok {

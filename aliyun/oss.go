@@ -12,6 +12,7 @@ const (
 	accessKeyID     = "LTAIOpvgiTmAKJNi"
 	accessKeySecret = "apT9ttTZcedRj5bPdOlmLgvT8vM4R4"
 	yuntiBucket     = "yuntinews"
+	bucketURL       = "http://yuntinews.oss-cn-shenzhen.aliyuncs.com"
 )
 
 //UploadOssFile upload content to aliyun oss
@@ -35,4 +36,9 @@ func UploadOssFile(filename, content string) bool {
 	}
 
 	return true
+}
+
+//GenOssURL generate oss download url
+func GenOssURL(filename string) string {
+	return bucketURL + "/" + filename
 }
