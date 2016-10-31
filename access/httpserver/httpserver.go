@@ -391,7 +391,6 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
-	log.Printf("resp:%s", res.String())
 	tops := make([]interface{}, len(res.Tops))
 	for i := 0; i < len(res.Tops); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
@@ -538,7 +537,6 @@ func discoverServer(w http.ResponseWriter, r *http.Request) {
 
 //Serve do server work
 func Serve() {
-	http.HandleFunc("/", welcome)
 	http.HandleFunc("/hello", hello)
 	http.Handle("/login", appHandler(login))
 	http.Handle("/get_phone_code", appHandler(getPhoneCode))
@@ -548,5 +546,6 @@ func Serve() {
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/service", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
+	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
 }
