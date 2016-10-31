@@ -280,7 +280,6 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		json.Set("source", res.Infos[i].Source)
 		json.Set("dst", res.Infos[i].Dst)
 		json.Set("ctime", res.Infos[i].Ctime)
-		json.Set("video", res.Infos[i].Video)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)

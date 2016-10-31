@@ -20,8 +20,7 @@ message HotsInfo {
     string dst = 4;
     string ctime = 5;
     int32 stype = 6;
-    string video = 7;
-    int32 seq = 8;
+    int32 seq = 7;
 }
 
 message HotsReply {

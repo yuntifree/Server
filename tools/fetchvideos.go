@@ -22,7 +22,11 @@ func main() {
 		for j := 0; j < len(files); j++ {
 			f := files[j]
 			duration, _ := strconv.Atoi(f.Duration)
-			_, err := db.Exec("INSERT IGNORE INTO youku_video(id, origin_id, title, img, play_url, duration, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())", f.ID, f.OriginID, f.Title, f.ImgURL, f.PlayURL, duration)
+			dst := juhe.GenYoukuURL(f.OriginID)
+			if f.Source == "乐视" {
+				dst = juhe.GenLetvURL(f.OriginID)
+			}
+			_, err := db.Exec("INSERT IGNORE INTO youku_video(id, origin_id, title, img, play_url, duration, source, dst, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())", f.ID, f.OriginID, f.Title, f.ImgURL, f.PlayURL, duration, f.Source, dst)
 			if err != nil {
 				log.Printf("insert failed:%v", err)
 			}

@@ -20,40 +20,27 @@ const (
 
 type server struct{}
 
-func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
-	db, err := util.InitDB()
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
-	var table string
-	if in.Type == 0 {
-		table = "news"
-	} else {
-		table = "video"
-	}
-	query := "SELECT id, title, img1, img2, img3, vid, source, dst, ctime FROM " + table + " WHERE 1 = 1 "
-	if in.Seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(in.Seq))
+func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
+	var infos []*hot.HotsInfo
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime FROM news WHERE 1 = 1 "
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
 	}
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(util.MaxListSize)
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
+		return infos
 	}
 
-	infos := make([]*hot.HotsInfo, 20)
-	i := 0
 	for rows.Next() {
 		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Video, &info.Source, &info.Dst, &info.Ctime)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Source, &info.Dst, &info.Ctime)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
-			return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
+			return infos
 		}
 		var pics [3]string
 		j, k := 0, 0
@@ -65,11 +52,55 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 			}
 		}
 		info.Images = pics[:k]
-		infos[i] = &info
-		i++
+		infos = append(infos, &info)
 		log.Printf("title:%s source:%s", info.Title, info.Source)
 	}
-	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos[:i]}, nil
+	return infos
+}
+
+func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
+	var infos []*hot.HotsInfo
+	query := "SELECT vid, title, img, source, dst, ctime FROM youku_video WHERE 1 = 1 "
+	if seq != 0 {
+		query += " AND vid < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY vid DESC LIMIT " + strconv.Itoa(util.MaxListSize)
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var img [3]string
+		var info hot.HotsInfo
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &info.Source, &info.Dst, &info.Ctime)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		info.Images = img[:1]
+		infos = append(infos, &info)
+		log.Printf("title:%s source:%s", info.Title, info.Source)
+	}
+	return infos
+}
+
+func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
+	db, err := util.InitDB()
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
+	var infos []*hot.HotsInfo
+	if in.Type == 0 {
+		infos = getNews(db, in.Seq)
+	} else {
+		infos = getVideos(db, in.Seq)
+	}
+	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
 func getTops(db *sql.DB) ([]*hot.ServiceInfo, error) {

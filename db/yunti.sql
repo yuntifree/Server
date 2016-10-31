@@ -58,18 +58,16 @@ CREATE TABLE IF NOT EXISTS news (
     UNIQUE KEY(md5)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS video LIKE news;
-
-CREATE TABLE IF NOT EXISTS ad LIKE news;
-
 CREATE TABLE IF NOT EXISTS youku_video (
     vid      bigint unsigned NOT NULL AUTO_INCREMENT,
     id       varchar(32) NOT NULL,
     origin_id   varchar(32) NOT NULL,
     title       varchar(128) NOT NULL,
-    img         varchar(128) NOT NULL,
-    play_url    varchar(128) NOT NULL,
+    img         varchar(1024) NOT NULL,
+    play_url    varchar(256) NOT NULL,
     duration    int unsigned NOT NULL DEFAULT 0,
+    source      varchar(128) NOT NULL,
+    dst         varchar(256) NOT NULL,
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(vid)
 ) ENGINE = InnoDB;
@@ -124,5 +122,20 @@ CREATE TABLE IF NOT EXISTS user_record (
     PRIMARY KEY(rid),
     KEY(username),
     KEY(aid)
+) ENGINE = InnoDB;
+
+-- OSS
+CREATE TABLE IF NOT EXISTS back_login (
+    uid     int unsigned NOT NULL AUTO_INCREMENT,
+    username    varchar(32) NOT NULL,
+    password    varchar(32) NOT NULL,
+    salt        varchar(32) NOT NULL,
+    login_time  datetime NOT NULL DEFAULT '2016-01-01',
+    expire_time  datetime NOT NULL DEFAULT '2016-01-01',
+    skey        varchar(32) NOT NULL,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(uid),
+    UNIQUE KEY(username)
 ) ENGINE = InnoDB;
 
