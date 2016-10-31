@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS user (
     salt        varchar(32) NOT NULL,
     -- term 0: android 1:ios
     term    tinyint unsigned NOT NULL DEFAULT 0,
+    nickname    varchar(32) NOT NULL,
+    headurl     varchar(256) NOT NULL,
     version int unsigned NOT NULL DEFAULT 0,
     udid    varchar(32) NOT NULL DEFAULT '',
     model   varchar(32) NOT NULL DEFAULT '',
@@ -59,6 +61,38 @@ CREATE TABLE IF NOT EXISTS news (
 CREATE TABLE IF NOT EXISTS video LIKE news;
 
 CREATE TABLE IF NOT EXISTS ad LIKE news;
+
+CREATE TABLE IF NOT EXISTS youku_video (
+    vid      bigint unsigned NOT NULL AUTO_INCREMENT,
+    id       varchar(32) NOT NULL,
+    origin_id   varchar(32) NOT NULL,
+    title       varchar(128) NOT NULL,
+    img         varchar(128) NOT NULL,
+    play_url    varchar(128) NOT NULL,
+    duration    int unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(vid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS wx_openid (
+    wid     int unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    wtype   tinyint unsigned NOT NULL DEFAULT 0,
+    openid  varchar(32) NOT NULL,
+    PRIMARY KEY(wid),
+    KEY(uid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS service (
+    sid     int unsigned NOT NULL AUTO_INCREMENT,
+    category int unsigned NOT NULL,
+    title   varchar(64) NOT NULL,
+    icon    varchar(128) NOT NULL,
+    dst     varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(sid)
+) ENGINE = InnoDB;
 
 -- data from ZTE
 CREATE TABLE IF NOT EXISTS ap (
