@@ -17,6 +17,7 @@ service Verify{
 message TokenRequest {
     common.Head head = 1;
     string token = 2;
+    int32 type = 3;
 }
 
 message TokenReply {

@@ -249,7 +249,7 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func checkToken(uid int64, token string) bool {
+func checkToken(uid int64, token string, ctype int32) bool {
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
@@ -259,7 +259,7 @@ func checkToken(uid int64, token string) bool {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.CheckToken(context.Background(), &verify.TokenRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
+	res, err := c.CheckToken(context.Background(), &verify.TokenRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token, Type: ctype})
 	if err != nil {
 		log.Printf("failed: %v", err)
 		return false
@@ -289,7 +289,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uid := util.GetJSONInt(post, "uid")
 	token := util.GetJSONString(post, "token")
 
-	flag := checkToken(uid, token)
+	flag := checkToken(uid, token, 0)
 	if !flag {
 		return &util.AppError{util.LogicErr, 101, "token验证失败"}
 	}
@@ -411,7 +411,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uid := util.GetJSONInt(post, "uid")
 	token := util.GetJSONString(post, "token")
 
-	flag := checkToken(uid, token)
+	flag := checkToken(uid, token, 0)
 	if !flag {
 		return &util.AppError{util.LogicErr, 101, "token验证失败"}
 	}

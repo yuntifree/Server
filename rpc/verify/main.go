@@ -212,7 +212,7 @@ func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	flag := util.CheckToken(db, in.Head.Uid, in.Token)
+	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
 		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
@@ -227,7 +227,7 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*veri
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	flag := util.CheckToken(db, in.Head.Uid, in.Token)
+	flag := util.CheckToken(db, in.Head.Uid, in.Token, in.Type)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
 		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
