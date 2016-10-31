@@ -4,12 +4,12 @@ import (
 	"log"
 	"net/http"
 
-	common "../../proto/common"
-	discover "../../proto/discover"
-	helloworld "../../proto/hello"
-	hot "../../proto/hot"
-	verify "../../proto/verify"
-	util "../../util"
+	common "../proto/common"
+	discover "../proto/discover"
+	helloworld "../proto/hello"
+	hot "../proto/hot"
+	verify "../proto/verify"
+	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -534,8 +534,8 @@ func discoverServer(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//Serve do server work
-func Serve() {
+//ServeApp do app server work
+func ServeApp() {
 	http.HandleFunc("/hello", hello)
 	http.Handle("/login", appHandler(login))
 	http.Handle("/get_phone_code", appHandler(getPhoneCode))
@@ -547,4 +547,10 @@ func Serve() {
 	http.HandleFunc("/discover", discoverServer)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
+}
+
+//ServeOss do oss server work
+func ServeOss() {
+	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
+	http.ListenAndServe(":8080", nil)
 }
