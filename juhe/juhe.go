@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	"text/template"
+	"html/template"
 
 	simplejson "github.com/bitly/go-simplejson"
 
@@ -28,7 +28,8 @@ type News struct {
 
 //Page page info
 type Page struct {
-	Title, Content string
+	Title   string
+	Content template.HTML
 }
 
 func getTypeStr(stype int) string {
@@ -134,7 +135,7 @@ func GetNews(stype int) []News {
 		}
 		var buf bytes.Buffer
 		w := io.Writer(&buf)
-		err = tpl.Execute(w, &Page{Title: title, Content: content})
+		err = tpl.Execute(w, &Page{Title: title, Content: template.HTML(content)})
 		filename := util.GenSalt()
 		if flag := aliyun.UploadOssFile(filename, buf.String()); !flag {
 			log.Printf("UploadOssFile failed %s:%v", filename, err)
