@@ -348,6 +348,84 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
+
+	flag := checkToken(uid, token)
+	if !flag {
+		return &util.AppError{util.LogicErr, 101, "token验证失败"}
+	}
+
+	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+	uuid := util.GenUUID()
+	res, err := c.GetServices(context.Background(), &hot.ServiceRequest{Head: &common.Head{Uid: uid, Sid: uuid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
+		return &util.AppError{util.LogicErr, 4, "token验证失败"}
+	} else if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "init json failed"}
+	}
+	log.Printf("resp:%s", res.String())
+	tops := make([]interface{}, len(res.Tops))
+	for i := 0; i < len(res.Tops); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("title", res.Tops[i].Title)
+		json.Set("icon", res.Tops[i].Icon)
+		json.Set("dst", res.Tops[i].Dst)
+		tops[i] = json
+	}
+	js.SetPath([]string{"data", "top"}, tops)
+
+	services := make([]interface{}, len(res.Services))
+	for i := 0; i < len(res.Services); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("title", res.Services[i].Title)
+		items := make([]interface{}, len(res.Services[i].Infos))
+		for j := 0; j < len(res.Services[i].Infos); j++ {
+			in, _ := simplejson.NewJson([]byte(`{}`))
+			in.Set("title", res.Services[i].Infos[j].Title)
+			in.Set("icon", res.Services[i].Infos[j].Icon)
+			in.Set("dst", res.Services[i].Infos[j].Dst)
+			items[j] = in
+		}
+		json.Set("items", items)
+		services[i] = json
+	}
+	js.SetPath([]string{"data", "services"}, services)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -468,6 +546,7 @@ func Serve() {
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/auto_login", appHandler(autoLogin))
+	http.Handle("/service", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.ListenAndServe(":80", nil)
 }

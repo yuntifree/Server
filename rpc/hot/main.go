@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net"
 	"strconv"
@@ -69,6 +70,101 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 		log.Printf("title:%s source:%s", info.Title, info.Source)
 	}
 	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos[:i]}, nil
+}
+
+func getTops(db *sql.DB) ([]*hot.ServiceInfo, error) {
+	var infos []*hot.ServiceInfo
+	rows, err := db.Query("SELECT title, icon, dst FROM service WHERE category = 0")
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos, err
+	}
+
+	for rows.Next() {
+		var info hot.ServiceInfo
+		err := rows.Scan(&info.Title, &info.Icon, &info.Dst)
+		if err != nil {
+			continue
+		}
+		infos = append(infos, &info)
+	}
+
+	return infos, nil
+}
+
+func getCategoryTitle(category int) string {
+	switch category {
+	default:
+		return "智慧政务"
+	case 2:
+		return "交通出行"
+	case 3:
+		return "医疗服务"
+	case 4:
+		return "网上充值"
+	}
+}
+
+func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
+	var infos []*hot.ServiceCategory
+	rows, err := db.Query("SELECT title, icon, dst, category FROM service WHERE category != 0 ORDER BY category")
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos, err
+	}
+
+	category := 0
+	var srvs []*hot.ServiceInfo
+	for rows.Next() {
+		var info hot.ServiceInfo
+		var cate int
+		err := rows.Scan(&info.Title, &info.Icon, &info.Dst, &cate)
+		if err != nil {
+			continue
+		}
+
+		if cate != category {
+			if len(srvs) > 0 {
+				var cateinfo hot.ServiceCategory
+				cateinfo.Title = getCategoryTitle(category)
+				cateinfo.Infos = srvs[:]
+				infos = append(infos, &cateinfo)
+				srvs = srvs[len(srvs):]
+			}
+			category = cate
+		}
+		srvs = append(srvs, &info)
+	}
+
+	if len(srvs) > 0 {
+		var cateinfo hot.ServiceCategory
+		cateinfo.Title = getCategoryTitle(category)
+		cateinfo.Infos = srvs[:]
+		infos = append(infos, &cateinfo)
+	}
+
+	return infos, nil
+}
+
+func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.ServiceReply, error) {
+	db, err := util.InitDB()
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	infos, err := getTops(db)
+	if err != nil {
+		log.Printf("getTops failed:%v", err)
+		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	categories, err := getService(db)
+	if err != nil {
+		log.Printf("getServie failed:%v", err)
+		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	return &hot.ServiceReply{Head: &common.Head{Retcode: 0}, Tops: infos, Services: categories}, nil
 }
 
 func main() {
