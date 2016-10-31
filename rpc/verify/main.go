@@ -108,6 +108,34 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 	return &verify.VerifyReply{Result: flag}, nil
 }
 
+func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	db, err := util.InitDB()
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	var uid int64
+	var epass string
+	var salt string
+	err = db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
+	}
+	pass := util.GenSaltPasswd(in.Password, salt)
+	if pass != epass {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 3}}, errors.New("verify password failed")
+	}
+
+	token := util.GenSalt()
+	_, err = db.Exec("UPDATE back_login SET skey = ?, login_time = NOW(), expire_time = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, uid)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
+	}
+
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token}, nil
+}
+
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	db, err := util.InitDB()
 	if err != nil {
