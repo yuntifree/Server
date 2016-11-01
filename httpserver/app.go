@@ -174,30 +174,6 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func checkToken(uid int64, token string, ctype int32) bool {
-	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
-	if err != nil {
-		log.Printf("did not connect: %v", err)
-		return false
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
-	uuid := util.GenUUID()
-	res, err := c.CheckToken(context.Background(), &verify.TokenRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token, Type: ctype})
-	if err != nil {
-		log.Printf("failed: %v", err)
-		return false
-	}
-
-	if res.Head.Retcode != 0 {
-		log.Printf("check token failed")
-		return false
-	}
-
-	return true
-}
-
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
