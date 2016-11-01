@@ -15,33 +15,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	helloAddress    = "localhost:50051"
-	verifyAddress   = "localhost:50052"
-	hotAddress      = "localhost:50053"
-	discoverAddress = "localhost:50054"
-	defaultName     = "world"
-)
-
-type appHandler func(http.ResponseWriter, *http.Request) *util.AppError
-
-func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if e := fn(w, r); e != nil {
-		log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
-
-		js, _ := simplejson.NewJson([]byte(`{}`))
-		js.Set("errcode", e.Code)
-		js.Set("desc", e.Msg)
-		body, err := js.MarshalJSON()
-		if err != nil {
-			log.Printf("MarshalJSON failed: %v", err)
-			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-			return
-		}
-		w.Write(body)
-	}
-}
-
 func getMessage(name string) string {
 	conn, err := grpc.Dial(helloAddress, grpc.WithInsecure())
 	if err != nil {
@@ -68,54 +41,6 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	name := "hello"
 	message := getMessage(name)
 	w.Write([]byte(message))
-}
-
-func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			}
-		}
-	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	username := util.GetJSONString(post, "username")
-	password := util.GetJSONString(post, "password")
-
-	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
-	uuid := util.GenUUID()
-	res, err := c.BackLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
-	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
-	}
-
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
-	}
-
-	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
-	js.SetPath([]string{"data", "token"}, res.Token)
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
-	}
-	w.Write(body)
-	return nil
 }
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -591,15 +516,8 @@ func ServeApp() {
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/auto_login", appHandler(autoLogin))
-	http.Handle("/service", appHandler(getService))
+	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
-}
-
-//ServeOss do oss server work
-func ServeOss() {
-	http.Handle("/login", appHandler(backLogin))
-	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
-	http.ListenAndServe(":8080", nil)
 }

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package fetch;
+
+service Fetch{
+    rpc FetchReviewNews(CommRequest) returns (NewsReply) {}
+    rpc FetchTags(CommRequest) returns (TagsReply) {}
+}
+
+message CommRequest {
+    common.Head head = 1;
+    int64 seq = 2;
+    int32 num = 3;
+}
+
+message NewsInfo {
+    int64 id = 1;
+    string title = 2;
+}
+
+message NewsReply {
+    common.Head head = 1;
+    repeated NewsInfo infos = 2;
+}
+
+message TagInfo {
+    int32 id = 1;
+    string content = 2;
+}
+
+message TagsReply {
+    common.Head head = 1;
+    repeated TagInfo infos = 2;
+}

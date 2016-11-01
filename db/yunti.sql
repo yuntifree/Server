@@ -54,6 +54,9 @@ CREATE TABLE IF NOT EXISTS news (
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     dtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    ruid    int unsigned NOT NULL DEFAULT 0,
+    review  tinyint unsigned NOT NULL DEFAULT 0,
+    rtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     PRIMARY KEY(id),
     UNIQUE KEY(md5)
 ) ENGINE = InnoDB;
@@ -137,5 +140,23 @@ CREATE TABLE IF NOT EXISTS back_login (
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(uid),
     UNIQUE KEY(username)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS tags (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    category    int unsigned NOT NULL,
+    content     varchar(128) NOT NULL,
+    deleted     tinyint unsigned NOT NULL,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(category)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS news_tags(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    nid    bigint unsigned NOT NULL,
+    tid    int unsigned NOT NULL,
+    PRIMARY KEY(id),
+    KEY(nid)
 ) ENGINE = InnoDB;
 
