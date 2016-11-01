@@ -1,7 +1,9 @@
 package util
 
 import (
+	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha1"
 	"encoding/hex"
 	"math/rand"
 	"strings"
@@ -43,4 +45,17 @@ func Rand() int32 {
 func Randn(n int32) int32 {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	return r.Int31n(n)
+}
+
+//Sha1 gen hex sha1 of content
+func Sha1(content string) string {
+	hash := sha1.Sum([]byte(content))
+	return hex.EncodeToString(hash[:])
+}
+
+//HmacSha1 gen hex sha1 of conten with key
+func HmacSha1(content, key string) string {
+	mac := hmac.New(sha1.New, []byte(key))
+	hash := mac.Sum([]byte(content))
+	return hex.EncodeToString(hash[:])
 }
