@@ -14,7 +14,7 @@ const (
 //APInfo ap base information
 type APInfo struct {
 	Aid                 int
-	Address             string
+	Address, Mac        string
 	Longitude, Latitude float64
 }
 
@@ -87,7 +87,8 @@ func GetAPInfoList(seq int) []APInfo {
 		info.Longitude, _ = tmp.Get("longitude").Float64()
 		info.Latitude, _ = tmp.Get("latitude").Float64()
 		info.Address, _ = tmp.Get("address").String()
-		log.Printf("get %d %f %f %s", info.Aid, info.Longitude, info.Latitude, info.Address)
+		info.Mac, _ = tmp.Get("apmac").String()
+		log.Printf("get %d %f %f %s %s", info.Aid, info.Longitude, info.Latitude, info.Address, info.Mac)
 		infos[i] = info
 	}
 

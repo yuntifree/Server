@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS ap (
     longitude   double NOT NULL,
     latitude    double NOT NULL,
     address     varchar(256) NOT NULL,
+    mac         varchar(32) NOT NULL,
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
 
