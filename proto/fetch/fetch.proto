@@ -7,6 +7,7 @@ package fetch;
 service Fetch{
     rpc FetchReviewNews(CommRequest) returns (NewsReply) {}
     rpc FetchTags(CommRequest) returns (TagsReply) {}
+    rpc FetchAps(ApRequest) returns (ApReply) {}
 }
 
 message CommRequest {
@@ -33,4 +34,21 @@ message TagInfo {
 message TagsReply {
     common.Head head = 1;
     repeated TagInfo infos = 2;
+}
+
+message ApInfo {
+    int32 id = 1;
+    double longitude = 2;
+    double latitude = 3;
+}
+
+message ApRequest {
+    common.Head head = 1;
+    double longitude = 2;
+    double latitude = 3;
+}
+
+message ApReply {
+    common.Head head = 1;
+    repeated ApInfo infos = 2;
 }

@@ -6,6 +6,7 @@ import (
 
 	common "../proto/common"
 	discover "../proto/discover"
+	fetch "../proto/fetch"
 	helloworld "../proto/hello"
 	hot "../proto/hot"
 	verify "../proto/verify"
@@ -373,6 +374,68 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
+
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
+
+	flag := checkToken(uid, token, 0)
+	if !flag {
+		return &util.AppError{util.LogicErr, 101, "token验证失败"}
+	}
+
+	longitude := util.GetJSONFloat(post, "longitude")
+	latitude := util.GetJSONFloat(post, "latitude")
+
+	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+	uuid := util.GenUUID()
+	res, err := c.FetchAps(context.Background(), &fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Longitude: longitude, Latitude: latitude})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "init json failed"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("id", res.Infos[i].Id)
+		json.Set("longitude", res.Infos[i].Longitude)
+		json.Set("latitude", res.Infos[i].Latitude)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -492,6 +555,7 @@ func ServeApp() {
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/auto_login", appHandler(autoLogin))
+	http.Handle("/get_nearby_aps", appHandler(getAps))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))

@@ -98,6 +98,38 @@ func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.T
 	return &fetch.TagsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: tags}, nil
 }
 
+func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
+	var infos []*fetch.ApInfo
+	rows, err := db.Query("SELECT id, longitude, latitude FROM ap WHERE longitude > ? - 0.1 AND longitude < ? + 0.1 AND latitude > ? - 0.1 AND latitude < ? + 0.1 ORDER BY (pow(abs(longitude - ?), 2) + pow(abs(latitude - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info fetch.ApInfo
+		err = rows.Scan(&info.Id, &info.Longitude, &info.Latitude)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("id:%s longitude:%f latitude:%f ", info.Id, info.Longitude, info.Latitude)
+	}
+	return infos
+}
+
+func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
+	db, err := util.InitDB()
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &fetch.ApReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
+	infos := getAps(db, in.Longitude, in.Latitude)
+	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
