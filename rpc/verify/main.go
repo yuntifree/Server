@@ -56,7 +56,7 @@ func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 }
 
 func getPhoneCode(phone string, ctype int32) (bool, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return false, err
@@ -109,7 +109,7 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 }
 
 func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
@@ -137,7 +137,7 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
@@ -168,7 +168,7 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -207,7 +207,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
@@ -222,7 +222,7 @@ func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.
 }
 
 func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*verify.TokenReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
@@ -264,7 +264,7 @@ func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
 }
 
 func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, err

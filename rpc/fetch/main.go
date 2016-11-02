@@ -50,7 +50,7 @@ func getReviewNews(db *sql.DB, seq, num int64) []*fetch.NewsInfo {
 }
 
 func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*fetch.NewsReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(true)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &fetch.NewsReply{Head: &common.Head{Retcode: 1}}, err
@@ -88,7 +88,7 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 }
 
 func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.TagsReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(true)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &fetch.TagsReply{Head: &common.Head{Retcode: 1}}, err
@@ -120,7 +120,7 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 }
 
 func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(true)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &fetch.ApReply{Head: &common.Head{Retcode: 1}}, err

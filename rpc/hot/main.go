@@ -88,7 +88,7 @@ func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 }
 
 func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(true)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
@@ -178,7 +178,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 }
 
 func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.ServiceReply, error) {
-	db, err := util.InitDB()
+	db, err := util.InitDB(true)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
