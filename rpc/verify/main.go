@@ -61,6 +61,7 @@ func getPhoneCode(phone string, ctype int32) (bool, error) {
 		log.Printf("connect mysql failed:%v", err)
 		return false, err
 	}
+	defer db.Close()
 	log.Printf("request phone:%s, ctype:%d", phone, ctype)
 	flag := util.ExistPhone(db, phone)
 	if ctype == 1 && !flag {
@@ -114,6 +115,7 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 
 	var uid int64
 	var epass string
@@ -142,6 +144,7 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 
 	var uid int64
 	var epass string
@@ -173,6 +176,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 	flag := util.ExistPhone(db, in.Username)
 	if flag {
 		log.Printf("used phone:%v", in.Username)
@@ -212,6 +216,7 @@ func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
@@ -227,6 +232,7 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*veri
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, in.Type)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
@@ -269,6 +275,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 		log.Printf("connect mysql failed:%v", err)
 		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 
 	flag := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 	if !flag {

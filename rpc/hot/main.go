@@ -93,6 +93,7 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 		log.Printf("connect mysql failed:%v", err)
 		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
 	if in.Type == 0 {
@@ -183,6 +184,7 @@ func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.
 		log.Printf("connect mysql failed:%v", err)
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	defer db.Close()
 	infos, err := getTops(db)
 	if err != nil {
 		log.Printf("getTops failed:%v", err)
