@@ -39,4 +39,5 @@ do
     elif [ $1 -eq 2 ]; then
         install_rpc $arg
     fi
+    rm -f $arg
 done
