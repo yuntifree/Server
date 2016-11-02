@@ -29,7 +29,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
 
 		js, _ := simplejson.NewJson([]byte(`{}`))
-		js.Set("errcode", e.Code)
+		js.Set("errno", e.Code)
 		js.Set("desc", e.Msg)
 		body, err := js.MarshalJSON()
 		if err != nil {
