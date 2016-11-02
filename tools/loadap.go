@@ -11,7 +11,7 @@ import (
 
 func main() {
 	seq := 0
-	db, err := util.InitDB()
+	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("InitDB failed:%v", err)
 		os.Exit(1)
