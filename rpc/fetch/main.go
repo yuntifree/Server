@@ -100,7 +100,7 @@ func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.T
 
 func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 	var infos []*fetch.ApInfo
-	rows, err := db.Query("SELECT id, longitude, latitude FROM ap WHERE longitude > ? - 0.1 AND longitude < ? + 0.1 AND latitude > ? - 0.1 AND latitude < ? + 0.1 ORDER BY (pow(abs(longitude - ?), 2) + pow(abs(latitude - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	rows, err := db.Query("SELECT id, bd_lon, bd_lat FROM ap WHERE bd_lon > ? - 0.1 AND bd_lon < ? + 0.1 AND bd_lat > ? - 0.1 AND bd_lat < ? + 0.1 ORDER BY (pow(abs(bd_lon - ?), 2) + pow(abs(bd_lat - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos
