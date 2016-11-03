@@ -22,7 +22,7 @@ type server struct{}
 
 func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime FROM news WHERE 1 = 1 "
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime FROM news WHERE deleted = 0 "
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package modify;
+
+service Modify{
+    rpc ReviewNews(NewsRequest) returns (NewsReply) {}
+}
+
+message NewsRequest {
+    common.Head head = 1;
+    int64 id = 2;
+    bool reject = 3;
+    bool modify = 4;
+    string title = 5;
+    repeated int32 tags = 6;
+}
+
+message NewsReply {
+    common.Head head = 1;
+}
+
+

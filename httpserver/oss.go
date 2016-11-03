@@ -6,6 +6,7 @@ import (
 
 	common "../proto/common"
 	fetch "../proto/fetch"
+	modify "../proto/modify"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -273,12 +274,80 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		return &util.AppError{util.JSONErr, 2, "invalid param"}
+	}
+
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
+
+	flag := checkToken(uid, token, 1)
+	if !flag {
+		return &util.AppError{util.LogicErr, 101, "token验证失败"}
+	}
+
+	id := util.GetJSONInt(post, "id")
+	reject := util.GetJSONInt(post, "reject")
+	mod := util.GetJSONIntDef(post, "modify", 0)
+	var title string
+	var tags []int32
+
+	if mod != 0 {
+		title = util.GetJSONStringDef(post, "title", "")
+	}
+
+	arr, err := post.Get("data").Get("tags").Array()
+	if err == nil {
+		for i := 0; i < len(arr); i++ {
+			tid, _ := post.Get("data").Get("tags").GetIndex(i).Int()
+			tags = append(tags, int32(tid))
+		}
+	}
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+	uuid := util.GenUUID()
+	res, err := c.ReviewNews(context.Background(), &modify.NewsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
+		Modify: mod == 1, Title: title, Tags: tags})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取标签失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 //ServeOss do oss server work
 func ServeOss() {
 	http.Handle("/login", appHandler(backLogin))
 	http.Handle("/get_news", appHandler(getReviewNews))
 	http.Handle("/get_tags", appHandler(getTags))
 	http.Handle("/get_users", appHandler(getUsers))
+	http.Handle("/review_news", appHandler(reviewNews))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)
 }

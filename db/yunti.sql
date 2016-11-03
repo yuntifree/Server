@@ -160,6 +160,8 @@ CREATE TABLE IF NOT EXISTS news_tags(
     id     bigint unsigned NOT NULL AUTO_INCREMENT,
     nid    bigint unsigned NOT NULL,
     tid    int unsigned NOT NULL,
+    ruid   int unsigned NOT NULL DEFAULT 0,
+    ctime  datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id),
     KEY(nid)
 ) ENGINE = InnoDB;

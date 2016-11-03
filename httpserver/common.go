@@ -19,6 +19,7 @@ const (
 	hotAddress      = "localhost:50053"
 	discoverAddress = "localhost:50054"
 	fetchAddress    = "localhost:50055"
+	modifyAddress   = "localhost:50056"
 	defaultName     = "world"
 )
 
