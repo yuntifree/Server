@@ -8,6 +8,7 @@ service Fetch{
     rpc FetchReviewNews(CommRequest) returns (NewsReply) {}
     rpc FetchTags(CommRequest) returns (TagsReply) {}
     rpc FetchAps(ApRequest) returns (ApReply) {}
+    rpc FetchUsers(CommRequest) returns (UserReply) {}
 }
 
 message CommRequest {
@@ -51,4 +52,17 @@ message ApRequest {
 message ApReply {
     common.Head head = 1;
     repeated ApInfo infos = 2;
+}
+
+message UserInfo {
+    int64 id = 1;
+    string phone = 2;
+    string imei = 3;
+    string active = 4;
+    string remark = 5;
+}
+
+message UserReply {
+    common.Head head = 1;
+    repeated UserInfo infos = 2;
 }

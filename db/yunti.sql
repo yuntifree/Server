@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS user (
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     token   varchar(32) NOT NULL DEFAULT '',
     private varchar(32) NOT NULL DEFAULT '',
+    remark  varchar(128) NOT NULL DEFAULT '',
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     atime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',

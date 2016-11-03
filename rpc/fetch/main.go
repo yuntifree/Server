@@ -130,6 +130,44 @@ func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApRe
 	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
+	var infos []*fetch.UserInfo
+	query := "select uid, phone, udid, atime, remark from user where 1 = 1 "
+	if seq != 0 {
+		query += " and uid < " + strconv.Itoa(int(seq))
+	}
+	query += " order by uid desc limit " + strconv.Itoa(int(num))
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info fetch.UserInfo
+		err = rows.Scan(&info.Id, &info.Phone, &info.Imei, &info.Active, &info.Remark)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("uid:%d phone:%s udid:%s active:%s remark:%s", info.Id, info.Phone, info.Imei, info.Active, info.Remark)
+	}
+	return infos
+}
+
+func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.UserReply, error) {
+	db, err := util.InitDB(true)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &fetch.UserReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	infos := getUsers(db, in.Seq, int64(in.Num))
+	return &fetch.UserReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
