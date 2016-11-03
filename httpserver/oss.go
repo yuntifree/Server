@@ -84,6 +84,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	num := util.GetJSONInt(post, "num")
 	seq := util.GetJSONInt(post, "seq")
+	ctype := util.GetJSONInt(post, "type")
 	if num > 100 {
 		num = 100
 	} else if num < 20 {
@@ -98,7 +99,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchReviewNews(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchReviewNews(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num), Type: int32(ctype)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -116,6 +117,9 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		json.Set("id", res.Infos[i].Id)
 		json.Set("seq", res.Infos[i].Id)
 		json.Set("title", res.Infos[i].Title)
+		json.Set("ctime", res.Infos[i].Ctime)
+		json.Set("source", res.Infos[i].Source)
+		json.Set("tag", res.Infos[i].Tag)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "news"}, infos)

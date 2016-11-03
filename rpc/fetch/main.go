@@ -22,9 +22,41 @@ const (
 
 type server struct{}
 
-func getReviewNews(db *sql.DB, seq, num int64) []*fetch.NewsInfo {
+func getNewsTag(db *sql.DB, id int64) string {
+	rows, err := db.Query("SELECT t.content FROM news_tags n, tags t WHERE n.tid = t.id AND n.nid = ?", id)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return ""
+	}
+
+	var tags string
+	for rows.Next() {
+		var tag string
+		err = rows.Scan(&tag)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return tags
+		}
+		if len(tags) > 0 {
+			tags += "," + tag
+		} else {
+			tags += tag
+		}
+	}
+	return tags
+}
+
+func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
-	query := "select id, title from news where 1 = 1 "
+	query := "select id, title, ctime, source from news where 1 = 1 "
+	switch ctype {
+	default:
+		query += " AND review = 0 "
+	case 1:
+		query += " AND review = 1 AND deleted = 0 "
+	case 2:
+		query += " AND review = 1 AND deleted = 1 "
+	}
 	if seq != 0 {
 		query += " and id < " + strconv.Itoa(int(seq))
 	}
@@ -38,13 +70,17 @@ func getReviewNews(db *sql.DB, seq, num int64) []*fetch.NewsInfo {
 
 	for rows.Next() {
 		var info fetch.NewsInfo
-		err = rows.Scan(&info.Id, &info.Title)
+		err = rows.Scan(&info.Id, &info.Title, &info.Ctime, &info.Source)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%s title:%s ", info.Id, info.Title)
+		log.Printf("id:%s title:%s ctime:%s source:%s ", info.Id, info.Title, info.Ctime, info.Source)
+		if ctype == 1 {
+			info.Tag = getNewsTag(db, info.Id)
+		}
+
 	}
 	return infos
 }
@@ -55,8 +91,8 @@ func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*f
 		log.Printf("connect mysql failed:%v", err)
 		return &fetch.NewsReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
-	news := getReviewNews(db, in.Seq, int64(in.Num))
+	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num, in.Type)
+	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
 	return &fetch.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: news}, nil
 }
 

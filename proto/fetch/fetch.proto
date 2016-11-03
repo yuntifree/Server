@@ -15,11 +15,15 @@ message CommRequest {
     common.Head head = 1;
     int64 seq = 2;
     int32 num = 3;
+    int32 type = 4;
 }
 
 message NewsInfo {
     int64 id = 1;
     string title = 2;
+    string tag = 3;
+    string source = 4;
+    string ctime = 5;
 }
 
 message NewsReply {
