@@ -48,7 +48,7 @@ func getNewsTag(db *sql.DB, id int64) string {
 
 func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
-	query := "select id, title, ctime, source from news where 1 = 1 "
+	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 "
 	switch ctype {
 	default:
 		query += " AND review = 0 "
@@ -58,9 +58,9 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 		query += " AND review = 1 AND deleted = 1 "
 	}
 	if seq != 0 {
-		query += " and id < " + strconv.Itoa(int(seq))
+		query += " AND id < " + strconv.Itoa(int(seq))
 	}
-	query += " order by id desc limit " + strconv.Itoa(int(num))
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -98,11 +98,11 @@ func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*f
 
 func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 	var infos []*fetch.TagInfo
-	query := "select id, content from tags where 1 = 1 "
+	query := "SELECT id, content FROM tags WHERE 1 = 1 "
 	if seq != 0 {
-		query += " and id < " + strconv.Itoa(int(seq))
+		query += " AND id < " + strconv.Itoa(int(seq))
 	}
-	query += " order by id desc limit " + strconv.Itoa(int(num))
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -136,7 +136,7 @@ func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.T
 
 func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 	var infos []*fetch.ApInfo
-	rows, err := db.Query("SELECT id, bd_lon, bd_lat FROM ap WHERE bd_lon > ? - 0.1 AND bd_lon < ? + 0.1 AND bd_lat > ? - 0.1 AND bd_lat < ? + 0.1 ORDER BY (pow(abs(bd_lon - ?), 2) + pow(abs(bd_lat - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	rows, err := db.Query("SELECT id, bd_lon, bd_lat FROM ap WHERE bd_lon > ? - 0.1 AND bd_lon < ? + 0.1 AND bd_lat > ? - 0.1 AND bd_lat < ? + 0.1 ORDER BY (POW(ABS(bd_lon - ?), 2) + POW(ABS(bd_lat - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos
@@ -206,11 +206,11 @@ func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch
 
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	var infos []*fetch.UserInfo
-	query := "select uid, phone, udid, atime, remark from user where 1 = 1 "
+	query := "SELECT uid, phone, udid, atime, remark FROM user WHERE 1 = 1 "
 	if seq != 0 {
-		query += " and uid < " + strconv.Itoa(int(seq))
+		query += " AND uid < " + strconv.Itoa(int(seq))
 	}
-	query += " order by uid desc limit " + strconv.Itoa(int(num))
+	query += " ORDER BY uid DESC LIMIT " + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
