@@ -166,6 +166,44 @@ func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApRe
 	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
+	var infos []*fetch.ApStatInfo
+	query := "SELECT id, address, mac, count, bandwidth, online FROM ap WHERE 1 = 1 "
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info fetch.ApStatInfo
+		err = rows.Scan(&info.Id, &info.Address, &info.Mac, &info.Count, &info.Bandwidth, &info.Online)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("id:%s address:%s mac:%s count:%d bandwidth:%d online:%d ", info.Id, info.Address, info.Mac, info.Count, info.Bandwidth, info.Online)
+	}
+	return infos
+}
+
+func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch.ApStatReply, error) {
+	db, err := util.InitDB(true)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &fetch.ApStatReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	infos := getApStat(db, int32(in.Seq), in.Num)
+	return &fetch.ApStatReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	var infos []*fetch.UserInfo
 	query := "select uid, phone, udid, atime, remark from user where 1 = 1 "

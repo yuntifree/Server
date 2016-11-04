@@ -9,6 +9,7 @@ service Fetch{
     rpc FetchTags(CommRequest) returns (TagsReply) {}
     rpc FetchAps(ApRequest) returns (ApReply) {}
     rpc FetchUsers(CommRequest) returns (UserReply) {}
+    rpc FetchApStat(CommRequest) returns (ApStatReply) {}
 }
 
 message CommRequest {
@@ -47,6 +48,15 @@ message ApInfo {
     double latitude = 3;
 }
 
+message ApStatInfo {
+    int32 id = 1;
+    string address = 2;
+    string mac = 3;
+    int32 count = 4;
+    int32 bandwidth = 5;
+    int32 online = 6;
+}
+
 message ApRequest {
     common.Head head = 1;
     double longitude = 2;
@@ -69,4 +79,9 @@ message UserInfo {
 message UserReply {
     common.Head head = 1;
     repeated UserInfo infos = 2;
+}
+
+message ApStatReply {
+    common.Head head = 1;
+    repeated ApStatInfo infos = 3;
 }

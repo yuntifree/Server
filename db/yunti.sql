@@ -105,6 +105,9 @@ CREATE TABLE IF NOT EXISTS ap (
     mac         varchar(32) NOT NULL,
     bd_lon      double NOT NULL,
     bd_lat      double NOT NULL,
+    count       int unsigned NOT NULL DEFAULT 0,
+    bandwidth   int unsigned NOT NULL DEFAULT 0,
+    online      tinyint unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
 
