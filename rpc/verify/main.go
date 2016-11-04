@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"database/sql"
-	"math/rand"
 
 	"../../util"
 
@@ -22,6 +21,7 @@ const (
 	servername = "service:verify"
 	expiretime = 3600 * 24 * 30
 	mastercode = 251653
+	randrange  = 1000000
 )
 
 type server struct{}
@@ -73,8 +73,7 @@ func getPhoneCode(phone string, ctype int32) (bool, error) {
 	var code int
 	err = db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1", phone).Scan(&code)
 	if err != nil {
-		r := rand.New(rand.NewSource(99))
-		code := r.Int31n(1000000)
+		code := util.Randn(randrange)
 		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))", phone, code)
 		if err != nil {
 			log.Printf("insert into phone_code failed:%v", err)
