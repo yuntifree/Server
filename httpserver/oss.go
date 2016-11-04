@@ -13,6 +13,15 @@ import (
 	"google.golang.org/grpc"
 )
 
+func genReqNum(num int64) int64 {
+	if num > 100 {
+		num = 100
+	} else if num < 20 {
+		num = 20
+	}
+	return num
+}
+
 func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -85,11 +94,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	num := util.GetJSONInt(post, "num")
 	seq := util.GetJSONInt(post, "seq")
 	ctype := util.GetJSONInt(post, "type")
-	if num > 100 {
-		num = 100
-	} else if num < 20 {
-		num = 20
-	}
+	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
 	if err != nil {
@@ -158,11 +163,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	num := util.GetJSONInt(post, "num")
 	seq := util.GetJSONInt(post, "seq")
-	if num > 100 {
-		num = 100
-	} else if num < 20 {
-		num = 20
-	}
+	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
 	if err != nil {
@@ -228,11 +229,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	num := util.GetJSONInt(post, "num")
 	seq := util.GetJSONInt(post, "seq")
-	if num > 100 {
-		num = 100
-	} else if num < 20 {
-		num = 20
-	}
+	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
 	if err != nil {
@@ -368,11 +365,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	num := util.GetJSONInt(post, "num")
 	seq := util.GetJSONInt(post, "seq")
-	if num > 100 {
-		num = 100
-	} else if num < 20 {
-		num = 20
-	}
+	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
 	if err != nil {
