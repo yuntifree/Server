@@ -169,3 +169,13 @@ CREATE TABLE IF NOT EXISTS news_tags(
     KEY(nid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS template (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    content varchar(4096) NOT NULL,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    ruid     int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    mtime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;

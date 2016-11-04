@@ -242,6 +242,44 @@ func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.
 	return &fetch.UserReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
+	var infos []*fetch.TemplateInfo
+	query := "SELECT id, title, content, online FROM template WHERE 1 = 1 "
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info fetch.TemplateInfo
+		err = rows.Scan(&info.Id, &info.Title, &info.Content, &info.Online)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("id:%d title:%s Online:%d ", info.Id, info.Title, info.Online)
+	}
+	return infos
+}
+
+func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fetch.TemplateReply, error) {
+	db, err := util.InitDB(true)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &fetch.TemplateReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	infos := getTemplates(db, int32(in.Seq), in.Num)
+	return &fetch.TemplateReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {

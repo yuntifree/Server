@@ -10,6 +10,7 @@ service Fetch{
     rpc FetchAps(ApRequest) returns (ApReply) {}
     rpc FetchUsers(CommRequest) returns (UserReply) {}
     rpc FetchApStat(CommRequest) returns (ApStatReply) {}
+    rpc FetchTemplates(CommRequest) returns (TemplateReply) {}
 }
 
 message CommRequest {
@@ -76,6 +77,13 @@ message UserInfo {
     string remark = 5;
 }
 
+message TemplateInfo {
+    int32 id = 1;
+    string title = 2;
+    string content = 3;
+    int32 online = 4;
+}
+
 message UserReply {
     common.Head head = 1;
     repeated UserInfo infos = 2;
@@ -84,4 +92,9 @@ message UserReply {
 message ApStatReply {
     common.Head head = 1;
     repeated ApStatInfo infos = 3;
+}
+
+message TemplateReply {
+    common.Head head = 1;
+    repeated TemplateInfo infos = 3;
 }

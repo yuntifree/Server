@@ -412,6 +412,74 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(util.ParamError); ok {
+				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			}
+		}
+	}()
+	post, err := simplejson.NewFromReader(r.Body)
+	if err != nil {
+		return &util.AppError{util.JSONErr, 2, "invalid param"}
+	}
+
+	uid := util.GetJSONInt(post, "uid")
+	token := util.GetJSONString(post, "token")
+
+	flag := checkToken(uid, token, 1)
+	if !flag {
+		return &util.AppError{util.LogicErr, 101, "token验证失败"}
+	}
+
+	num := util.GetJSONInt(post, "num")
+	seq := util.GetJSONInt(post, "seq")
+	num = genReqNum(num)
+
+	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchTemplates(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("id", res.Infos[i].Id)
+		json.Set("seq", res.Infos[i].Id)
+		json.Set("title", res.Infos[i].Title)
+		json.Set("online", res.Infos[i].Online)
+		json.Set("content", res.Infos[i].Content)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+	if len(res.Infos) >= util.MaxListSize {
+		js.SetPath([]string{"data", "hasmore"}, 1)
+	}
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 //ServeOss do oss server work
 func ServeOss() {
 	http.Handle("/login", appHandler(backLogin))
@@ -419,6 +487,7 @@ func ServeOss() {
 	http.Handle("/get_tags", appHandler(getTags))
 	http.Handle("/get_ap_stat", appHandler(getApStat))
 	http.Handle("/get_users", appHandler(getUsers))
+	http.Handle("/get_templates", appHandler(getTemplates))
 	http.Handle("/review_news", appHandler(reviewNews))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)
