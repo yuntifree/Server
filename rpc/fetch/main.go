@@ -46,6 +46,69 @@ func getNewsTag(db *sql.DB, id int64) string {
 	return tags
 }
 
+func getTotalNews(db *sql.DB, ctype int32) int64 {
+	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 "
+	switch ctype {
+	default:
+		query += " AND review = 0 "
+	case 1:
+		query += " AND review = 1 AND deleted = 0 "
+	case 2:
+		query += " AND review = 1 AND deleted = 1 "
+	}
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total failed:%v", err)
+		return 0
+	}
+	return total
+}
+
+func getTotalTags(db *sql.DB) int64 {
+	query := "SELECT COUNT(id) FROM tags "
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total tags failed:%v", err)
+		return 0
+	}
+	return total
+}
+
+func getTotalAps(db *sql.DB) int64 {
+	query := "SELECT COUNT(id) FROM ap "
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total ap failed:%v", err)
+		return 0
+	}
+	return total
+}
+
+func getTotalTemplates(db *sql.DB) int64 {
+	query := "SELECT COUNT(id) FROM template "
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total ap failed:%v", err)
+		return 0
+	}
+	return total
+}
+
+func getTotalUsers(db *sql.DB) int64 {
+	query := "SELECT COUNT(id) FROM user "
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total user failed:%v", err)
+		return 0
+	}
+	return total
+}
+
 func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
 	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 "
@@ -93,7 +156,8 @@ func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*f
 	}
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num, in.Type)
 	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
-	return &fetch.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: news}, nil
+	total := getTotalNews(db, in.Type)
+	return &fetch.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: news, Total: total}, nil
 }
 
 func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
@@ -131,7 +195,8 @@ func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.T
 	}
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	tags := getTags(db, in.Seq, int64(in.Num))
-	return &fetch.TagsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: tags}, nil
+	total := getTotalTags(db)
+	return &fetch.TagsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: tags, Total: total}, nil
 }
 
 func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
@@ -201,7 +266,8 @@ func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch
 	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getApStat(db, int32(in.Seq), in.Num)
-	return &fetch.ApStatReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	total := getTotalAps(db)
+	return &fetch.ApStatReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
@@ -239,7 +305,8 @@ func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.
 	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getUsers(db, in.Seq, int64(in.Num))
-	return &fetch.UserReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	total := getTotalUsers(db)
+	return &fetch.UserReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
 func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
@@ -277,7 +344,8 @@ func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fe
 	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getTemplates(db, int32(in.Seq), in.Num)
-	return &fetch.TemplateReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	total := getTotalTemplates(db)
+	return &fetch.TemplateReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
 func main() {

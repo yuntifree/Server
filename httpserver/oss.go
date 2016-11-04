@@ -128,9 +128,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "news"}, infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
+	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -194,9 +192,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "tags"}, infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
+	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -263,9 +259,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
+	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -400,9 +394,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
+	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -468,9 +460,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
+	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
 	if err != nil {

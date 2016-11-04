@@ -31,6 +31,7 @@ message NewsInfo {
 message NewsReply {
     common.Head head = 1;
     repeated NewsInfo infos = 2;
+    int64 total = 3;
 }
 
 message TagInfo {
@@ -41,6 +42,7 @@ message TagInfo {
 message TagsReply {
     common.Head head = 1;
     repeated TagInfo infos = 2;
+    int64 total = 3;
 }
 
 message ApInfo {
@@ -87,14 +89,17 @@ message TemplateInfo {
 message UserReply {
     common.Head head = 1;
     repeated UserInfo infos = 2;
+    int64 total = 3;
 }
 
 message ApStatReply {
     common.Head head = 1;
-    repeated ApStatInfo infos = 3;
+    repeated ApStatInfo infos = 2;
+    int64 total = 3;
 }
 
 message TemplateReply {
     common.Head head = 1;
-    repeated TemplateInfo infos = 3;
+    repeated TemplateInfo infos = 2;
+    int64 total = 3;
 }
