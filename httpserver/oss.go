@@ -436,6 +436,49 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	title := req.GetParamStringDef("title", "")
+	content := req.GetParamStringDef("content", "")
+	online := req.GetParamIntDef("online", 0)
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.ModTemplate(context.Background(), &modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "修改模板失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 //ServeOss do oss server work
 func ServeOss() {
 	http.Handle("/login", appHandler(backLogin))
@@ -445,6 +488,7 @@ func ServeOss() {
 	http.Handle("/get_users", appHandler(getUsers))
 	http.Handle("/get_templates", appHandler(getTemplates))
 	http.Handle("/add_template", appHandler(addTemplate))
+	http.Handle("/mod_template", appHandler(modTemplate))
 	http.Handle("/review_news", appHandler(reviewNews))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)

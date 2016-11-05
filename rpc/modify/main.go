@@ -71,6 +71,36 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*m
 	return &modify.AddTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: int32(id)}, nil
 }
 
+func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.ModTempReply, error) {
+	db, err := util.InitDB(false)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &modify.ModTempReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer db.Close()
+
+	query := "UPDATE template SET "
+	if in.Info.Title != "" {
+		query += " title = '" + in.Info.Title + "', "
+	}
+	if in.Info.Content != "" {
+		query += " content = '" + in.Info.Content + "', "
+	}
+	online := 0
+	if in.Info.Online {
+		online = 1
+	}
+	query += " mtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid)) + ", online = " + strconv.Itoa(online) + " WHERE id = " + strconv.Itoa(int(in.Info.Id))
+	_, err = db.Exec(query)
+
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return &modify.ModTempReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	return &modify.ModTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {

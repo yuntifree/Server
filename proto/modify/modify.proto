@@ -7,6 +7,7 @@ package modify;
 service Modify{
     rpc ReviewNews(NewsRequest) returns (NewsReply) {}
     rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
+    rpc ModTemplate(ModTempRequest) returns (ModTempReply) {}
 }
 
 message NewsRequest {
@@ -39,5 +40,13 @@ message AddTempReply {
     int32 id = 2;
 }
 
+message ModTempRequest {
+    common.Head head = 1;
+    TemplateInfo info = 2;
+}
+
+message ModTempReply {
+    common.Head head = 1;
+}
 
 
