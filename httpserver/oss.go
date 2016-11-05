@@ -50,7 +50,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
@@ -95,7 +95,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -151,7 +151,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -203,7 +203,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -272,7 +272,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -313,7 +313,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -369,7 +369,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -422,7 +422,7 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "添加模板失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -466,7 +466,7 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "修改模板失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}

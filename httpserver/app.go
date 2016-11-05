@@ -72,7 +72,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
@@ -188,7 +188,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
@@ -249,7 +249,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
@@ -293,7 +293,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
@@ -360,7 +360,7 @@ func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
@@ -413,7 +413,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
@@ -468,7 +468,7 @@ func discoverServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
 		log.Printf("NewJson failed: %v", err)
 		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
