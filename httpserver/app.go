@@ -49,16 +49,15 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	username := util.GetJSONString(post, "username")
-	password := util.GetJSONString(post, "password")
+	var req request
+	req.init(r.Body)
+	username := req.GetParamString("username")
+	password := req.GetParamString("password")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -119,16 +118,15 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	phone := util.GetJSONString(post, "phone")
-	ctype := util.GetJSONInt(post, "type")
+	var req request
+	req.init(r.Body)
+	phone := req.GetParamString("phone")
+	ctype := req.GetParamInt("type")
 
 	flag, err := getCode(phone, int32(ctype))
 	if err != nil || !flag {
@@ -143,16 +141,15 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	token := util.GetJSONString(post, "token")
-	uid := util.GetJSONInt(post, "uid")
+	var req request
+	req.init(r.Body)
+	uid := req.GetParamInt("uid")
+	token := req.GetParamString("token")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -180,24 +177,16 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 0)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	ctype := util.GetJSONInt(post, "type")
-	seq := util.GetJSONInt(post, "seq")
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	ctype := req.GetParamInt("type")
+	seq := req.GetParamInt("seq")
 
 	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
 	if err != nil {
@@ -250,17 +239,16 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "parse input json failed"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-	privdata := util.GetJSONString(post, "privdata")
+	var req request
+	req.init(r.Body)
+	uid := req.GetParamInt("uid")
+	token := req.GetParamString("token")
+	privdata := req.GetParamString("privdata")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -302,21 +290,14 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 0)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
 
 	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
 	if err != nil {
@@ -379,24 +360,17 @@ func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
 
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 0)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	longitude := util.GetJSONFloat(post, "longitude")
-	latitude := util.GetJSONFloat(post, "latitude")
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
 	if err != nil {
@@ -441,17 +415,16 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "parse input json failed"}
-	}
-
-	username := util.GetJSONString(post, "username")
-	password := util.GetJSONString(post, "password")
-	code := util.GetJSONInt(post, "code")
+	var req request
+	req.init(r.Body)
+	username := req.GetParamString("username")
+	password := req.GetParamString("password")
+	code := req.GetParamInt("code")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {

@@ -27,16 +27,15 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	username := util.GetJSONString(post, "username")
-	password := util.GetJSONString(post, "password")
+	var req request
+	req.init(r.Body)
+	username := req.GetParamString("username")
+	password := req.GetParamString("password")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -75,25 +74,17 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	num := util.GetJSONInt(post, "num")
-	seq := util.GetJSONInt(post, "seq")
-	ctype := util.GetJSONInt(post, "type")
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	ctype := req.GetParamInt("type")
 	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
@@ -143,24 +134,17 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
 
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	num := util.GetJSONInt(post, "num")
-	seq := util.GetJSONInt(post, "seq")
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
@@ -207,24 +191,16 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	num := util.GetJSONInt(post, "num")
-	seq := util.GetJSONInt(post, "seq")
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
@@ -274,36 +250,28 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	id := util.GetJSONInt(post, "id")
-	reject := util.GetJSONInt(post, "reject")
-	mod := util.GetJSONIntDef(post, "modify", 0)
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	reject := req.GetParamInt("reject")
+	mod := req.GetParamIntDef("modify", 0)
 	var title string
 	var tags []int32
 
 	if mod != 0 {
-		title = util.GetJSONStringDef(post, "title", "")
+		title = req.GetParamStringDef("title", "")
 	}
 
-	arr, err := post.Get("data").Get("tags").Array()
+	arr, err := req.Post.Get("data").Get("tags").Array()
 	if err == nil {
 		for i := 0; i < len(arr); i++ {
-			tid, _ := post.Get("data").Get("tags").GetIndex(i).Int()
+			tid, _ := req.Post.Get("data").Get("tags").GetIndex(i).Int()
 			tags = append(tags, int32(tid))
 		}
 	}
@@ -341,24 +309,16 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	num := util.GetJSONInt(post, "num")
-	seq := util.GetJSONInt(post, "seq")
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
@@ -409,24 +369,16 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		if r := recover(); r != nil {
 			if v, ok := r.(util.ParamError); ok {
 				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
+			} else if k, ok := r.(util.AppError); ok {
+				apperr = &k
 			}
 		}
 	}()
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
-	}
-
-	uid := util.GetJSONInt(post, "uid")
-	token := util.GetJSONString(post, "token")
-
-	flag := checkToken(uid, token, 1)
-	if !flag {
-		return &util.AppError{util.LogicErr, 101, "token验证失败"}
-	}
-
-	num := util.GetJSONInt(post, "num")
-	seq := util.GetJSONInt(post, "seq")
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
 	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
