@@ -394,6 +394,48 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	title := req.GetParamString("title")
+	content := req.GetParamString("content")
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddTemplate(context.Background(), &modify.AddTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Title: title, Content: content}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加模板失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errcode":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "tid"}, res.Id)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 //ServeOss do oss server work
 func ServeOss() {
 	http.Handle("/login", appHandler(backLogin))
@@ -402,6 +444,7 @@ func ServeOss() {
 	http.Handle("/get_ap_stat", appHandler(getApStat))
 	http.Handle("/get_users", appHandler(getUsers))
 	http.Handle("/get_templates", appHandler(getTemplates))
+	http.Handle("/add_template", appHandler(addTemplate))
 	http.Handle("/review_news", appHandler(reviewNews))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)

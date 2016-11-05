@@ -6,6 +6,7 @@ package modify;
 
 service Modify{
     rpc ReviewNews(NewsRequest) returns (NewsReply) {}
+    rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
 }
 
 message NewsRequest {
@@ -20,5 +21,23 @@ message NewsRequest {
 message NewsReply {
     common.Head head = 1;
 }
+
+message TemplateInfo {
+    int32 id = 1;
+    string title = 2;
+    string content = 3;
+    bool online = 4;
+}
+
+message AddTempRequest {
+    common.Head head = 1;
+    TemplateInfo info = 2;
+}
+
+message AddTempReply {
+    common.Head head = 1;
+    int32 id = 2;
+}
+
 
 

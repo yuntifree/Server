@@ -48,6 +48,29 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modif
 	return &modify.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*modify.AddTempReply, error) {
+	db, err := util.InitDB(false)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer db.Close()
+
+	res, err := db.Exec("INSERT INTO template(title, content, ruid, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW())", in.Info.Title, in.Info.Content, in.Head.Uid)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	return &modify.AddTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: int32(id)}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
