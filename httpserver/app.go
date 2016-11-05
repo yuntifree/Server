@@ -47,11 +47,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -116,11 +112,7 @@ func getCode(phone string, ctype int32) (bool, error) {
 func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -139,11 +131,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -175,11 +163,7 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -237,11 +221,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -288,11 +268,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -358,11 +334,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 
@@ -413,11 +385,7 @@ func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request

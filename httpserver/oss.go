@@ -25,11 +25,7 @@ func genReqNum(num int64) int64 {
 func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -72,11 +68,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -132,11 +124,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 
@@ -189,11 +177,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -248,11 +232,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -307,11 +287,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request
@@ -367,11 +343,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
-			if v, ok := r.(util.ParamError); ok {
-				apperr = &util.AppError{util.ParamErr, 2, v.Error()}
-			} else if k, ok := r.(util.AppError); ok {
-				apperr = &k
-			}
+			apperr = extractError(r)
 		}
 	}()
 	var req request

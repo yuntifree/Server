@@ -84,6 +84,16 @@ func (r *request) GetParamFloatDef(key string, def float64) float64 {
 	return util.GetJSONFloatDef(r.Post, key, def)
 }
 
+func extractError(r interface{}) *util.AppError {
+	if v, ok := r.(util.ParamError); ok {
+		return &util.AppError{util.ParamErr, 2, v.Error()}
+	} else if k, ok := r.(util.AppError); ok {
+		return &k
+	}
+
+	return nil
+}
+
 type appHandler func(http.ResponseWriter, *http.Request) *util.AppError
 
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
