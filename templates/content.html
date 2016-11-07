@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" name="viewport">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<meta name="format-detection" content="email=no">
+<meta name="author" content="Cleam Lee">
+<meta name="keywords" content="东莞无线,头条新闻,头条,今日新闻头条,头条网,头条新闻,今日头条新闻">
+<meta name="description" content="东莞无线是一款会自动学习的资讯软件,它会分析你的兴趣爱好,为你推荐喜欢的内容,并且越用越懂你.就要你好看,东莞无限!">
+<title>{{.Title}}</title>
+<script type="text/javascript" src="http://mini.eastday.com/toutiaoh5/js/responsive.min.js"></script>
+<link rel="stylesheet" href="http://mini.eastday.com/toutiaoh5/css/photoswipe/photoswipe.min.css">
+<link rel="stylesheet" href="http://mini.eastday.com/toutiaoh5/css/common.min.css">
+<link rel="stylesheet" href="http://mini.eastday.com/toutiaoh5/css/page_details_v2.min.css">
+</head>
+<body>
+<article>
+<div id="title">
+    <div class="article-title">
+        <h1 class="title">{{.Title}}</h1>
+    </div>
+    <div class="article-src-time">
+        <span class="src">{{.Ctime}}&nbsp;&nbsp;&nbsp;&nbsp;{{.Source}}</span>
+    </div>
+</div>
+<div id="content" class="J-article-content article-content">
+{{range .Infos}}
+{{- if .Type }}<p class="section txt">{{.Src}}</p>
+{{else}}
+<div class="section img"><a href="{{.Src}}"><img src="{{.Src}}", style="width:100%;height:auto;display:block;">
+{{end -}}
+{{end}}
+</div>
+</article>
+</body>
+</html>

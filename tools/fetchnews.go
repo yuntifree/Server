@@ -22,7 +22,7 @@ func main() {
 		news := juhe.GetNews(i)
 		for j := 0; j < len(news); j++ {
 			ns := news[j]
-			_, err := db.Exec("INSERT IGNORE INTO news(title, img1, img2, img3, dst, source, md5, ctime, dtime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())", ns.Title, ns.Pics[0], ns.Pics[1], ns.Pics[2], ns.URL, ns.Author, ns.Md5, ns.Date)
+			_, err := db.Exec("INSERT IGNORE INTO news(title, img1, img2, img3, dst, source, md5, ctime, stype, dtime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())", ns.Title, ns.Pics[0], ns.Pics[1], ns.Pics[2], ns.URL, ns.Author, ns.Md5, ns.Date, i)
 			if err != nil {
 				log.Printf("insert failed:%v", err)
 			}
