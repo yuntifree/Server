@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS news (
     vid     varchar(256) NOT NULL DEFAULT '',
     source  varchar(128) NOT NULL DEFAULT '',
     dst     varchar(256) NOT NULL,
+    origin  varchar(256) NOT NULL,
     md5     varchar(32) NOT NULL,
     stype   tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,

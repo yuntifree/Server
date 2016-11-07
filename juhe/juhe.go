@@ -26,9 +26,9 @@ const (
 
 //News information for news
 type News struct {
-	Title, Date, Author, URL, Md5 string
-	Pics                          [3]string
-	Stype                         int
+	Title, Date, Author, URL, Md5, Origin string
+	Pics                                  [3]string
+	Stype                                 int
 }
 
 //Page page info
@@ -147,7 +147,7 @@ func genContent(contents []Content) string {
 
 //GetContent fetch content from url
 func GetContent(url string) (news News, err error) {
-	news.URL = url
+	news.Origin = url
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.76 Mobile Safari/537.36")
