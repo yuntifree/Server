@@ -7,7 +7,6 @@ import (
 
 	common "../proto/common"
 	discover "../proto/discover"
-	fetch "../proto/fetch"
 	helloworld "../proto/hello"
 	hot "../proto/hot"
 	verify "../proto/verify"
@@ -334,55 +333,8 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
-func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
-
-	var req request
-	req.initCheckApp(r.Body)
-	uid := req.GetParamInt("uid")
-	longitude := req.GetParamFloat("longitude")
-	latitude := req.GetParamFloat("latitude")
-
-	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-	uuid := util.GenUUID()
-	res, err := c.FetchAps(context.Background(), &fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Longitude: longitude, Latitude: latitude})
-	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
-	}
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "init json failed"}
-	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("aid", res.Infos[i].Id)
-		json.Set("longitude", res.Infos[i].Longitude)
-		json.Set("latitude", res.Infos[i].Latitude)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
-	}
-	w.Write(body)
-	return nil
+func getAppAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	return getAps(w, r, false)
 }
 
 func extractIP(addr string) string {
@@ -508,7 +460,7 @@ func ServeApp() {
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/auto_login", appHandler(autoLogin))
-	http.Handle("/get_nearby_aps", appHandler(getAps))
+	http.Handle("/get_nearby_aps", appHandler(getAppAps))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))

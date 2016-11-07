@@ -479,6 +479,10 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	return getAps(w, r, true)
+}
+
 //ServeOss do oss server work
 func ServeOss() {
 	http.Handle("/login", appHandler(backLogin))
@@ -489,6 +493,7 @@ func ServeOss() {
 	http.Handle("/get_templates", appHandler(getTemplates))
 	http.Handle("/add_template", appHandler(addTemplate))
 	http.Handle("/mod_template", appHandler(modTemplate))
+	http.Handle("/get_nearby_aps", appHandler(getOssAps))
 	http.Handle("/review_news", appHandler(reviewNews))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)

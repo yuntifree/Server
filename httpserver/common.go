@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	common "../proto/common"
+	fetch "../proto/fetch"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -135,4 +136,59 @@ func checkToken(uid int64, token string, ctype int32) bool {
 	}
 
 	return true
+}
+
+func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+
+	var req request
+	if back {
+		req.initCheckOss(r.Body)
+	} else {
+		req.initCheckOss(r.Body)
+	}
+	uid := req.GetParamInt("uid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+
+	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+	uuid := util.GenUUID()
+	res, err := c.FetchAps(context.Background(), &fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Longitude: longitude, Latitude: latitude})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "init json failed"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("aid", res.Infos[i].Id)
+		json.Set("longitude", res.Infos[i].Longitude)
+		json.Set("latitude", res.Infos[i].Latitude)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
 }
