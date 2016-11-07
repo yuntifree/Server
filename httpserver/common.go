@@ -149,7 +149,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	if back {
 		req.initCheckOss(r.Body)
 	} else {
-		req.initCheckOss(r.Body)
+		req.initCheckApp(r.Body)
 	}
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
@@ -181,6 +181,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		json.Set("aid", res.Infos[i].Id)
 		json.Set("longitude", res.Infos[i].Longitude)
 		json.Set("latitude", res.Infos[i].Latitude)
+		json.Set("address", res.Infos[i].Address)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)

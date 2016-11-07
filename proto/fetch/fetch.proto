@@ -49,6 +49,7 @@ message ApInfo {
     int32 id = 1;
     double longitude = 2;
     double latitude = 3;
+    string address = 4;
 }
 
 message ApStatInfo {
