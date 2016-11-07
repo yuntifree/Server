@@ -134,7 +134,8 @@ func Gps2Bd(p1 Point) (p2 Point) {
 	return
 }
 
-func getDistance(p1, p2 Point) int {
+//GetDistance calc distance between two points
+func GetDistance(p1, p2 Point) int {
 	radLat1 := rad(p1.Latitude)
 	radLat2 := rad(p2.Latitude)
 	a := radLat1 - radLat2

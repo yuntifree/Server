@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	port = ":50055"
+	port        = ":50055"
+	maxDistance = 3000
 )
 
 type server struct{}
@@ -207,6 +208,9 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 		return infos
 	}
 
+	var p1 util.Point
+	p1.Longitude = longitude
+	p1.Latitude = latitude
 	for rows.Next() {
 		var info fetch.ApInfo
 		err = rows.Scan(&info.Id, &info.Longitude, &info.Latitude)
@@ -214,8 +218,16 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 			log.Printf("scan rows failed: %v", err)
 			return infos
 		}
-		infos = append(infos, &info)
+		var p2 util.Point
+		p2.Longitude = info.Longitude
+		p2.Latitude = info.Latitude
+		distance := util.GetDistance(p1, p2)
+
 		log.Printf("id:%s longitude:%f latitude:%f ", info.Id, info.Longitude, info.Latitude)
+		if distance > maxDistance {
+			break
+		}
+		infos = append(infos, &info)
 	}
 	return infos
 }
