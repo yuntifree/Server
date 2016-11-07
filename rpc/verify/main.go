@@ -189,6 +189,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	wifipass := util.GenWifiPass()
+	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
 	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, model, udid, channel, reg_ip, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata, in.Model, in.Udid, in.Channel, in.Regip)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
@@ -200,6 +201,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	log.Printf("uid:%d\n", uid)
 
 	if uid == 0 {
 		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &wifipass)
@@ -207,7 +209,8 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			log.Printf("get user id failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, uid, in.Model, in.Udid)
+		log.Printf("scan uid:%d wifipass:%s\n", uid, wifipass)
+		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, in.Model, in.Udid, uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
