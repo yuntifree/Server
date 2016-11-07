@@ -161,7 +161,7 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 
-	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, uid)
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), model = ?, udid = ? WHERE uid = ?", token, privdata, in.Model, in.Udid, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -190,7 +190,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	wifipass := util.GenWifiPass()
-	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata)
+	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, model, udid, channel, reg_ip, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata, in.Model, in.Udid, in.Channel, in.Regip)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -208,7 +208,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			log.Printf("get user id failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, uid)
+		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, uid, in.Model, in.Udid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err

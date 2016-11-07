@@ -34,6 +34,8 @@ message LoginRequest {
     common.Head head = 1;
     string username = 2;
     string password = 3;
+    string model = 4;
+    string udid = 5;
 }
 
 message LoginReply {
@@ -54,6 +56,10 @@ message RegisterRequest {
     string username = 2;
     string password = 3;
     int32 code = 4;
+    string model = 5;
+    string udid = 6;
+    string channel = 7;
+    string regip = 8;
 }
 
 message RegisterReply {

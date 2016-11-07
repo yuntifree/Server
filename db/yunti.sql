@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS user (
     udid    varchar(32) NOT NULL DEFAULT '',
     model   varchar(32) NOT NULL DEFAULT '',
     channel varchar(32) NOT NULL DEFAULT '',
+    reg_ip  varchar(32) NOT NULL DEFAULT '',
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     token   varchar(32) NOT NULL DEFAULT '',
     private varchar(32) NOT NULL DEFAULT '',

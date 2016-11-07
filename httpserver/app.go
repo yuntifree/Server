@@ -3,6 +3,7 @@ package httpserver
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	common "../proto/common"
 	discover "../proto/discover"
@@ -54,6 +55,8 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.init(r.Body)
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
+	model := req.GetParamString("model")
+	udid := req.GetParamString("udid")
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -63,7 +66,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Login(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
+	res, err := c.Login(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Model: model, Udid: udid})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -382,6 +385,11 @@ func getAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func extractIP(addr string) string {
+	arr := strings.Split(addr, ":")
+	return arr[0]
+}
+
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -393,6 +401,10 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 	code := req.GetParamInt("code")
+	udid := req.GetParamString("udid")
+	model := req.GetParamString("model")
+	channel := req.GetParamString("channel")
+	regip := extractIP(r.RemoteAddr)
 
 	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -402,7 +414,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Code: int32(code)})
+	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Code: int32(code), Udid: udid, Model: model, Channel: channel, Regip: regip})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
