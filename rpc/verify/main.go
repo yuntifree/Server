@@ -63,11 +63,10 @@ func getPhoneCode(phone string, ctype int32) (bool, error) {
 	}
 	defer db.Close()
 	log.Printf("request phone:%s, ctype:%d", phone, ctype)
-	flag := util.ExistPhone(db, phone)
-	if ctype == 1 && !flag {
-		return false, errors.New("phone not exist")
-	} else if ctype == 0 && flag {
-		return false, errors.New("phone already exist")
+	if ctype == 1 {
+		if flag := util.ExistPhone(db, phone); !flag {
+			return false, errors.New("phone not exist")
+		}
 	}
 
 	var code int
