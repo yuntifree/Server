@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"html/template"
@@ -81,6 +82,15 @@ func getTypeStr(stype int) string {
 		return "top"
 	}
 
+}
+
+func extractDate(date string) string {
+	var digitReg = regexp.MustCompile(`(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)`)
+	arr := digitReg.FindStringSubmatch("2016年11月07日 09:30")
+	if len(arr) == 6 {
+		return arr[1] + "-" + arr[2] + "-" + arr[3] + " " + arr[4] + ":" + arr[5] + ":00"
+	}
+	return date
 }
 
 func initTemplate() *template.Template {
@@ -204,6 +214,7 @@ func GetContent(url string) (news News, err error) {
 		news.Pics[i] = images[i]
 	}
 
+	news.Date = extractDate(news.Date)
 	return news, nil
 }
 
