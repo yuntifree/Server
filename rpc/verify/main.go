@@ -176,12 +176,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	defer db.Close()
-	flag := util.ExistPhone(db, in.Username)
-	if flag {
-		log.Printf("used phone:%v", in.Username)
-		return &verify.RegisterReply{Head: &common.Head{Retcode: common.ErrCode_USED_PHONE}}, nil
-	}
-	flag, err = checkPhoneCode(db, in.Username, in.Code)
+	flag, err := checkPhoneCode(db, in.Username, in.Code)
 	if err != nil {
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 	}
@@ -205,6 +200,19 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	if uid == 0 {
+		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &wifipass)
+		if err != nil {
+			log.Printf("get user id failed:%v", err)
+			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+		}
+		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, uid)
+		if err != nil {
+			log.Printf("update user info failed:%v", err)
+			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+		}
 	}
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
 }
