@@ -38,6 +38,7 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 	var err error
 	r.Post, err = simplejson.NewFromReader(body)
 	if err != nil {
+		log.Printf("parse reqbody failed:%v", err)
 		panic(util.AppError{util.JSONErr, 4, "invalid param"})
 	}
 
@@ -51,6 +52,7 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 
 	flag := checkToken(uid, token, ctype)
 	if !flag {
+		log.Printf("checkToken failed, uid:%d token:%s\n", uid, token)
 		panic(util.AppError{util.LogicErr, 101, "token验证失败"})
 	}
 }
