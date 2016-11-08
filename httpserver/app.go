@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -295,6 +296,9 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		json.Set("source", res.Infos[i].Source)
 		json.Set("dst", res.Infos[i].Dst)
 		json.Set("ctime", res.Infos[i].Ctime)
+		if res.Infos[i].Stype == 11 {
+			json.Set("stype", 1)
+		}
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)
@@ -541,6 +545,48 @@ func discoverServer(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func wxMpLogin(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	code := r.Form["code"]
+	if len(code) == 0 {
+		log.Printf("get code failed\n")
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	echostr := r.Form["echostr"]
+
+	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.WxMpLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Code: code[0]})
+	if err != nil {
+		log.Printf("Login failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	if res.Head.Retcode != 0 {
+		w.Write([]byte(`{"errno":105,"desc":"微信公众号登录失败"}`))
+		return
+	}
+
+	if len(echostr) == 0 {
+		rs := fmt.Sprintf(`{"errno":0, "uid":%d, "token":%s"}`, res.Head.Uid, res.Token)
+		w.Write([]byte(rs))
+		return
+	}
+
+	dst := fmt.Sprintf("%s?uid=%d&token=%s", echostr[0], res.Head.Uid, res.Token)
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 //ServeApp do app server work
 func ServeApp() {
 	http.HandleFunc("/hello", hello)
@@ -555,6 +601,7 @@ func ServeApp() {
 	http.Handle("/report_wifi", appHandler(reportWifi))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
+	http.HandleFunc("/wx_mp_login", wxMpLogin)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
 }

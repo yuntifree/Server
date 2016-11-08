@@ -136,6 +136,55 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token}, nil
 }
 
+func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	var wxi util.WxInfo
+	wxi, err := util.GetCodeToken(in.Code)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	err = util.GetWxInfo(&wxi)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	db, err := util.InitDB(false)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer db.Close()
+
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	wifipass := util.GenWifiPass()
+	res, err := db.Exec("INSERT IGNORE INTO user(username, headurl, sex, token, private, wifi_passwd, etime, atime, ctime) VALUES (?, ?, ?, ?, ?,?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW())", wxi.UnionID, wxi.HeadURL, wxi.Sex, token, privdata, wifipass)
+	if err != nil {
+		log.Printf("insert user reord failed %s:%v", wxi.UnionID, err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	uid, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("get last insert id failed %s:%v", wxi.UnionID, err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	if uid == 0 {
+		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?", wxi.UnionID).Scan(&uid, &wifipass)
+		if err != nil {
+			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
+			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+		}
+		_, err = db.Query("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?", token, privdata, uid)
+		if err != nil {
+			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
+			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+		}
+	}
+
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
+}
+
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	db, err := util.InitDB(false)
 	if err != nil {

@@ -12,6 +12,7 @@ service Verify{
      rpc Logout(LogoutRequest) returns (LogoutReply) {}
      rpc CheckToken(TokenRequest) returns (TokenReply) {}
      rpc AutoLogin(AutoRequest) returns (AutoReply) {}
+     rpc WxMpLogin(LoginRequest) returns (LoginReply) {}
 }
 
 message TokenRequest {
@@ -36,6 +37,7 @@ message LoginRequest {
     string password = 3;
     string model = 4;
     string udid = 5;
+    string code = 6;
 }
 
 message LoginReply {
