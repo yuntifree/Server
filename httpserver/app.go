@@ -9,6 +9,7 @@ import (
 	discover "../proto/discover"
 	helloworld "../proto/hello"
 	hot "../proto/hot"
+	modify "../proto/modify"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -156,6 +157,42 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	if res.Head.Retcode != 0 {
 		return &util.AppError{util.LogicErr, 4, "logout failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	ssid := req.GetParamString("ssid")
+	username := req.GetParamString("username")
+	password := req.GetParamString("password")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddWifi(context.Background(), &modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &common.WifiInfo{Ssid: ssid, Username: username, Password: password, Longitude: longitude, Latitude: latitude}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "AddWifi failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -461,6 +498,7 @@ func ServeApp() {
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))
+	http.Handle("/report_wifi", appHandler(reportWifi))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))

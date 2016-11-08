@@ -136,6 +136,20 @@ CREATE TABLE IF NOT EXISTS user_record (
     KEY(aid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS wifi (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    ssid    varchar(128) NOT NULL,
+    username    varchar(128) NOT NULL,
+    password    varchar(64) NOT NULL,
+    longitude   double NOT NULL,
+    latitude    double NOT NULL,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
+) ENGINE = InnoDB;
+
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,

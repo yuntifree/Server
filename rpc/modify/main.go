@@ -71,6 +71,23 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*m
 	return &modify.AddTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: int32(id)}, nil
 }
 
+func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.WifiReply, error) {
+	db, err := util.InitDB(false)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &modify.WifiReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer db.Close()
+
+	_, err = db.Exec("INSERT INTO wifi(ssid, username, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?,?, NOW())", in.Info.Ssid, in.Info.Username, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return &modify.WifiReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	return &modify.WifiReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.ModTempReply, error) {
 	db, err := util.InitDB(false)
 	if err != nil {
