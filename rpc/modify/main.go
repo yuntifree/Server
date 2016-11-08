@@ -118,6 +118,36 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 	return &modify.ModTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) ReportPlay(ctx context.Context, in *modify.PlayRequest) (*modify.PlayReply, error) {
+	db, err := util.InitDB(false)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer db.Close()
+
+	res, err := db.Exec("INSERT IGNORE INTO play_record(uid, vid, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Id)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("get last insert id failed:%v", err)
+		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	if id != 0 {
+		_, err := db.Query("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
+		if err != nil {
+			log.Printf("update video play failed %d:%v", in.Id, err)
+			return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+		}
+	}
+
+	return &modify.PlayReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {

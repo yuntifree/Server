@@ -9,6 +9,7 @@ service Modify{
     rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
     rpc ModTemplate(ModTempRequest) returns (ModTempReply) {}
     rpc AddWifi(WifiRequest) returns (WifiReply) {}
+    rpc ReportPlay(PlayRequest) returns (PlayReply) {}
 }
 
 message NewsRequest {
@@ -56,6 +57,15 @@ message WifiRequest {
 }
 
 message WifiReply {
+    common.Head head = 1;
+}
+
+message PlayRequest {
+    common.Head head = 1;
+    int64 id = 2;
+}
+
+message PlayReply {
     common.Head head = 1;
 }
 

@@ -201,6 +201,38 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func reportPlay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.ReportPlay(context.Background(), &modify.PlayRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "ReportPlay failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -601,6 +633,7 @@ func ServeApp() {
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))
 	http.Handle("/report_wifi", appHandler(reportWifi))
+	http.Handle("/report_play", appHandler(reportPlay))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)
