@@ -289,6 +289,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("seq", res.Infos[i].Seq)
+		json.Set("id", res.Infos[i].Seq)
 		json.Set("title", res.Infos[i].Title)
 		if len(res.Infos[i].Images) > 0 {
 			json.Set("images", res.Infos[i].Images)
@@ -299,6 +300,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if res.Infos[i].Stype == 11 {
 			json.Set("stype", 1)
 		}
+		json.Set("play", res.Infos[i].Play)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)

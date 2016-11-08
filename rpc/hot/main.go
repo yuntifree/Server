@@ -60,7 +60,7 @@ func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
 
 func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT vid, title, img, source, dst, ctime FROM youku_video WHERE 1 = 1 "
+	query := "SELECT vid, title, img, source, dst, ctime, play FROM youku_video WHERE 1 = 1 "
 	if seq != 0 {
 		query += " AND vid < " + strconv.Itoa(int(seq))
 	}
@@ -75,7 +75,7 @@ func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 	for rows.Next() {
 		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img[0], &info.Source, &info.Dst, &info.Ctime)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &info.Source, &info.Dst, &info.Ctime, &info.Play)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos

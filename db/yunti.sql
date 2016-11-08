@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS youku_video (
     duration    int unsigned NOT NULL DEFAULT 0,
     source      varchar(128) NOT NULL,
     dst         varchar(256) NOT NULL,
+    play        bigint unsigned NOT NULL DEFAULT 0,
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(vid)
 ) ENGINE = InnoDB;
@@ -148,6 +149,15 @@ CREATE TABLE IF NOT EXISTS wifi (
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id),
     KEY(uid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS play_record (
+    rid     bigint unsigned NOT NULL AUTO_INCREMENT,
+    vid     bigint unsigned NOT NULL,
+    uid     int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(rid),
+    UNIQUE KEY(vid, uid)
 ) ENGINE = InnoDB;
 
 -- OSS

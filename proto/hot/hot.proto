@@ -21,6 +21,7 @@ message HotsInfo {
     string ctime = 5;
     int32 stype = 6;
     int32 seq = 7;
+    int64 play = 8;
 }
 
 message HotsReply {
