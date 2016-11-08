@@ -141,10 +141,6 @@ func getBaseURL(url string) string {
 	return prefix
 }
 
-func genContent(contents []Content) string {
-	return ""
-}
-
 //GetContent fetch content from url
 func GetContent(url string) (news News, err error) {
 	news.Origin = url
