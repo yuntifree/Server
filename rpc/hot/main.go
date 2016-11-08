@@ -22,7 +22,7 @@ type server struct{}
 
 func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime FROM news WHERE deleted = 0 "
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 "
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}
@@ -37,7 +37,7 @@ func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
 	for rows.Next() {
 		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Source, &info.Dst, &info.Ctime)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Source, &info.Dst, &info.Ctime, &info.Stype)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
