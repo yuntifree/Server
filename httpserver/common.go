@@ -103,7 +103,11 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		js, _ := simplejson.NewJson([]byte(`{}`))
 		js.Set("errno", e.Code)
-		js.Set("desc", e.Msg)
+		if e.Code < 100 {
+			js.Set("desc", "服务器又傲娇了~")
+		} else {
+			js.Set("desc", e.Msg)
+		}
 		body, err := js.MarshalJSON()
 		if err != nil {
 			log.Printf("MarshalJSON failed: %v", err)
