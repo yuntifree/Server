@@ -7,6 +7,7 @@ import (
 
 	common "../proto/common"
 	discover "../proto/discover"
+	fetch "../proto/fetch"
 	helloworld "../proto/hello"
 	hot "../proto/hot"
 	modify "../proto/modify"
@@ -196,6 +197,58 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	}
 
 	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+
+	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchWifi(context.Background(), &fetch.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Longitude: longitude, Latitude: latitude})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取共享wifi失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("ssid", res.Infos[i].Ssid)
+		json.Set("username", res.Infos[i].Username)
+		json.Set("password", res.Infos[i].Password)
+		json.Set("longitude", res.Infos[i].Longitude)
+		json.Set("latitude", res.Infos[i].Latitude)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
 	return nil
 }
 
@@ -496,6 +549,7 @@ func ServeApp() {
 	http.Handle("/register", appHandler(register))
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
+	http.Handle("/fetch_wifi", appHandler(fetchWifi))
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))
 	http.Handle("/report_wifi", appHandler(reportWifi))

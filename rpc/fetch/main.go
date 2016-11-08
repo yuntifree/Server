@@ -243,6 +243,49 @@ func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApRe
 	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
+	var infos []*common.WifiInfo
+	rows, err := db.Query("SELECT ssid, username, password, longitude, latitude FROM wifi WHERE longitude > ? - 0.1 AND longitude < ? + 0.1 AND latitude > ? - 0.1 AND latitude < ? + 0.1 ORDER BY (POW(ABS(longitude - ?), 2) + POW(ABS(latitude - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	var p1 util.Point
+	p1.Longitude = longitude
+	p1.Latitude = latitude
+	for rows.Next() {
+		var info common.WifiInfo
+		err = rows.Scan(&info.Ssid, &info.Username, &info.Password, &info.Longitude, &info.Latitude)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		var p2 util.Point
+		p2.Longitude = info.Longitude
+		p2.Latitude = info.Latitude
+		distance := util.GetDistance(p1, p2)
+
+		log.Printf("ssid:%s username:%s password:%s longitude:%f latitude:%f ", info.Ssid, info.Username, info.Password, info.Longitude, info.Latitude)
+		if distance > maxDistance {
+			break
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.WifiReply, error) {
+	db, err := util.InitDB(true)
+	if err != nil {
+		log.Printf("connect mysql failed:%v", err)
+		return &fetch.WifiReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
+	infos := getWifis(db, in.Longitude, in.Latitude)
+	return &fetch.WifiReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 	var infos []*fetch.ApStatInfo
 	query := "SELECT id, address, mac, count, bandwidth, online FROM ap WHERE 1 = 1 "

@@ -11,6 +11,7 @@ service Fetch{
     rpc FetchUsers(CommRequest) returns (UserReply) {}
     rpc FetchApStat(CommRequest) returns (ApStatReply) {}
     rpc FetchTemplates(CommRequest) returns (TemplateReply) {}
+    rpc FetchWifi(WifiRequest) returns (WifiReply) {}
 }
 
 message CommRequest {
@@ -103,4 +104,15 @@ message TemplateReply {
     common.Head head = 1;
     repeated TemplateInfo infos = 2;
     int64 total = 3;
+}
+
+message WifiRequest {
+    common.Head head = 1;
+    double longitude = 2;
+    double latitude = 3;
+}
+
+message WifiReply {
+    common.Head head = 1;
+    repeated common.WifiInfo infos = 2;
 }
