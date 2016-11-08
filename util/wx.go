@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	wxAppid    = ""
-	wxAppkey   = ""
+	wxAppid    = "wx0387308775179bfe"
+	wxAppkey   = "829008d0ae26aa03522bc0dbc370d790"
 	wxTokenURL = "https://api.weixin.qq.com/sns/oauth2/access_token"
 	wxInfoURL  = "https://api.weixin.qq.com/sns/userinfo"
 )
