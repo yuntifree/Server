@@ -118,34 +118,46 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 	return &modify.ModTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReportPlay(ctx context.Context, in *modify.PlayRequest) (*modify.PlayReply, error) {
+func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.ClickReply, error) {
 	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("connect mysql failed:%v", err)
-		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	defer db.Close()
 
-	res, err := db.Exec("INSERT IGNORE INTO play_record(uid, vid, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Id)
+	res, err := db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("get last insert id failed:%v", err)
-		return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
 	if id != 0 {
-		_, err := db.Query("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
+		switch in.Type {
+		case 0:
+			_, err = db.Query("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
+		case 1:
+			_, err = db.Query("UPDATE news SET click = click + 1 WHERE id = ?", in.Id)
+		case 2:
+			_, err = db.Query("UPDATE ads SET display = display + 1 WHERE id = ?", in.Id)
+		case 3:
+			_, err = db.Query("UPDATE ads SET click = click + 1 WHERE id = ?", in.Id)
+		default:
+			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
+
+		}
 		if err != nil {
-			log.Printf("update video play failed %d:%v", in.Id, err)
-			return &modify.PlayReply{Head: &common.Head{Retcode: 1}}, err
+			log.Printf("update click count failed type:%d id:%d:%v", in.Type, in.Id, err)
+			return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
 		}
 	}
 
-	return &modify.PlayReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.ClickReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

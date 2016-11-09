@@ -201,7 +201,7 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
-func reportPlay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
 			apperr = extractError(r)
@@ -211,6 +211,7 @@ func reportPlay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
+	ctype := req.GetParamInt("type")
 
 	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
 	if err != nil {
@@ -220,13 +221,13 @@ func reportPlay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.ReportPlay(context.Background(), &modify.PlayRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id})
+	res, err := c.ReportClick(context.Background(), &modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Type: int32(ctype)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "ReportPlay failed"}
+		return &util.AppError{util.LogicErr, 4, "ReportClick failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -598,6 +599,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
 
+	log.Printf("code:%s\n", code[0])
 	uuid := util.GenUUID()
 	res, err := c.WxMpLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Code: code[0]})
 	if err != nil {
@@ -633,7 +635,7 @@ func ServeApp() {
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))
 	http.Handle("/report_wifi", appHandler(reportWifi))
-	http.Handle("/report_play", appHandler(reportPlay))
+	http.Handle("/report_click", appHandler(reportClick))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)

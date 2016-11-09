@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS phone_code (
     KEY(phone, uid)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS news (
+CREATE TABLE IF NOT EXISTS news ( 
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     title   varchar(256) NOT NULL,
     img1    varchar(256) NOT NULL DEFAULT '',
@@ -55,6 +55,31 @@ CREATE TABLE IF NOT EXISTS news (
     md5     varchar(32) NOT NULL,
     stype   tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    click   bigint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    dtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    ruid    int unsigned NOT NULL DEFAULT 0,
+    review  tinyint unsigned NOT NULL DEFAULT 0,
+    rtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    PRIMARY KEY(id),
+    UNIQUE KEY(md5)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ads ( 
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    img1    varchar(256) NOT NULL DEFAULT '',
+    img2    varchar(256) NOT NULL DEFAULT '',
+    img3    varchar(256) NOT NULL DEFAULT '',
+    vid     varchar(256) NOT NULL DEFAULT '',
+    source  varchar(128) NOT NULL DEFAULT '',
+    dst     varchar(256) NOT NULL,
+    origin  varchar(256) NOT NULL,
+    md5     varchar(32) NOT NULL,
+    stype   tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    display bigint unsigned NOT NULL DEFAULT 0,
+    click   bigint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     dtime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     ruid    int unsigned NOT NULL DEFAULT 0,
@@ -151,13 +176,14 @@ CREATE TABLE IF NOT EXISTS wifi (
     KEY(uid)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS play_record (
+CREATE TABLE IF NOT EXISTS click_record (
     rid     bigint unsigned NOT NULL AUTO_INCREMENT,
-    vid     bigint unsigned NOT NULL,
+    type    tinyint unsigned NOT NULL, 
+    id      bigint unsigned NOT NULL,
     uid     int unsigned NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(rid),
-    UNIQUE KEY(vid, uid)
+    UNIQUE KEY(type, id, uid)
 ) ENGINE = InnoDB;
 
 -- OSS
