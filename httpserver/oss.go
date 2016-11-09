@@ -229,6 +229,43 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	reject := req.GetParamInt("reject")
+	mod := req.GetParamIntDef("modify", 0)
+	var title string
+	if mod != 0 {
+		title = req.GetParamStringDef("title", "")
+	}
+
+	conn, err := grpc.Dial(modifyAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+	uuid := util.GenUUID()
+	res, err := c.ReviewVideo(context.Background(), &modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
+		Modify: mod == 1, Title: title})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "视频审核失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -552,6 +589,7 @@ func ServeOss() {
 	http.Handle("/mod_template", appHandler(modTemplate))
 	http.Handle("/get_nearby_aps", appHandler(getOssAps))
 	http.Handle("/review_news", appHandler(reviewNews))
+	http.Handle("/review_video", appHandler(reviewVideo))
 	http.Handle("/get_videos", appHandler(getVideos))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)

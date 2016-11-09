@@ -6,6 +6,7 @@ package modify;
 
 service Modify{
     rpc ReviewNews(NewsRequest) returns (NewsReply) {}
+    rpc ReviewVideo(VideoRequest) returns (VideoReply) {}
     rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
     rpc ModTemplate(ModTempRequest) returns (ModTempReply) {}
     rpc AddWifi(WifiRequest) returns (WifiReply) {}
@@ -22,6 +23,18 @@ message NewsRequest {
 }
 
 message NewsReply {
+    common.Head head = 1;
+}
+
+message VideoRequest {
+    common.Head head = 1;
+    int64 id = 2;
+    bool reject = 3;
+    bool modify = 4;
+    string title = 5;
+}
+
+message VideoReply {
     common.Head head = 1;
 }
 

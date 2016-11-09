@@ -44,6 +44,21 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modif
 	return &modify.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*modify.VideoReply, error) {
+	if in.Reject {
+		db.Exec("UPDATE youku_video SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE vid = ?", in.Head.Uid, in.Id)
+	} else {
+		query := "UPDATE youku_video SET review = 1, rtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid))
+		if in.Modify && in.Title != "" {
+			query += ", title = '" + in.Title + "' "
+		}
+		query += " WHERE vid = " + strconv.Itoa(int(in.Id))
+		db.Exec(query)
+	}
+
+	return &modify.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*modify.AddTempReply, error) {
 	res, err := db.Exec("INSERT INTO template(title, content, ruid, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW())", in.Info.Title, in.Info.Content, in.Head.Uid)
 	if err != nil {
