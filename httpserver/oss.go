@@ -340,6 +340,63 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	ctype := req.GetParamInt("type")
+	num = genReqNum(num)
+
+	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchVideos(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num), Type: int32(ctype)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取视频审核信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("id", res.Infos[i].Id)
+		json.Set("title", res.Infos[i].Title)
+		json.Set("img", res.Infos[i].Img)
+		json.Set("dst", res.Infos[i].Dst)
+		json.Set("ctime", res.Infos[i].Ctime)
+		json.Set("source", res.Infos[i].Source)
+		json.Set("duration", res.Infos[i].Duration)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "total"}, res.Total)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -495,6 +552,7 @@ func ServeOss() {
 	http.Handle("/mod_template", appHandler(modTemplate))
 	http.Handle("/get_nearby_aps", appHandler(getOssAps))
 	http.Handle("/review_news", appHandler(reviewNews))
+	http.Handle("/get_videos", appHandler(getVideos))
 	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	http.ListenAndServe(":8080", nil)
 }

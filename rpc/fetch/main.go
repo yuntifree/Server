@@ -68,6 +68,25 @@ func getTotalNews(db *sql.DB, ctype int32) int64 {
 	return total
 }
 
+func getTotalVideos(db *sql.DB, ctype int32) int64 {
+	query := "SELECT COUNT(vid) FROM youku_video WHERE 1 = 1 "
+	switch ctype {
+	default:
+		query += " AND review = 0 "
+	case 1:
+		query += " AND review = 1 AND deleted = 0 "
+	case 2:
+		query += " AND review = 1 AND deleted = 1 "
+	}
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total failed:%v", err)
+		return 0
+	}
+	return total
+}
+
 func getTotalTags(db *sql.DB) int64 {
 	query := "SELECT COUNT(id) FROM tags "
 	var total int64
@@ -368,6 +387,44 @@ func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fe
 	infos := getTemplates(db, int32(in.Seq), in.Num)
 	total := getTotalTemplates(db)
 	return &fetch.TemplateReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+}
+
+func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
+	var infos []*fetch.VideoInfo
+	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 "
+	switch ctype {
+	default:
+		query += " AND review = 0 "
+	case 1:
+		query += " AND review = 1 AND deleted = 0 "
+	case 2:
+		query += " AND review = 1 AND deleted = 1 "
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info fetch.VideoInfo
+		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst, &info.Ctime, &info.Source, &info.Duration)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("id:%d title:%s dst:%s ", info.Id, info.Title, info.Dst)
+	}
+	return infos
+}
+func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch.VideoReply, error) {
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	infos := getVideos(db, int32(in.Seq), in.Num, in.Type)
+	total := getTotalVideos(db, in.Type)
+	return &fetch.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
 func main() {

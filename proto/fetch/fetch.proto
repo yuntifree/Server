@@ -12,6 +12,7 @@ service Fetch{
     rpc FetchApStat(CommRequest) returns (ApStatReply) {}
     rpc FetchTemplates(CommRequest) returns (TemplateReply) {}
     rpc FetchWifi(WifiRequest) returns (WifiReply) {}
+    rpc FetchVideos(CommRequest) returns (VideoReply) {}
 }
 
 message CommRequest {
@@ -115,4 +116,20 @@ message WifiRequest {
 message WifiReply {
     common.Head head = 1;
     repeated common.WifiInfo infos = 2;
+}
+
+message VideoInfo {
+    int64 id = 1;
+    string img = 2;
+    string title = 3;
+    string dst = 4;
+    string ctime = 5;
+    string source = 6;
+    int32 duration = 7;
+}
+
+message VideoReply {
+    common.Head head = 1;
+    repeated VideoInfo infos = 2;
+    int64 total = 3;
 }

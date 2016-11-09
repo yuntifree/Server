@@ -101,6 +101,10 @@ CREATE TABLE IF NOT EXISTS youku_video (
     dst         varchar(256) NOT NULL,
     play        bigint unsigned NOT NULL DEFAULT 0,
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    review      tinyint unsigned NOT NULL DEFAULT 0,
+    ruid        int unsigned NOT NULL DEFAULT 0,
+    rtime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(vid)
 ) ENGINE = InnoDB;
 
