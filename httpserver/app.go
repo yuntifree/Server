@@ -623,6 +623,12 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func live(w http.ResponseWriter, r *http.Request) {
+	redirect := "http://wx.youcaitv.cn/wx_mp_login"
+	dst := util.GenRedirectURL(redirect)
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 //ServeApp do app server work
 func ServeApp() {
 	http.HandleFunc("/hello", hello)
@@ -638,6 +644,7 @@ func ServeApp() {
 	http.Handle("/report_click", appHandler(reportClick))
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/discover", discoverServer)
+	http.HandleFunc("/live", live)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
