@@ -309,15 +309,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
-	}
-	w.Write(body)
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
@@ -560,16 +552,7 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "修改模板失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
-	}
-	w.Write(body)
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
