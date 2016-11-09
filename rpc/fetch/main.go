@@ -49,16 +49,19 @@ func getNewsTag(db *sql.DB, id int64) string {
 	return tags
 }
 
-func getTotalNews(db *sql.DB, ctype int32) int64 {
-	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 "
+func genTypeQuery(ctype int32) string {
 	switch ctype {
 	default:
-		query += " AND review = 0 "
+		return " AND review = 0 "
 	case 1:
-		query += " AND review = 1 AND deleted = 0 "
+		return " AND review = 1 AND deleted = 0 "
 	case 2:
-		query += " AND review = 1 AND deleted = 1 "
+		return " AND review = 1 AND deleted = 1 "
 	}
+}
+
+func getTotalNews(db *sql.DB, ctype int32) int64 {
+	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 " + genTypeQuery(ctype)
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
@@ -69,15 +72,7 @@ func getTotalNews(db *sql.DB, ctype int32) int64 {
 }
 
 func getTotalVideos(db *sql.DB, ctype int32) int64 {
-	query := "SELECT COUNT(vid) FROM youku_video WHERE 1 = 1 "
-	switch ctype {
-	default:
-		query += " AND review = 0 "
-	case 1:
-		query += " AND review = 1 AND deleted = 0 "
-	case 2:
-		query += " AND review = 1 AND deleted = 1 "
-	}
+	query := "SELECT COUNT(vid) FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
@@ -133,15 +128,7 @@ func getTotalUsers(db *sql.DB) int64 {
 
 func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
-	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 "
-	switch ctype {
-	default:
-		query += " AND review = 0 "
-	case 1:
-		query += " AND review = 1 AND deleted = 0 "
-	case 2:
-		query += " AND review = 1 AND deleted = 1 "
-	}
+	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " + genTypeQuery(int32(ctype))
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
@@ -372,15 +359,7 @@ func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fe
 
 func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 	var infos []*fetch.VideoInfo
-	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 "
-	switch ctype {
-	default:
-		query += " AND review = 0 "
-	case 1:
-		query += " AND review = 1 AND deleted = 0 "
-	case 2:
-		query += " AND review = 1 AND deleted = 1 "
-	}
+	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
