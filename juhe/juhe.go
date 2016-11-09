@@ -2,10 +2,14 @@ package juhe
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"html/template"
@@ -19,9 +23,12 @@ import (
 )
 
 const (
-	baseurl = "http://v.juhe.cn/toutiao/index"
-	appkey  = "ab30c7f450f8322c1e1be4efe2e3d084"
-	dgurl   = "http://news.sun0769.com/dg/"
+	baseurl    = "http://v.juhe.cn/toutiao/index"
+	appkey     = "ab30c7f450f8322c1e1be4efe2e3d084"
+	dgurl      = "http://news.sun0769.com/dg/"
+	weatherurl = "http://op.juhe.cn/onebox/weather/query"
+	weatherkey = "ef10f2457a44285270011a38e775076c"
+	city       = "东莞"
 )
 
 //News information for news
@@ -49,6 +56,14 @@ type DgPage struct {
 type Content struct {
 	Type int
 	Src  string
+}
+
+//Weather weather info
+type Weather struct {
+	Temperature int
+	Info        string
+	Type        int
+	Date        string
 }
 
 const (
@@ -313,4 +328,61 @@ func GetImages(d *goquery.Document, url string) ([]string, error) {
 	})
 
 	return images, nil
+}
+
+//GetRealWeather get realtime weather of dongguan
+func GetRealWeather() (Weather, error) {
+	var w Weather
+	url := fmt.Sprintf("%s?cityname=%s&key=%s", weatherurl, url.QueryEscape(city), weatherkey)
+	log.Printf("url:%s\n", url)
+
+	res, err := util.HTTPRequest(url, "")
+	if err != nil {
+		log.Printf("request failed %s:%v", url, err)
+		return w, err
+	}
+
+	js, err := simplejson.NewJson([]byte(res))
+	if err != nil {
+		log.Printf("parse resp failed:%v", err)
+		return w, err
+	}
+
+	errcode, err := js.Get("error_code").Int()
+	if err != nil {
+		log.Printf("get error_code failed:%v", err)
+		return w, err
+	}
+	if errcode != 0 {
+		log.Printf("get weather failed, errcode:%d", errcode)
+		return w, errors.New("get weather failed")
+	}
+	wth := js.Get("result").Get("data").Get("realtime")
+	dt, err := wth.Get("date").String()
+	if err != nil {
+		log.Printf("get date failed:%v", err)
+		return w, err
+	}
+	tm, err := wth.Get("time").String()
+	if err != nil {
+		log.Printf("get time failed:%v", err)
+		return w, err
+	}
+	tmp, err := wth.Get("weather").Get("temperature").String()
+	if err != nil {
+		log.Printf("get temperature failed:%v", err)
+		return w, err
+	}
+
+	info, err := wth.Get("weather").Get("info").String()
+	if err != nil {
+		log.Printf("get info failed:%v", err)
+		return w, err
+	}
+
+	w.Temperature, _ = strconv.Atoi(tmp)
+	w.Info = info
+	w.Date = dt + " " + tm
+
+	return w, nil
 }

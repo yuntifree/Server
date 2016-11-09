@@ -190,6 +190,16 @@ CREATE TABLE IF NOT EXISTS click_record (
     UNIQUE KEY(type, id, uid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS weather (
+    wid     bigint unsigned NOT NULL AUTO_INCREMENT,
+    temp    int unsigned NOT NULL,
+    info    varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    dtime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(wid),
+    UNIQUE KEY(ctime)
+) ENGINE = InnoDB;
+
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,
