@@ -103,7 +103,6 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("id", res.Infos[i].Id)
-		json.Set("seq", res.Infos[i].Id)
 		json.Set("title", res.Infos[i].Title)
 		json.Set("ctime", res.Infos[i].Ctime)
 		json.Set("source", res.Infos[i].Source)
@@ -159,7 +158,6 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("id", res.Infos[i].Id)
-		json.Set("seq", res.Infos[i].Id)
 		json.Set("content", res.Infos[i].Content)
 		infos[i] = json
 	}
@@ -211,7 +209,6 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("id", res.Infos[i].Id)
-		json.Set("seq", res.Infos[i].Id)
 		json.Set("imei", res.Infos[i].Imei)
 		json.Set("phone", res.Infos[i].Phone)
 		json.Set("active", res.Infos[i].Active)
@@ -350,7 +347,6 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("id", res.Infos[i].Id)
-		json.Set("seq", res.Infos[i].Id)
 		json.Set("address", res.Infos[i].Address)
 		json.Set("mac", res.Infos[i].Mac)
 		json.Set("online", res.Infos[i].Online)
@@ -463,7 +459,6 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("id", res.Infos[i].Id)
-		json.Set("seq", res.Infos[i].Id)
 		json.Set("title", res.Infos[i].Title)
 		json.Set("online", res.Infos[i].Online)
 		json.Set("content", res.Infos[i].Content)

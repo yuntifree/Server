@@ -142,10 +142,7 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	case 2:
 		query += " AND review = 1 AND deleted = 1 "
 	}
-	if seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -179,11 +176,7 @@ func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*f
 
 func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 	var infos []*fetch.TagInfo
-	query := "SELECT id, content FROM tags WHERE 1 = 1 "
-	if seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	query := "SELECT id, content FROM tags ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -289,11 +282,7 @@ func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.W
 
 func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 	var infos []*fetch.ApStatInfo
-	query := "SELECT id, address, mac, count, bandwidth, online FROM ap WHERE 1 = 1 "
-	if seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	query := "SELECT id, address, mac, count, bandwidth, online FROM ap ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -323,11 +312,7 @@ func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch
 
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	var infos []*fetch.UserInfo
-	query := "SELECT uid, phone, udid, atime, remark FROM user WHERE 1 = 1 "
-	if seq != 0 {
-		query += " AND uid < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY uid DESC LIMIT " + strconv.Itoa(int(num))
+	query := "SELECT uid, phone, udid, atime, remark FROM user ORDER BY uid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -357,11 +342,7 @@ func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.
 
 func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 	var infos []*fetch.TemplateInfo
-	query := "SELECT id, title, content, online FROM template WHERE 1 = 1 "
-	if seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	query := "SELECT id, title, content, online FROM template ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
