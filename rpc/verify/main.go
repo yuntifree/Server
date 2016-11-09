@@ -26,6 +26,8 @@ const (
 
 type server struct{}
 
+var db *sql.DB
+
 func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 	if code == mastercode {
 		return true, nil
@@ -56,12 +58,6 @@ func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 }
 
 func getPhoneCode(phone string, ctype int32) (bool, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return false, err
-	}
-	defer db.Close()
 	log.Printf("request phone:%s, ctype:%d", phone, ctype)
 	if ctype == 1 {
 		if flag := util.ExistPhone(db, phone); !flag {
@@ -70,7 +66,7 @@ func getPhoneCode(phone string, ctype int32) (bool, error) {
 	}
 
 	var code int
-	err = db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1", phone).Scan(&code)
+	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1", phone).Scan(&code)
 	if err != nil {
 		code := util.Randn(randrange)
 		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))", phone, code)
@@ -108,17 +104,10 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 }
 
 func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	var uid int64
 	var epass string
 	var salt string
-	err = db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
+	err := db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -146,13 +135,6 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
-
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
 
 	token := util.GenSalt()
 	privdata := util.GenSalt()
@@ -328,13 +310,6 @@ func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
 }
 
 func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	flag := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 	if !flag {
 		log.Printf("check privdata failed, uid:%d token:%s privdata:%s", in.Head.Uid, in.Token, in.Privdata)
@@ -352,6 +327,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	db, err = util.InitDB(false)
+	if err != nil {
+		log.Fatalf("failed to init db connection: %v", err)
+	}
 	go util.ReportHandler(servername, port)
 
 	s := grpc.NewServer()

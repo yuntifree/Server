@@ -20,6 +20,8 @@ const (
 
 type server struct{}
 
+var db *sql.DB
+
 func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
 	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 "
@@ -88,12 +90,6 @@ func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 }
 
 func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &hot.HotsReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
 	if in.Type == 0 {
@@ -179,12 +175,6 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 }
 
 func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.ServiceReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
 	infos, err := getTops(db)
 	if err != nil {
 		log.Printf("getTops failed:%v", err)
@@ -204,6 +194,11 @@ func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
+	}
+
+	db, err = util.InitDB(true)
+	if err != nil {
+		log.Fatalf("failed to init db connection: %v", err)
 	}
 
 	s := grpc.NewServer()

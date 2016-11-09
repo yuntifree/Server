@@ -23,6 +23,8 @@ const (
 
 type server struct{}
 
+var db *sql.DB
+
 func getNewsTag(db *sql.DB, id int64) string {
 	rows, err := db.Query("SELECT t.content FROM news_tags n, tags t WHERE n.tid = t.id AND n.nid = ?", id)
 	if err != nil {
@@ -150,11 +152,6 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 }
 
 func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*fetch.NewsReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.NewsReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num, in.Type)
 	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
 	total := getTotalNews(db, in.Type)
@@ -189,11 +186,6 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 }
 
 func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.TagsReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.TagsReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	tags := getTags(db, in.Seq, int64(in.Num))
 	total := getTotalTags(db)
@@ -233,11 +225,6 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 }
 
 func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.ApReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getAps(db, in.Longitude, in.Latitude)
 	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
@@ -276,11 +263,6 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 }
 
 func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.WifiReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.WifiReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getWifis(db, in.Longitude, in.Latitude)
 	return &fetch.WifiReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
@@ -314,11 +296,6 @@ func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 }
 
 func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch.ApStatReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.ApStatReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getApStat(db, int32(in.Seq), in.Num)
 	total := getTotalAps(db)
@@ -353,11 +330,6 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 }
 
 func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.UserReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.UserReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getUsers(db, in.Seq, int64(in.Num))
 	total := getTotalUsers(db)
@@ -392,11 +364,6 @@ func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 }
 
 func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fetch.TemplateReply, error) {
-	db, err := util.InitDB(true)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &fetch.TemplateReply{Head: &common.Head{Retcode: 1}}, err
-	}
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getTemplates(db, int32(in.Seq), in.Num)
 	total := getTotalTemplates(db)
@@ -407,6 +374,11 @@ func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
+	}
+
+	db, err = util.InitDB(true)
+	if err != nil {
+		log.Fatalf("failed to init db connection: %v", err)
 	}
 
 	s := grpc.NewServer()

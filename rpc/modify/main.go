@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net"
 	"strconv"
@@ -21,14 +22,9 @@ const (
 
 type server struct{}
 
-func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modify.NewsReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &modify.NewsReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
+var db *sql.DB
 
+func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modify.NewsReply, error) {
 	if in.Reject {
 		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?", in.Head.Uid, in.Id)
 	} else {
@@ -49,13 +45,6 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modif
 }
 
 func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*modify.AddTempReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	res, err := db.Exec("INSERT INTO template(title, content, ruid, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW())", in.Info.Title, in.Info.Content, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
@@ -72,14 +61,7 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*m
 }
 
 func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.WifiReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &modify.WifiReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
-	_, err = db.Exec("INSERT INTO wifi(ssid, username, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?,?, NOW())", in.Info.Ssid, in.Info.Username, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
+	_, err := db.Exec("INSERT INTO wifi(ssid, username, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?,?, NOW())", in.Info.Ssid, in.Info.Username, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return &modify.WifiReply{Head: &common.Head{Retcode: 1}}, err
@@ -89,13 +71,6 @@ func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.W
 }
 
 func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.ModTempReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &modify.ModTempReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	query := "UPDATE template SET "
 	if in.Info.Title != "" {
 		query += " title = '" + in.Info.Title + "', "
@@ -108,7 +83,7 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 		online = 1
 	}
 	query += " mtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid)) + ", online = " + strconv.Itoa(online) + " WHERE id = " + strconv.Itoa(int(in.Info.Id))
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 
 	if err != nil {
 		log.Printf("query failed:%v", err)
@@ -119,13 +94,6 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 }
 
 func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.ClickReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	res, err := db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
 	if err != nil {
 		log.Printf("query failed:%v", err)
@@ -164,6 +132,11 @@ func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
+	}
+
+	db, err = util.InitDB(false)
+	if err != nil {
+		log.Fatalf("failed to init db connection:%v", err)
 	}
 
 	go util.ReportHandler(servername, port)
