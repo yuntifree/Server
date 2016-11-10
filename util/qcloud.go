@@ -19,8 +19,8 @@ func genBody(phone string, code int) string {
 	if err != nil {
 		return ""
 	}
-	s := strconv.Itoa(code)
-	msg := s + "为您的登录验证码，请于5分钟内填写。如非本人操作，请忽略本短信。"
+	s := fmt.Sprintf("%06d", code)
+	msg := "【东莞无线】欢迎使用东莞无线免费WiFi,您的验证码为:" + s
 	js.Set("msg", msg)
 	sig := GetMD5Hash(appkey + phone)
 	js.Set("sig", sig)
