@@ -286,6 +286,66 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetWeatherNews(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	infos := make([]interface{}, len(res.News))
+	for i := 0; i < len(res.News); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("id", res.News[i].Seq)
+		json.Set("title", res.News[i].Title)
+		if len(res.News[i].Images) > 0 {
+			json.Set("images", res.News[i].Images)
+		}
+		json.Set("source", res.News[i].Source)
+		json.Set("dst", res.News[i].Dst)
+		json.Set("ctime", res.News[i].Ctime)
+		json.Set("play", res.News[i].Play)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "news"}, infos)
+
+	json, _ := simplejson.NewJson([]byte(`{}`))
+	json.Set("temp", res.Weather.Temp)
+	json.Set("type", res.Weather.Type)
+	json.Set("info", res.Weather.Info)
+	js.SetPath([]string{"data", "weather"}, json)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -637,6 +697,7 @@ func ServeApp() {
 	http.Handle("/register", appHandler(register))
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
+	http.Handle("/get_weather_news", appHandler(getWeatherNews))
 	http.Handle("/fetch_wifi", appHandler(fetchWifi))
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))

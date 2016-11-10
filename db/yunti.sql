@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS weather (
     wid     bigint unsigned NOT NULL AUTO_INCREMENT,
     temp    int unsigned NOT NULL,
     info    varchar(32) NOT NULL,
+    type    tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     dtime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(wid),

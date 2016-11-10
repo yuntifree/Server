@@ -5,6 +5,7 @@ import "common/common.proto";
 service Hot {
     rpc GetHots(HotsRequest) returns (HotsReply) {}
     rpc GetServices(ServiceRequest) returns (ServiceReply) {}
+    rpc GetWeatherNews(HotsRequest) returns (WeatherNewsReply) {}
 }
 
 message HotsRequest {
@@ -48,4 +49,16 @@ message ServiceReply {
     common.Head head = 1;
     repeated ServiceInfo tops = 2;
     repeated ServiceCategory services = 3;
+}
+
+message WeatherInfo {
+    int32 type = 1;
+    int32 temp = 2;
+    string info = 3;
+}
+
+message WeatherNewsReply {
+    common.Head head = 1;
+    WeatherInfo weather = 2;
+    repeated HotsInfo news = 3;
 }

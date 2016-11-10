@@ -15,20 +15,21 @@ import (
 )
 
 const (
-	port = ":50053"
+	port        = ":50053"
+	homeNewsNum = 3
 )
 
 type server struct{}
 
 var db *sql.DB
 
-func getNews(db *sql.DB, seq int32) []*hot.HotsInfo {
+func getNews(db *sql.DB, seq, num int32) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
 	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 "
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(util.MaxListSize)
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -93,7 +94,7 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
 	if in.Type == 0 {
-		infos = getNews(db, in.Seq)
+		infos = getNews(db, in.Seq, util.MaxListSize)
 	} else {
 		infos = getVideos(db, in.Seq)
 	}
@@ -190,6 +191,26 @@ func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.
 	return &hot.ServiceReply{Head: &common.Head{Retcode: 0}, Tops: infos, Services: categories}, nil
 }
 
+func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
+	var info hot.WeatherInfo
+	err := db.QueryRow("SELECT type, temp, info FROM weather ORDER BY wid DESC LIMIT 1").Scan(&info.Type, &info.Temp, &info.Info)
+	if err != nil {
+		log.Printf("select weather failed:%v", err)
+		return info, err
+	}
+	return info, nil
+}
+
+func (s *server) GetWeatherNews(ctx context.Context, in *hot.HotsRequest) (*hot.WeatherNewsReply, error) {
+	weather, err := getWeather(db)
+	if err != nil {
+		log.Printf("getWeather failed:%v", err)
+		return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	infos := getNews(db, 0, homeNewsNum)
+	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
+}
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
