@@ -18,13 +18,8 @@ import (
 )
 
 const (
-	helloAddress    = "localhost:50051"
-	verifyAddress   = "localhost:50052"
-	hotAddress      = "localhost:50053"
-	discoverAddress = "localhost:50054"
-	fetchAddress    = "localhost:50055"
-	modifyAddress   = "localhost:50056"
 	defaultName     = "world"
+	discoverAddress = "localhost:50054"
 )
 
 type request struct {
@@ -123,7 +118,12 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkToken(uid int64, token string, ctype int32) bool {
-	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	address, err := getNameServer(uid, util.VerifyServerName)
+	if err != nil {
+		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
+		return false
+	}
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 		return false
@@ -163,7 +163,12 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
 
-	conn, err := grpc.Dial(fetchAddress, grpc.WithInsecure())
+	address, err := getNameServer(uid, util.FetchServerName)
+	if err != nil {
+		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -202,8 +207,13 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	return nil
 }
 
-func getNameServer(uid int, name string) (string, error) {
-	conn, err := grpc.Dial(discoverAddress, grpc.WithInsecure())
+func getDiscoverAddress() string {
+	return discoverAddress
+}
+
+func getNameServer(uid int64, name string) (string, error) {
+	address := getDiscoverAddress()
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect %s: %v", discoverAddress, err)
 		return "", err
