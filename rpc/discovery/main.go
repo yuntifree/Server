@@ -15,12 +15,9 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-const (
-	port = ":50054"
-)
-
 type server struct{}
 
+//Server server ip and port
 type Server struct {
 	host string
 	port int32
@@ -82,10 +79,12 @@ func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*disc
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", util.DiscoverServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
+	go util.ReportHandler(util.DiscoverServerName, util.DiscoverServerPort)
 
 	s := grpc.NewServer()
 	discover.RegisterDiscoverServer(s, &server{})

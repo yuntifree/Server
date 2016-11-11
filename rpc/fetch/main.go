@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	port        = ":50055"
 	maxDistance = 3000
 )
 
@@ -388,7 +387,7 @@ func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -397,6 +396,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init db connection: %v", err)
 	}
+
+	go util.ReportHandler(util.FetchServerName, util.FetchServerPort)
 
 	s := grpc.NewServer()
 	fetch.RegisterFetchServer(s, &server{})

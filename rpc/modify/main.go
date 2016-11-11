@@ -15,11 +15,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	port       = ":50056"
-	servername = "service:modify"
-)
-
 type server struct{}
 
 var db *sql.DB
@@ -144,7 +139,7 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -154,7 +149,7 @@ func main() {
 		log.Fatalf("failed to init db connection:%v", err)
 	}
 
-	go util.ReportHandler(servername, port)
+	go util.ReportHandler(util.ModifyServerName, util.ModifyServerPort)
 
 	s := grpc.NewServer()
 	modify.RegisterModifyServer(s, &server{})

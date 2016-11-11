@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	port        = ":50053"
 	homeNewsNum = 3
 	saveRate    = 50 / 1000.0 * 0.3
 )
@@ -236,7 +235,7 @@ func (s *server) GetFrontInfo(ctx context.Context, in *hot.HotsRequest) (*hot.Fr
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", util.HotServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -245,6 +244,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init db connection: %v", err)
 	}
+	go util.ReportHandler(util.HotServerName, util.HotServerPort)
 
 	s := grpc.NewServer()
 	hot.RegisterHotServer(s, &server{})

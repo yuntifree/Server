@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	port       = ":50052"
-	servername = "service:verify"
 	expiretime = 3600 * 24 * 30
 	mastercode = 251653
 	randrange  = 1000000
@@ -330,7 +328,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 }
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", util.VerifyServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -339,7 +337,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init db connection: %v", err)
 	}
-	go util.ReportHandler(servername, port)
+	go util.ReportHandler(util.VerifyServerName, util.VerifyServerPort)
 
 	s := grpc.NewServer()
 	verify.RegisterVerifyServer(s, &server{})
