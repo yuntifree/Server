@@ -286,6 +286,49 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	conn, err := grpc.Dial(hotAddress, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetFrontInfo(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取首页信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	json, _ := simplejson.NewJson([]byte(`{}`))
+	json.Set("total", res.Uinfo.Total)
+	json.Set("save", res.Uinfo.Save)
+	js.SetPath([]string{"data", "uinfo"}, json)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -698,6 +741,7 @@ func ServeApp() {
 	http.Handle("/logout", appHandler(logout))
 	http.Handle("/hot", appHandler(getHot))
 	http.Handle("/get_weather_news", appHandler(getWeatherNews))
+	http.Handle("/get_front_info", appHandler(getFrontInfo))
 	http.Handle("/fetch_wifi", appHandler(fetchWifi))
 	http.Handle("/auto_login", appHandler(autoLogin))
 	http.Handle("/get_nearby_aps", appHandler(getAppAps))

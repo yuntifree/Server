@@ -17,6 +17,7 @@ import (
 const (
 	port        = ":50053"
 	homeNewsNum = 3
+	saveRate    = 50 / 1000.0 * 0.3
 )
 
 type server struct{}
@@ -211,6 +212,29 @@ func (s *server) GetWeatherNews(ctx context.Context, in *hot.HotsRequest) (*hot.
 	infos := getNews(db, 0, homeNewsNum)
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
 }
+
+func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
+	var info hot.UseInfo
+	err := db.QueryRow("SELECT times, duration FROM user WHERE uid = ?", uid).Scan(&info.Total, &info.Save)
+	if err != nil {
+		log.Printf("select weather failed:%v", err)
+		return info, err
+	}
+	return info, nil
+}
+
+func (s *server) GetFrontInfo(ctx context.Context, in *hot.HotsRequest) (*hot.FrontReply, error) {
+	uinfo, err := getUseInfo(db, in.Head.Uid)
+	if err != nil {
+		log.Printf("getUseInfo failed:%v", err)
+		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	uinfo.Save = int32(float64(uinfo.Save) * saveRate)
+
+	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
