@@ -658,8 +658,16 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
-func live(w http.ResponseWriter, r *http.Request) {
+func jump(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	file := r.Form["echofile"]
+	var echostr string
 	redirect := "http://wx.youcaitv.cn/wx_mp_login"
+	if len(file) > 0 {
+		echostr = file[0]
+		echostr = "http://wx.youcaitv.cn/" + echostr
+		redirect += "?echostr=" + echostr
+	}
 	dst := util.GenRedirectURL(redirect)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
@@ -679,7 +687,7 @@ func ServeApp() {
 	http.Handle("/report_wifi", appHandler(reportWifi))
 	http.Handle("/report_click", appHandler(reportClick))
 	http.Handle("/services", appHandler(getService))
-	http.HandleFunc("/live", live)
+	http.HandleFunc("/jump", jump)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
