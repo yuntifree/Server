@@ -125,6 +125,13 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token}, nil
 }
 
+func recordWxOpenid(db *sql.DB, uid int64, wtype int32, openid string) {
+	_, err := db.Exec("INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) VALUES (?, ?, ?, NOW())", uid, wtype, openid)
+	if err != nil {
+		log.Printf("record wx openid failed uid:%d wtype:%d openid:%s\n", uid, wtype, openid)
+	}
+}
+
 func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	var wxi util.WxInfo
 	wxi, err := util.GetCodeToken(in.Code)
@@ -164,6 +171,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 		}
 	}
 
+	recordWxOpenid(db, uid, 0, wxi.Openid)
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
 }
 

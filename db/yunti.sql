@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS wx_openid (
     wtype   tinyint unsigned NOT NULL DEFAULT 0,
     openid  varchar(32) NOT NULL,
     PRIMARY KEY(wid),
-    KEY(uid)
+    UNIQUE KEY(uid, wtype)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS service (
