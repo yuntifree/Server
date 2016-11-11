@@ -8,7 +8,6 @@ import (
 
 	common "../proto/common"
 	fetch "../proto/fetch"
-	helloworld "../proto/hello"
 	hot "../proto/hot"
 	modify "../proto/modify"
 	verify "../proto/verify"
@@ -17,34 +16,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
-
-func getMessage(name string) string {
-	conn, err := grpc.Dial(helloAddress, grpc.WithInsecure())
-	if err != nil {
-		log.Printf("did not connect: %v", err)
-		return ""
-	}
-	defer conn.Close()
-	c := helloworld.NewGreeterClient(conn)
-
-	r, err := c.SayHello(context.Background(), &helloworld.HelloRequest{Name: name})
-	if err != nil {
-		log.Printf("could not greet: %v", err)
-		return ""
-	}
-
-	return r.Message
-}
-
-func welcome(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Welcome to Yunti~"))
-}
-
-func hello(w http.ResponseWriter, r *http.Request) {
-	name := "hello"
-	message := getMessage(name)
-	w.Write([]byte(message))
-}
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
@@ -683,7 +654,6 @@ func live(w http.ResponseWriter, r *http.Request) {
 
 //ServeApp do app server work
 func ServeApp() {
-	http.HandleFunc("/hello", hello)
 	http.Handle("/login", appHandler(login))
 	http.Handle("/get_phone_code", appHandler(getPhoneCode))
 	http.Handle("/register", appHandler(register))
