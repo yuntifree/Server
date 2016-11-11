@@ -2,7 +2,6 @@ package httpserver
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	common "../proto/common"
@@ -34,11 +33,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 
-	address, err := getNameServer(0, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -85,11 +80,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	ctype := req.GetParamInt("type")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -145,11 +136,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -201,11 +188,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -264,11 +247,7 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		title = req.GetParamStringDef("title", "")
 	}
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -316,11 +295,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		}
 	}
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -354,11 +329,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -415,11 +386,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	ctype := req.GetParamInt("type")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -476,11 +443,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -533,11 +496,7 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	title := req.GetParamString("title")
 	content := req.GetParamString("content")
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -582,11 +541,7 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	content := req.GetParamStringDef("content", "")
 	online := req.GetParamIntDef("online", 0)
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}

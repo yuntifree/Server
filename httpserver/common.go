@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	defaultName     = "world"
 	discoverAddress = "localhost:50054"
 )
 
@@ -118,11 +117,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkToken(uid int64, token string, ctype int32) bool {
-	address, err := getNameServer(uid, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return false
-	}
+	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
@@ -163,11 +158,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -211,12 +202,12 @@ func getDiscoverAddress() string {
 	return discoverAddress
 }
 
-func getNameServer(uid int64, name string) (string, error) {
+func getNameServer(uid int64, name string) string {
 	address := getDiscoverAddress()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect %s: %v", discoverAddress, err)
-		return "", err
+		panic(util.AppError{util.RPCErr, 4, err.Error()})
 	}
 	defer conn.Close()
 	c := discover.NewDiscoverClient(conn)
@@ -225,13 +216,13 @@ func getNameServer(uid int64, name string) (string, error) {
 	res, err := c.Resolve(context.Background(), &discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
 	if err != nil {
 		log.Printf("Resolve failed %s: %v", name, err)
-		return "", err
+		panic(util.AppError{util.RPCErr, 4, err.Error()})
 	}
 
 	if res.Head.Retcode != 0 {
 		log.Printf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)
-		return "", err
+		panic(util.AppError{util.RPCErr, 4, fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)})
 	}
 
-	return fmt.Sprintf("%s:%d", res.Host, res.Port), nil
+	return fmt.Sprintf("%s:%d", res.Host, res.Port)
 }

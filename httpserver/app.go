@@ -30,12 +30,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	model := req.GetParamString("model")
 	udid := req.GetParamString("udid")
 
-	address, err := getNameServer(0, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-
+	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -72,11 +67,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getCode(phone string, ctype int32) (bool, error) {
-	address, err := getNameServer(0, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return false, err
-	}
+	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
@@ -125,11 +116,7 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uid := req.GetParamInt("uid")
 	token := req.GetParamString("token")
 
-	address, err := getNameServer(uid, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -166,11 +153,7 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -204,11 +187,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	id := req.GetParamInt("id")
 	ctype := req.GetParamInt("type")
 
-	address, err := getNameServer(uid, util.ModifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.ModifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -242,11 +221,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
 
-	address, err := getNameServer(uid, util.FetchServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.FetchServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -297,11 +272,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 
-	address, err := getNameServer(uid, util.HotServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.HotServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -345,11 +316,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 
-	address, err := getNameServer(uid, util.HotServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.HotServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -412,11 +379,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	ctype := req.GetParamInt("type")
 	seq := req.GetParamInt("seq")
 
-	address, err := getNameServer(uid, util.HotServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.HotServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -480,11 +443,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	token := req.GetParamString("token")
 	privdata := req.GetParamString("privdata")
 
-	address, err := getNameServer(uid, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -530,11 +489,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 
-	address, err := getNameServer(uid, util.HotServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.HotServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -616,11 +571,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	channel := req.GetParamString("channel")
 	regip := extractIP(r.RemoteAddr)
 
-	address, err := getNameServer(0, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
+	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -659,6 +610,11 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func wxMpLogin(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+
 	r.ParseForm()
 	code := r.Form["code"]
 	if len(code) == 0 {
@@ -668,12 +624,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	echostr := r.Form["echostr"]
 
-	address, err := getNameServer(0, util.VerifyServerName)
-	if err != nil {
-		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
+	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
