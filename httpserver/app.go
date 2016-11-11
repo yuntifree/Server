@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	common "../proto/common"
-	discover "../proto/discover"
 	fetch "../proto/fetch"
 	helloworld "../proto/hello"
 	hot "../proto/hot"
@@ -627,62 +626,6 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func discoverServer(w http.ResponseWriter, r *http.Request) {
-	post, err := simplejson.NewFromReader(r.Body)
-	if err != nil {
-		log.Printf("parse request body failed:%v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-
-	name, err := post.Get("name").String()
-	if err != nil {
-		log.Printf("get name failed:%v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-
-	conn, err := grpc.Dial(discoverAddress, grpc.WithInsecure())
-	if err != nil {
-		log.Printf("did not connect: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-	defer conn.Close()
-	c := discover.NewDiscoverClient(conn)
-
-	uuid := util.GenUUID()
-	res, err := c.Resolve(context.Background(), &discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
-	if err != nil {
-		log.Printf("Login failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-
-	if res.Head.Retcode == common.ErrCode_USED_PHONE {
-		w.Write([]byte(`{"errno":104,"desc":"该手机号已注册，请直接登录"}`))
-		return
-	}
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		log.Printf("NewJson failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-
-	js.SetPath([]string{"data", "host"}, res.Host)
-	js.SetPath([]string{"data", "port"}, res.Port)
-	body, err := js.MarshalJSON()
-	if err != nil {
-		log.Printf("MarshalJSON failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-		return
-	}
-	w.Write(body)
-
-}
-
 func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	code := r.Form["code"]
@@ -748,7 +691,6 @@ func ServeApp() {
 	http.Handle("/report_wifi", appHandler(reportWifi))
 	http.Handle("/report_click", appHandler(reportClick))
 	http.Handle("/services", appHandler(getService))
-	http.HandleFunc("/discover", discoverServer)
 	http.HandleFunc("/live", live)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
