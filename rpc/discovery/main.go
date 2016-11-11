@@ -40,7 +40,7 @@ func parseServer(name string) (Server, error) {
 	return srv, nil
 }
 
-func fetchServers(name string) []Server {
+func fetchServers(name string) []string {
 	client := util.InitRedis()
 	vals, err := client.ZRangeByScore(name, redis.ZRangeBy{Min: "-inf", Max: "+inf", Offset: 0, Count: 10}).Result()
 	if err != nil {
@@ -48,23 +48,16 @@ func fetchServers(name string) []Server {
 		return nil
 	}
 
-	servers := make([]Server, 10)
-	var idx int
+	var servers []string
 	for i, key := range vals {
-		idx = i
 		log.Printf("%d:%s", i, key)
-		srv, err := parseServer(key)
-		if err != nil {
-			log.Printf("parse failed:%v", err)
-			continue
-		}
-		servers[i] = srv
+		servers = append(servers, key)
 		if i >= 10 {
 			break
 		}
 	}
 
-	return servers[:idx+1]
+	return servers
 }
 
 func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*discover.ServerReply, error) {
@@ -74,8 +67,8 @@ func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*disc
 		log.Printf("fetch servers failed:%s", in.Sname)
 		return &discover.ServerReply{Head: &common.Head{Retcode: common.ErrCode_FETCH_SERVER}}, nil
 	}
-	srv := servers[util.Randn(int32(len(servers)))]
-	return &discover.ServerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Host: srv.host, Port: srv.port}, nil
+	host := servers[util.Randn(int32(len(servers)))]
+	return &discover.ServerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Host: host}, nil
 }
 
 func main() {

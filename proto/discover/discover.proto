@@ -16,5 +16,4 @@ message ServerRequest {
 message ServerReply {
     common.Head head = 1;
     string host = 2;
-    int32 port = 3;
 }

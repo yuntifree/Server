@@ -224,5 +224,5 @@ func getNameServer(uid int64, name string) string {
 		panic(util.AppError{util.RPCErr, 4, fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)})
 	}
 
-	return fmt.Sprintf("%s:%d", res.Host, res.Port)
+	return res.Host
 }
