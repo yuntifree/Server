@@ -318,7 +318,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	json, _ := simplejson.NewJson([]byte(`{}`))
 	json.Set("total", res.Uinfo.Total)
 	json.Set("save", res.Uinfo.Save)
-	js.SetPath([]string{"data", "uinfo"}, json)
+	js.SetPath([]string{"data", "user"}, json)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
