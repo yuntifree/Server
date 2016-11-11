@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 
 	common "../proto/common"
+	discover "../proto/discover"
 	fetch "../proto/fetch"
 	verify "../proto/verify"
 	util "../util"
@@ -198,4 +200,28 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	}
 	w.Write(body)
 	return nil
+}
+
+func getNameServer(uid int, name string) (string, error) {
+	conn, err := grpc.Dial(discoverAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect %s: %v", discoverAddress, err)
+		return "", err
+	}
+	defer conn.Close()
+	c := discover.NewDiscoverClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.Resolve(context.Background(), &discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
+	if err != nil {
+		log.Printf("Resolve failed %s: %v", name, err)
+		return "", err
+	}
+
+	if res.Head.Retcode != 0 {
+		log.Printf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%d", res.Host, res.Port), nil
 }

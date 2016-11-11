@@ -59,7 +59,13 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	model := req.GetParamString("model")
 	udid := req.GetParamString("udid")
 
-	conn, err := grpc.Dial(verifyAddress, grpc.WithInsecure())
+	address, err := getNameServer(0, util.VerifyServerName)
+	if err != nil {
+		log.Printf("getNameServer failed %s:%v\n", util.VerifyServerName, err)
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
