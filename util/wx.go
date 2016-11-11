@@ -84,15 +84,13 @@ func GetWxInfo(wxi *WxInfo) (err error) {
 		log.Printf("get nickname failed:%v", err)
 		return
 	}
-	/*
-		unionid, err := js.Get("unionid").String()
-		if err != nil {
-			log.Printf("get unionid failed:%v", err)
-			return
-		}
-	*/
+	unionid, err := js.Get("unionid").String()
+	if err != nil {
+		log.Printf("get unionid failed:%v", err)
+		return
+	}
 	wxi.NickName = nickname
-	wxi.UnionID = wxi.Openid
+	wxi.UnionID = unionid
 	wxi.HeadURL, _ = js.Get("headimgurl").String()
 	wxi.Sex, _ = js.Get("sex").Int()
 
