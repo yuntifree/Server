@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -800,6 +801,57 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func genNonce() string {
+	nonce := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var res []byte
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for i := 0; i < 12; i++ {
+		ch := nonce[r.Int31n(int32(len(nonce)))]
+		res = append(res, ch)
+	}
+	return string(res)
+}
+
+func getJsapiSign(w http.ResponseWriter, r *http.Request) {
+	address := getNameServer(0, util.VerifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetWxTicket(context.Background(), &verify.TicketRequest{Head: &common.Head{Sid: uuid}})
+	if err != nil {
+		log.Printf("GetWxTicket failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+
+	if res.Head.Retcode != 0 {
+		w.Write([]byte(`{"errno":107,"desc":"获取微信ticket失败"}`))
+		return
+	}
+
+	noncestr := genNonce()
+	ts := time.Now().Unix()
+	url := r.URL.String()
+	pos := strings.Index(url, "#")
+	if pos != -1 {
+		url = url[:pos]
+	}
+
+	ori := fmt.Sprintf("jsapi_ticket=%s&noncestr=%s&timestamp=%d&url=%s", res.Ticket, noncestr, ts, url)
+	sign := util.Sha1(ori)
+	log.Printf("origin:%s sign:%s\n", ori, sign)
+	out := fmt.Sprintf("var wx_cf={\"debug\":false, \"appId\":\"%s\",\"timestamp\":%d,\"nonceStr\":\"%s\",\"signature\":\"%s\",\"jsApiList\":[],\"jsapi_ticket\":\"%s\"};", util.WxAppid, ts, noncestr, sign, res.Ticket)
+	w.Write([]byte(out))
+	return
+}
+
 //ServeApp do app server work
 func ServeApp() {
 	http.Handle("/login", appHandler(login))
@@ -817,6 +869,7 @@ func ServeApp() {
 	http.Handle("/services", appHandler(getService))
 	http.HandleFunc("/jump", jump)
 	http.HandleFunc("/wx_mp_login", wxMpLogin)
+	http.HandleFunc("/get_jsapi_sign", getJsapiSign)
 	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	http.ListenAndServe(":80", nil)
 }

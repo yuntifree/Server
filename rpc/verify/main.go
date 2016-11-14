@@ -384,6 +384,35 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
 }
 
+func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
+	_, err := db.Exec("UPDATE wx_token SET access_token = ?, api_ticket = ?, expire_time = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE appid = ?", accessToken, ticket, appid)
+	if err != nil {
+		log.Printf("updateTokenTicket failed:%v", err)
+	}
+}
+
+func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*verify.TicketReply, error) {
+	var token, ticket string
+	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1", util.WxAppid).Scan(&token, &ticket)
+	if err == nil {
+		log.Printf("GetWxTicket select succ, token:%s ticket:%s\n", token, ticket)
+		return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
+	}
+	token, err = util.GetWxToken(util.WxAppid, util.WxAppkey)
+	if err != nil {
+		log.Printf("GetWxToken failed:%v", err)
+		return &verify.TicketReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	ticket, err = util.GetWxJsapiTicket(token)
+	if err != nil {
+		log.Printf("GetWxToken failed:%v", err)
+		return &verify.TicketReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+
+	updateTokenTicket(db, util.WxAppid, token, ticket)
+	return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.VerifyServerPort)
 	if err != nil {

@@ -14,6 +14,7 @@ service Verify{
      rpc AutoLogin(AutoRequest) returns (AutoReply) {}
      rpc WxMpLogin(LoginRequest) returns (LoginReply) {}
      rpc UnionLogin(LoginRequest) returns (LoginReply) {}
+     rpc GetWxTicket(TicketRequest) returns (TicketReply) {}
 }
 
 message TokenRequest {
@@ -94,4 +95,15 @@ message AutoReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
+}
+
+message TicketRequest {
+    common.Head head = 1;
+    int32 type = 2;
+}
+
+message TicketReply {
+    common.Head head = 1;
+    string token = 2;
+    string ticket = 3;
 }

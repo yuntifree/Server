@@ -117,6 +117,17 @@ CREATE TABLE IF NOT EXISTS wx_openid (
     UNIQUE KEY(uid, wtype)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS wx_token (
+    tid     int unsigned NOT NULL AUTO_INCREMENT,
+    appid   varchar(32) NOT NULL,
+    secret  varchar(32) NOT NULL,
+    access_token    varchar(128) NOT NULL,
+    api_ticket      varchar(128) NOT NULL,
+    expire_time     datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(tid),
+    UNIQUE KEY(appid)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS service (
     sid     int unsigned NOT NULL AUTO_INCREMENT,
     category int unsigned NOT NULL,
