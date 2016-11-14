@@ -325,6 +325,12 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
+	resp, err := getRspFromSSDB(hotWeatherKey)
+	if err == nil {
+		log.Printf("getRspFromSSDB succ key:%s\n", hotWeatherKey)
+		w.Write([]byte(resp))
+		return nil
+	}
 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -374,6 +380,8 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
+	data := js.Get("data")
+	setSSDBCache(hotWeatherKey, data)
 	return nil
 }
 
