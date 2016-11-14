@@ -1,10 +1,12 @@
 package httpserver
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	common "../proto/common"
 	fetch "../proto/fetch"
@@ -375,6 +377,70 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	return nil
 }
 
+func genSsdbKey(ctype int64) string {
+	switch ctype {
+	default:
+		return hotNewsKey
+	case 1:
+		return hotVideoKey
+	}
+}
+
+func getRspFromSSDB(key string) (string, error) {
+	val, err := util.GetSSDBVal(key)
+	if err != nil {
+		log.Printf("getRspFromSSDB GetSSDBVal key:%s failed:%v", key, err)
+		return "", err
+	}
+	js, err := simplejson.NewJson([]byte(val))
+	if err != nil {
+		log.Printf("getRspFromSSDB parse json failed:%v", err)
+		return "", err
+	}
+	expire, err := js.Get("expire").Int64()
+	if err != nil {
+		log.Printf("getRspFromSSDB get expire failed:%v", err)
+		return "", err
+	}
+	if time.Now().Unix() > expire {
+		log.Printf("getRspFromSSDB data expire :%d", expire)
+		return "", errors.New("ssdb data expired")
+	}
+	rsp, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		log.Printf("getRspFromSSDB NewJson failed:%v", err)
+		return "", err
+	}
+	data := js.Get("data")
+	rsp.Set("data", data)
+
+	body, err := rsp.MarshalJSON()
+	if err != nil {
+		log.Printf("getRspFromSSDB MarshalJson failed:%v", err)
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func setSSDBCache(key string, data *simplejson.Json) {
+	expire := time.Now().Unix() + expireInterval
+	js, err := simplejson.NewJson([]byte(`{}`))
+	if err != nil {
+		log.Printf("setSSDBCache key:%s NewJson failed:%v\n", key, err)
+		return
+	}
+	js.Set("expire", expire)
+	js.Set("data", data)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		log.Printf("setSSDBCache MarshalJson failed:%v", err)
+		return
+	}
+	util.SetSSDBVal(key, string(body))
+	return
+}
+
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -386,6 +452,18 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uid := req.GetParamInt("uid")
 	ctype := req.GetParamInt("type")
 	seq := req.GetParamInt("seq")
+	log.Printf("uid:%d ctype:%d seq:%d\n", uid, ctype, seq)
+	if seq == 0 {
+		key := genSsdbKey(ctype)
+		log.Printf("key:%s", key)
+		resp, err := getRspFromSSDB(key)
+		if err == nil {
+			log.Printf("getRspFromSSDB succ key:%s\n", key)
+			w.Write([]byte(resp))
+			return nil
+		}
+		log.Printf("getRspFromSSDB failed key:%s err:%v\n", key, err)
+	}
 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -436,6 +514,11 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
+	if seq == 0 {
+		key := genSsdbKey(ctype)
+		data := js.Get("data")
+		setSSDBCache(key, data)
+	}
 	return nil
 }
 

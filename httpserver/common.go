@@ -19,6 +19,10 @@ import (
 
 const (
 	discoverAddress = "localhost:50054"
+	hotNewsKey      = "hot:news"
+	hotVideoKey     = "hot:video"
+	hotWeatherKey   = "hot:weather"
+	expireInterval  = 300
 )
 
 type request struct {
@@ -88,6 +92,9 @@ func extractError(r interface{}) *util.AppError {
 		return &util.AppError{util.ParamErr, 2, v.Error()}
 	} else if k, ok := r.(util.AppError); ok {
 		return &k
+	} else {
+		log.Printf("unexpected panic:%v", r)
+		return &util.AppError{util.ParamErr, 2, v.Error()}
 	}
 
 	return nil

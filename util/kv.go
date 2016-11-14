@@ -7,6 +7,7 @@ import (
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
+	ssdb "github.com/ssdb/gossdb/ssdb"
 	"gopkg.in/redis.v5"
 )
 
@@ -58,9 +59,9 @@ func SetCachedToken(kv *redis.Client, uid int64, token string) {
 		log.Printf("RefreshCachedToken Encode failed:%v", err)
 		return
 	}
-	res, err := kv.HSet(userTokenSet, strconv.Itoa(int(uid)), string(data)).Result()
-	if err != nil || !res {
-		log.Printf("RefreshCachedToken HSet failed uid:%d token:%s res:%v err:%v", uid, token, res, err)
+	_, err = kv.HSet(userTokenSet, strconv.Itoa(int(uid)), string(data)).Result()
+	if err != nil {
+		log.Printf("RefreshCachedToken HSet failed uid:%d token:%s err:%v", uid, token, err)
 		return
 	}
 	return
@@ -92,5 +93,38 @@ func GetCachedToken(kv *redis.Client, uid int64) (token string, err error) {
 		return
 	}
 	token, _ = js.Get("token").String()
+	return
+}
+
+//GetSSDBVal get key-val from ssdb
+func GetSSDBVal(key string) (val string, err error) {
+	cli, err := ssdb.Connect("127.0.0.1", 8888)
+	if err != nil {
+		log.Printf("GetSSDBVal Connect failed:%v", err)
+		return
+	}
+	defer cli.Close()
+	res, err := cli.Get(key)
+	if err != nil {
+		log.Printf("GetSSDBVal failed:%v", err)
+		return
+	}
+	switch res.(type) {
+	default:
+		return "", errors.New("key not found")
+	case string:
+		return res.(string), nil
+	}
+}
+
+//SetSSDBVal set key-val to ssdb
+func SetSSDBVal(key, val string) (err error) {
+	cli, err := ssdb.Connect("127.0.0.1", 8888)
+	if err != nil {
+		log.Printf("GetSSDBVal Connect failed:%v", err)
+		return
+	}
+	defer cli.Close()
+	_, err = cli.Set(key, val)
 	return
 }
