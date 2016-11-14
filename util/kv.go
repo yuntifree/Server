@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"log"
 	"strconv"
 	"time"
@@ -34,16 +35,15 @@ func Report(client *redis.Client, name, port string) {
 }
 
 //ReportHandler handle report address
-func ReportHandler(name, port string) {
-	kv := InitRedis()
+func ReportHandler(kv *redis.Client, name, port string) {
 	for {
 		time.Sleep(time.Second * 2)
 		Report(kv, name, port)
 	}
 }
 
-//RefreshCachedToken refresh token in redis
-func RefreshCachedToken(uid int64, token string) {
+//SetCachedToken set token in redis
+func SetCachedToken(kv *redis.Client, uid int64, token string) {
 	js, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
 		log.Printf("RefreshCachedToken NewJson failed:%v", err)
@@ -52,12 +52,45 @@ func RefreshCachedToken(uid int64, token string) {
 
 	js.Set("expire", time.Now().Unix()+expireTime)
 	js.Set("ts", time.Now().Unix())
+	js.Set("token", token)
 	data, err := js.Encode()
 	if err != nil {
 		log.Printf("RefreshCachedToken Encode failed:%v", err)
 		return
 	}
-	kv := InitRedis()
-	kv.HSet(userTokenSet, strconv.Itoa(int(uid)), string(data))
+	res, err := kv.HSet(userTokenSet, strconv.Itoa(int(uid)), string(data)).Result()
+	if err != nil || !res {
+		log.Printf("RefreshCachedToken HSet failed uid:%d token:%s res:%v err:%v", uid, token, res, err)
+		return
+	}
+	return
+}
+
+//GetCachedToken get user's token from redis
+func GetCachedToken(kv *redis.Client, uid int64) (token string, err error) {
+	res, err := kv.HGet(userTokenSet, strconv.Itoa(int(uid))).Result()
+	if err != nil {
+		log.Printf("GetCachedToken HGet failed:%d %v", uid, err)
+		return
+	}
+	js, err := simplejson.NewJson([]byte(res))
+	if err != nil {
+		log.Printf("GetCachedToken NewJson failed:%v", err)
+		return
+	}
+
+	ts, _ := js.Get("ts").Int64()
+	if time.Now().Unix() > ts+expireInterval {
+		log.Printf("GetCachedToken cache expired:%d\n", ts)
+		err = errors.New("cache expired")
+		return
+	}
+	expire, _ := js.Get("expire").Int64()
+	if time.Now().Unix() > expire {
+		log.Printf("GetCachedToken token expired:%d\n", expire)
+		err = errors.New("token expired")
+		return
+	}
+	token, _ = js.Get("token").String()
 	return
 }
