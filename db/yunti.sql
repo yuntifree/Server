@@ -211,6 +211,16 @@ CREATE TABLE IF NOT EXISTS user_unionid (
     KEY(unionid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS banner (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    img     varchar(256) NOT NULL,
+    dst     varchar(256) NOT NULL,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,

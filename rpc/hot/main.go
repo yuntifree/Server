@@ -222,6 +222,16 @@ func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 	return info, nil
 }
 
+func getBannerInfo(db *sql.DB) (hot.BannerInfo, error) {
+	var info hot.BannerInfo
+	err := db.QueryRow("SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 ORDER BY id DESC LIMIT 1").Scan(&info.Img, &info.Dst)
+	if err != nil {
+		log.Printf("select banner info failed:%v", err)
+		return info, err
+	}
+	return info, nil
+}
+
 func (s *server) GetFrontInfo(ctx context.Context, in *hot.HotsRequest) (*hot.FrontReply, error) {
 	uinfo, err := getUseInfo(db, in.Head.Uid)
 	if err != nil {
@@ -230,8 +240,13 @@ func (s *server) GetFrontInfo(ctx context.Context, in *hot.HotsRequest) (*hot.Fr
 	}
 
 	uinfo.Save = int32(float64(uinfo.Save) * saveRate)
+	binfo, err := getBannerInfo(db)
+	if err != nil {
+		log.Printf("getBannerInfo failed:%v", err)
+		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
+	}
 
-	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo}, nil
+	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo, Binfo: &binfo}, nil
 }
 
 func main() {

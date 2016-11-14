@@ -293,10 +293,18 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	json, _ := simplejson.NewJson([]byte(`{}`))
-	json.Set("total", res.Uinfo.Total)
-	json.Set("save", res.Uinfo.Save)
-	js.SetPath([]string{"data", "user"}, json)
+	{
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("total", res.Uinfo.Total)
+		json.Set("save", res.Uinfo.Save)
+		js.SetPath([]string{"data", "user"}, json)
+	}
+	{
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("img", res.Binfo.Img)
+		json.Set("dst", res.Binfo.Dst)
+		js.SetPath([]string{"data", "banner"}, json)
+	}
 
 	body, err := js.MarshalJSON()
 	if err != nil {
