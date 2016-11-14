@@ -13,6 +13,7 @@ service Verify{
      rpc CheckToken(TokenRequest) returns (TokenReply) {}
      rpc AutoLogin(AutoRequest) returns (AutoReply) {}
      rpc WxMpLogin(LoginRequest) returns (LoginReply) {}
+     rpc UnionLogin(LoginRequest) returns (LoginReply) {}
 }
 
 message TokenRequest {
@@ -38,6 +39,7 @@ message LoginRequest {
     string model = 4;
     string udid = 5;
     string code = 6;
+    string unionid = 7;
 }
 
 message LoginReply {

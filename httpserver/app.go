@@ -654,7 +654,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := fmt.Sprintf("%s?uid=%d&token=%s", echostr[0], res.Head.Uid, res.Token)
+	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s", echostr[0], res.Head.Uid, res.Token, res.Privdata)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
@@ -662,12 +662,41 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	file := r.Form["echofile"]
 	var echostr string
-	redirect := "http://wx.youcaitv.cn/wx_mp_login"
 	if len(file) > 0 {
 		echostr = file[0]
 		echostr = "http://wx.youcaitv.cn/" + echostr
-		redirect += "?echostr=" + echostr
 	}
+	ck, err := r.Cookie("UNION")
+	if err == nil {
+		log.Printf("get cookie UNION succ:%s", ck.Value)
+		address := getNameServer(0, util.VerifyServerName)
+		conn, err := grpc.Dial(address, grpc.WithInsecure())
+		if err != nil {
+			log.Printf("did not connect: %v", err)
+			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+			return
+		}
+		defer conn.Close()
+		c := verify.NewVerifyClient(conn)
+
+		uuid := util.GenUUID()
+		res, err := c.UnionLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Unionid: ck.Value})
+		if err != nil {
+			log.Printf("UnionLogin failed: %v", err)
+			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+			return
+		}
+
+		if res.Head.Retcode != 0 {
+			w.Write([]byte(`{"errno":106,"desc":"微信公众号登录失败"}`))
+			return
+		}
+		dst := fmt.Sprintf("%s?uid=%d&token=%s", echostr, res.Head.Uid, res.Token)
+		http.Redirect(w, r, dst, http.StatusMovedPermanently)
+		return
+	}
+	redirect := "http://wx.youcaitv.cn/wx_mp_login"
+	redirect += "?echostr=" + echostr
 	dst := util.GenRedirectURL(redirect)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }

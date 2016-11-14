@@ -201,6 +201,16 @@ CREATE TABLE IF NOT EXISTS weather (
     UNIQUE KEY(ctime)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS user_unionid (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    unionid varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(uid),
+    KEY(unionid)
+) ENGINE = InnoDB;
+
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,

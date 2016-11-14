@@ -130,6 +130,13 @@ func recordWxOpenid(db *sql.DB, uid int64, wtype int32, openid string) {
 	}
 }
 
+func recordWxUnionid(db *sql.DB, uid int64, unionid string) {
+	_, err := db.Exec("INSERT INTO user_unionid(uid, unionid, ctime) VALUES(?, ?, NOW()) ON DUPLICATE KEY UPDATE unionid = ?", uid, unionid, unionid)
+	if err != nil {
+		log.Printf("recordWxUnionid failed uid:%d unionid:%s err:%v\n", uid, unionid, err)
+	}
+}
+
 func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	var wxi util.WxInfo
 	wxi, err := util.GetCodeToken(in.Code)
@@ -170,6 +177,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	}
 
 	recordWxOpenid(db, uid, 0, wxi.Openid)
+	recordWxUnionid(db, uid, privdata)
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
 }
 
@@ -325,6 +333,27 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 	privdata := util.GenSalt()
 	updatePrivdata(db, in.Head.Uid, token, privdata)
 	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
+}
+
+func unionToID(db *sql.DB, unionid string) (int64, error) {
+	var uid int64
+	err := db.QueryRow("SELECT uid FROM user_unionid WHERE unionid = ?", unionid).Scan(&uid)
+	if err != nil {
+		log.Printf("use unionid to find user failed %s:%v", unionid, err)
+		return uid, err
+	}
+	return uid, nil
+}
+
+func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	uid, err := unionToID(db, in.Unionid)
+	if err != nil {
+		return &verify.LoginReply{Head: &common.Head{Retcode: 106}}, nil
+	}
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	updatePrivdata(db, uid, token, privdata)
+	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
 }
 
 func main() {
