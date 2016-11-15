@@ -218,7 +218,7 @@ func GetContent(url string) (news News, err error) {
 		return news, err
 	}
 	log.Printf("UploadOssFile success: %s", filename)
-	news.URL = aliyun.GenOssURL(filename)
+	news.URL = aliyun.GenOssNewsURL(filename)
 	news.Author = "东莞阳光网"
 
 	for i := 0; i < 3 && i < len(images); i++ {
@@ -304,7 +304,7 @@ func GetNews(stype int) []News {
 			log.Printf("UploadOssFile failed %s:%v", filename, err)
 			continue
 		}
-		ns.URL = aliyun.GenOssURL(filename)
+		ns.URL = aliyun.GenOssNewsURL(filename)
 		ns.Author, _ = info.Get("author_name").String()
 		news[i] = ns
 		log.Printf("title:%s", ns.Title)
