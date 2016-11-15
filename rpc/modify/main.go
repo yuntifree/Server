@@ -149,7 +149,8 @@ func main() {
 		log.Fatalf("failed to init db connection:%v", err)
 	}
 
-	go util.ReportHandler(util.ModifyServerName, util.ModifyServerPort)
+	kv := util.InitRedis()
+	go util.ReportHandler(kv, util.ModifyServerName, util.ModifyServerPort)
 
 	s := grpc.NewServer()
 	modify.RegisterModifyServer(s, &server{})

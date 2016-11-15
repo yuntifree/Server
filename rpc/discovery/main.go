@@ -77,7 +77,8 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	go util.ReportHandler(util.DiscoverServerName, util.DiscoverServerPort)
+	kv := util.InitRedis()
+	go util.ReportHandler(kv, util.DiscoverServerName, util.DiscoverServerPort)
 
 	s := grpc.NewServer()
 	discover.RegisterDiscoverServer(s, &server{})

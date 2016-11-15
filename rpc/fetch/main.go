@@ -397,7 +397,8 @@ func main() {
 		log.Fatalf("failed to init db connection: %v", err)
 	}
 
-	go util.ReportHandler(util.FetchServerName, util.FetchServerPort)
+	kv := util.InitRedis()
+	go util.ReportHandler(kv, util.FetchServerName, util.FetchServerPort)
 
 	s := grpc.NewServer()
 	fetch.RegisterFetchServer(s, &server{})
