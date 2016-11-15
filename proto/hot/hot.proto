@@ -37,19 +37,18 @@ message ServiceRequest {
 
 message ServiceInfo {
     string title = 1;
-    string icon = 2;
-    string dst = 3;
+    string dst = 2;
 }
 
 message ServiceCategory {
     string title = 1;
-    repeated ServiceInfo infos = 2;
+    string icon = 2;
+    repeated ServiceInfo infos = 3;
 }
 
 message ServiceReply {
     common.Head head = 1;
-    repeated ServiceInfo tops = 2;
-    repeated ServiceCategory services = 3;
+    repeated ServiceCategory services = 2;
 }
 
 message WeatherInfo {

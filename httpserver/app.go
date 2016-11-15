@@ -612,25 +612,15 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
-	tops := make([]interface{}, len(res.Tops))
-	for i := 0; i < len(res.Tops); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("title", res.Tops[i].Title)
-		json.Set("icon", res.Tops[i].Icon)
-		json.Set("dst", res.Tops[i].Dst)
-		tops[i] = json
-	}
-	js.SetPath([]string{"data", "top"}, tops)
-
 	services := make([]interface{}, len(res.Services))
 	for i := 0; i < len(res.Services); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
 		json.Set("title", res.Services[i].Title)
+		json.Set("icon", res.Services[i].Icon)
 		items := make([]interface{}, len(res.Services[i].Infos))
 		for j := 0; j < len(res.Services[i].Infos); j++ {
 			in, _ := simplejson.NewJson([]byte(`{}`))
 			in.Set("title", res.Services[i].Infos[j].Title)
-			in.Set("icon", res.Services[i].Infos[j].Icon)
 			in.Set("dst", res.Services[i].Infos[j].Dst)
 			items[j] = in
 		}

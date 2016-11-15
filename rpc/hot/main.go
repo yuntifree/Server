@@ -101,42 +101,22 @@ func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsRep
 	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
-func getTops(db *sql.DB) ([]*hot.ServiceInfo, error) {
-	var infos []*hot.ServiceInfo
-	rows, err := db.Query("SELECT title, icon, dst FROM service WHERE category = 0")
-	if err != nil {
-		log.Printf("query failed:%v", err)
-		return infos, err
-	}
-
-	for rows.Next() {
-		var info hot.ServiceInfo
-		err := rows.Scan(&info.Title, &info.Icon, &info.Dst)
-		if err != nil {
-			continue
-		}
-		infos = append(infos, &info)
-	}
-
-	return infos, nil
-}
-
-func getCategoryTitle(category int) string {
+func getCategoryTitleIcon(category int) (string, string) {
 	switch category {
 	default:
-		return "智慧政务"
+		return "智慧政务", "http://file.yunxingzh.com/ico_government.png"
 	case 2:
-		return "交通出行"
+		return "交通出行", "http://file.yunxingzh.com/ico_traffic.png"
 	case 3:
-		return "医疗服务"
+		return "医疗服务", "http://file.yunxingzh.com/ico_medical.png"
 	case 4:
-		return "网上充值"
+		return "网上充值", "http://file.yunxingzh.com/ico_recharge.png"
 	}
 }
 
 func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	var infos []*hot.ServiceCategory
-	rows, err := db.Query("SELECT title, icon, dst, category FROM service WHERE category != 0 ORDER BY category")
+	rows, err := db.Query("SELECT title, dst, category FROM service WHERE category != 0 AND deleted = 0 ORDER BY category")
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos, err
@@ -147,7 +127,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	for rows.Next() {
 		var info hot.ServiceInfo
 		var cate int
-		err := rows.Scan(&info.Title, &info.Icon, &info.Dst, &cate)
+		err := rows.Scan(&info.Title, &info.Dst, &cate)
 		if err != nil {
 			continue
 		}
@@ -155,7 +135,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 		if cate != category {
 			if len(srvs) > 0 {
 				var cateinfo hot.ServiceCategory
-				cateinfo.Title = getCategoryTitle(category)
+				cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
 				cateinfo.Infos = srvs[:]
 				infos = append(infos, &cateinfo)
 				srvs = srvs[len(srvs):]
@@ -167,7 +147,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 
 	if len(srvs) > 0 {
 		var cateinfo hot.ServiceCategory
-		cateinfo.Title = getCategoryTitle(category)
+		cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
 		cateinfo.Infos = srvs[:]
 		infos = append(infos, &cateinfo)
 	}
@@ -176,19 +156,13 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 }
 
 func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.ServiceReply, error) {
-	infos, err := getTops(db)
-	if err != nil {
-		log.Printf("getTops failed:%v", err)
-		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
-	}
-
 	categories, err := getService(db)
 	if err != nil {
 		log.Printf("getServie failed:%v", err)
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &hot.ServiceReply{Head: &common.Head{Retcode: 0}, Tops: infos, Services: categories}, nil
+	return &hot.ServiceReply{Head: &common.Head{Retcode: 0}, Services: categories}, nil
 }
 
 func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
