@@ -1,7 +1,15 @@
 package main
 
-import "../httpserver"
+import (
+	"net/http"
+
+	"../httpserver"
+
+	"github.com/facebookgo/grace/gracehttp"
+)
 
 func main() {
-	httpserver.ServeOss()
+	gracehttp.Serve(
+		&http.Server{Addr: ":8080", Handler: httpserver.NewOssServer()},
+	)
 }

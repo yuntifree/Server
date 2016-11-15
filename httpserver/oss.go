@@ -566,20 +566,21 @@ func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, true)
 }
 
-//ServeOss do oss server work
-func ServeOss() {
-	http.Handle("/login", appHandler(backLogin))
-	http.Handle("/get_news", appHandler(getReviewNews))
-	http.Handle("/get_tags", appHandler(getTags))
-	http.Handle("/get_ap_stat", appHandler(getApStat))
-	http.Handle("/get_users", appHandler(getUsers))
-	http.Handle("/get_templates", appHandler(getTemplates))
-	http.Handle("/add_template", appHandler(addTemplate))
-	http.Handle("/mod_template", appHandler(modTemplate))
-	http.Handle("/get_nearby_aps", appHandler(getOssAps))
-	http.Handle("/review_news", appHandler(reviewNews))
-	http.Handle("/review_video", appHandler(reviewVideo))
-	http.Handle("/get_videos", appHandler(getVideos))
-	http.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
-	http.ListenAndServe(":8080", nil)
+//NewOssServer return oss http handler
+func NewOssServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/login", appHandler(backLogin))
+	mux.Handle("/get_news", appHandler(getReviewNews))
+	mux.Handle("/get_tags", appHandler(getTags))
+	mux.Handle("/get_ap_stat", appHandler(getApStat))
+	mux.Handle("/get_users", appHandler(getUsers))
+	mux.Handle("/get_templates", appHandler(getTemplates))
+	mux.Handle("/add_template", appHandler(addTemplate))
+	mux.Handle("/mod_template", appHandler(modTemplate))
+	mux.Handle("/get_nearby_aps", appHandler(getOssAps))
+	mux.Handle("/review_news", appHandler(reviewNews))
+	mux.Handle("/review_video", appHandler(reviewVideo))
+	mux.Handle("/get_videos", appHandler(getVideos))
+	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
+	return mux
 }
