@@ -852,24 +852,25 @@ func getJsapiSign(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-//ServeApp do app server work
-func ServeApp() {
-	http.Handle("/login", appHandler(login))
-	http.Handle("/get_phone_code", appHandler(getPhoneCode))
-	http.Handle("/register", appHandler(register))
-	http.Handle("/logout", appHandler(logout))
-	http.Handle("/hot", appHandler(getHot))
-	http.Handle("/get_weather_news", appHandler(getWeatherNews))
-	http.Handle("/get_front_info", appHandler(getFrontInfo))
-	http.Handle("/fetch_wifi", appHandler(fetchWifi))
-	http.Handle("/auto_login", appHandler(autoLogin))
-	http.Handle("/get_nearby_aps", appHandler(getAppAps))
-	http.Handle("/report_wifi", appHandler(reportWifi))
-	http.Handle("/report_click", appHandler(reportClick))
-	http.Handle("/services", appHandler(getService))
-	http.HandleFunc("/jump", jump)
-	http.HandleFunc("/wx_mp_login", wxMpLogin)
-	http.HandleFunc("/get_jsapi_sign", getJsapiSign)
-	http.Handle("/", http.FileServer(http.Dir("/data/server/html")))
-	http.ListenAndServe(":80", nil)
+//NewAppServer return app http handler
+func NewAppServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/login", appHandler(login))
+	mux.Handle("/get_phone_code", appHandler(getPhoneCode))
+	mux.Handle("/register", appHandler(register))
+	mux.Handle("/logout", appHandler(logout))
+	mux.Handle("/hot", appHandler(getHot))
+	mux.Handle("/get_weather_news", appHandler(getWeatherNews))
+	mux.Handle("/get_front_info", appHandler(getFrontInfo))
+	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
+	mux.Handle("/auto_login", appHandler(autoLogin))
+	mux.Handle("/get_nearby_aps", appHandler(getAppAps))
+	mux.Handle("/report_wifi", appHandler(reportWifi))
+	mux.Handle("/report_click", appHandler(reportClick))
+	mux.Handle("/services", appHandler(getService))
+	mux.HandleFunc("/jump", jump)
+	mux.HandleFunc("/wx_mp_login", wxMpLogin)
+	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
+	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
+	return mux
 }
