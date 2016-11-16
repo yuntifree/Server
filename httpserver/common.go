@@ -189,7 +189,6 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	infos := make([]interface{}, len(res.Infos))
 	for i := 0; i < len(res.Infos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("aid", res.Infos[i].Id)
 		json.Set("longitude", res.Infos[i].Longitude)
 		json.Set("latitude", res.Infos[i].Latitude)
 		json.Set("address", res.Infos[i].Address)
