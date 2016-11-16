@@ -11,4 +11,5 @@ const (
 	FetchServerPort    = ":50055"
 	ModifyServerName   = "service:modify"
 	ModifyServerPort   = ":50056"
+	MaxIdleConns       = 3
 )

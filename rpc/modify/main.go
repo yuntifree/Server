@@ -148,6 +148,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init db connection:%v", err)
 	}
+	db.SetMaxIdleConns(util.MaxIdleConns)
 
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.ModifyServerName, util.ModifyServerPort)
