@@ -172,7 +172,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
 			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		_, err = db.Query("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?", token, privdata, uid)
+		_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?", token, privdata, uid)
 		if err != nil {
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
 			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err

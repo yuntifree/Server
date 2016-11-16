@@ -118,13 +118,13 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 	if id != 0 {
 		switch in.Type {
 		case 0:
-			_, err = db.Query("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
+			_, err = db.Exec("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
 		case 1:
-			_, err = db.Query("UPDATE news SET click = click + 1 WHERE id = ?", in.Id)
+			_, err = db.Exec("UPDATE news SET click = click + 1 WHERE id = ?", in.Id)
 		case 2:
-			_, err = db.Query("UPDATE ads SET display = display + 1 WHERE id = ?", in.Id)
+			_, err = db.Exec("UPDATE ads SET display = display + 1 WHERE id = ?", in.Id)
 		case 3:
-			_, err = db.Query("UPDATE ads SET click = click + 1 WHERE id = ?", in.Id)
+			_, err = db.Exec("UPDATE ads SET click = click + 1 WHERE id = ?", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 
