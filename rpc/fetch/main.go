@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -17,7 +18,8 @@ import (
 )
 
 const (
-	maxDistance = 3000
+	maxDistance   = 3000
+	addressPrefix = "广东省东莞市东莞市市辖区"
 )
 
 type server struct{}
@@ -212,6 +214,9 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 		p2.Longitude = info.Longitude
 		p2.Latitude = info.Latitude
 		distance := util.GetDistance(p1, p2)
+		if strings.HasPrefix(info.Address, addressPrefix) {
+			info.Address = info.Address[len(addressPrefix):]
+		}
 
 		log.Printf("id:%s longitude:%f latitude:%f ", info.Id, info.Longitude, info.Latitude)
 		if distance > maxDistance {
