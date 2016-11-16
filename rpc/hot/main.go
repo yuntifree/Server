@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	homeNewsNum = 3
+	homeNewsNum = 6
 	saveRate    = 50 / 1000.0 * 0.3
 )
 
@@ -186,6 +186,7 @@ func (s *server) GetWeatherNews(ctx context.Context, in *hot.HotsRequest) (*hot.
 	}
 
 	infos := getNews(db, 0, homeNewsNum)
+	infos = append(infos[:0], infos[1], infos[3], infos[5])
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
 }
 
