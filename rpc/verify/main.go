@@ -271,16 +271,10 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
-		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, err
+		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, errors.New("check token failed")
 	}
 	util.ClearToken(db, in.Head.Uid)
 	return &verify.LogoutReply{Head: &common.Head{Retcode: 0}}, nil

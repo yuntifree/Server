@@ -32,6 +32,7 @@ func getNewsTag(db *sql.DB, id int64) string {
 		log.Printf("query failed:%v", err)
 		return ""
 	}
+	defer rows.Close()
 
 	var tags string
 	for rows.Next() {
@@ -137,6 +138,7 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.NewsInfo
@@ -171,6 +173,7 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.TagInfo
@@ -199,6 +202,7 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	var p1 util.Point
 	p1.Longitude = longitude
@@ -240,6 +244,7 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	var p1 util.Point
 	p1.Longitude = longitude
@@ -280,6 +285,7 @@ func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.ApStatInfo
@@ -310,6 +316,7 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.UserInfo
@@ -340,6 +347,7 @@ func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.TemplateInfo
@@ -371,6 +379,7 @@ func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info fetch.VideoInfo

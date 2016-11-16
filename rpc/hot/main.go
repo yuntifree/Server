@@ -36,6 +36,7 @@ func getNews(db *sql.DB, seq, num int32) []*hot.HotsInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var img [3]string
@@ -74,6 +75,7 @@ func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 		log.Printf("query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var img [3]string
@@ -121,6 +123,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 		log.Printf("query failed:%v", err)
 		return infos, err
 	}
+	defer rows.Close()
 
 	category := 0
 	var srvs []*hot.ServiceInfo
