@@ -20,7 +20,7 @@ type server struct{}
 
 var db *sql.DB
 
-func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modify.NewsReply, error) {
+func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modify.CommReply, error) {
 	if in.Reject {
 		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?", in.Head.Uid, in.Id)
 	} else {
@@ -37,10 +37,10 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modif
 		}
 	}
 
-	return &modify.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*modify.VideoReply, error) {
+func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*modify.CommReply, error) {
 	if in.Reject {
 		db.Exec("UPDATE youku_video SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE vid = ?", in.Head.Uid, in.Id)
 	} else {
@@ -52,7 +52,7 @@ func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*mod
 		db.Exec(query)
 	}
 
-	return &modify.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*modify.AddTempReply, error) {
@@ -71,17 +71,17 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*m
 	return &modify.AddTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: int32(id)}, nil
 }
 
-func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.WifiReply, error) {
+func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.CommReply, error) {
 	_, err := db.Exec("INSERT INTO wifi(ssid, username, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?,?, NOW())", in.Info.Ssid, in.Info.Username, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.WifiReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &modify.WifiReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.ModTempReply, error) {
+func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.CommReply, error) {
 	query := "UPDATE template SET "
 	if in.Info.Title != "" {
 		query += " title = '" + in.Info.Title + "', "
@@ -98,22 +98,22 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.ModTempReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &modify.ModTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.ClickReply, error) {
+func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.CommReply, error) {
 	res, err := db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("get last insert id failed:%v", err)
-		return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
+		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
 	if id != 0 {
@@ -132,11 +132,11 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 		}
 		if err != nil {
 			log.Printf("update click count failed type:%d id:%d:%v", in.Type, in.Id, err)
-			return &modify.ClickReply{Head: &common.Head{Retcode: 1}}, err
+			return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
 		}
 	}
 
-	return &modify.ClickReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*modify.CommReply, error) {

@@ -5,12 +5,12 @@ import "common/common.proto";
 package modify;
 
 service Modify{
-    rpc ReviewNews(NewsRequest) returns (NewsReply) {}
-    rpc ReviewVideo(VideoRequest) returns (VideoReply) {}
+    rpc ReviewNews(NewsRequest) returns (CommReply) {}
+    rpc ReviewVideo(VideoRequest) returns (CommReply) {}
     rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
-    rpc ModTemplate(ModTempRequest) returns (ModTempReply) {}
-    rpc AddWifi(WifiRequest) returns (WifiReply) {}
-    rpc ReportClick(ClickRequest) returns (ClickReply) {}
+    rpc ModTemplate(ModTempRequest) returns (CommReply) {}
+    rpc AddWifi(WifiRequest) returns (CommReply) {}
+    rpc ReportClick(ClickRequest) returns (CommReply) {}
     rpc ReportApmac(ApmacRequest) returns (CommReply) {}
 }
 
@@ -27,20 +27,12 @@ message NewsRequest {
     repeated int32 tags = 6;
 }
 
-message NewsReply {
-    common.Head head = 1;
-}
-
 message VideoRequest {
     common.Head head = 1;
     int64 id = 2;
     bool reject = 3;
     bool modify = 4;
     string title = 5;
-}
-
-message VideoReply {
-    common.Head head = 1;
 }
 
 message TemplateInfo {
@@ -65,27 +57,15 @@ message ModTempRequest {
     TemplateInfo info = 2;
 }
 
-message ModTempReply {
-    common.Head head = 1;
-}
-
 message WifiRequest {
     common.Head head = 1;
     common.WifiInfo info = 2;
-}
-
-message WifiReply {
-    common.Head head = 1;
 }
 
 message ClickRequest {
     common.Head head = 1;
     int64 id = 2;
     int32 type = 3;
-}
-
-message ClickReply {
-    common.Head head = 1;
 }
 
 message ApmacRequest {
