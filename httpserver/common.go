@@ -237,6 +237,7 @@ func getNameServer(uid int64, name string) string {
 
 func rspGzip(w http.ResponseWriter, body []byte) {
 	w.Header().Set("Content-Encoding", "gzip")
+	w.Header().Set("Content-Type", "application/json")
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
 	gw.Write(body)
