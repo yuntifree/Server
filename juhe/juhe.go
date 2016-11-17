@@ -383,6 +383,16 @@ func GetRealWeather() (Weather, error) {
 	w.Temperature, _ = strconv.Atoi(tmp)
 	w.Info = info
 	w.Date = dt + " " + tm
+	switch info {
+	default:
+		w.Type = 0
+	case "阴", "多云":
+		w.Type = 1
+	case "阵雨":
+		w.Type = 2
+	case "雪":
+		w.Type = 3
+	}
 
 	return w, nil
 }
