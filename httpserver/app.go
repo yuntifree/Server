@@ -362,7 +362,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	resp, err := getRspFromSSDB(hotWeatherKey)
 	if err == nil {
 		log.Printf("getRspFromSSDB succ key:%s\n", hotWeatherKey)
-		w.Write([]byte(resp))
+		rspGzip(w, []byte(resp))
 		return nil
 	}
 
@@ -413,7 +413,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
-	w.Write(body)
+	rspGzip(w, body)
 	data := js.Get("data")
 	setSSDBCache(hotWeatherKey, data)
 	return nil
@@ -501,7 +501,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		resp, err := getRspFromSSDB(key)
 		if err == nil {
 			log.Printf("getRspFromSSDB succ key:%s\n", key)
-			w.Write([]byte(resp))
+			rspGzip(w, []byte(resp))
 			return nil
 		}
 		log.Printf("getRspFromSSDB failed key:%s err:%v\n", key, err)
@@ -555,7 +555,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
-	w.Write(body)
+	rspGzip(w, body)
 	if seq == 0 {
 		key := genSsdbKey(ctype)
 		data := js.Get("data")

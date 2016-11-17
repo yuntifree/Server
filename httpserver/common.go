@@ -1,6 +1,8 @@
 package httpserver
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -200,7 +202,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
-	w.Write(body)
+	rspGzip(w, body)
 	return nil
 }
 
@@ -231,4 +233,13 @@ func getNameServer(uid int64, name string) string {
 	}
 
 	return res.Host
+}
+
+func rspGzip(w http.ResponseWriter, body []byte) {
+	w.Header().Set("Content-Encoding", "gzip")
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	gw.Write(body)
+	gw.Close()
+	w.Write(buf.Bytes())
 }
