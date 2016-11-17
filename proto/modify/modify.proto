@@ -11,6 +11,11 @@ service Modify{
     rpc ModTemplate(ModTempRequest) returns (ModTempReply) {}
     rpc AddWifi(WifiRequest) returns (WifiReply) {}
     rpc ReportClick(ClickRequest) returns (ClickReply) {}
+    rpc ReportApmac(ApmacRequest) returns (CommReply) {}
+}
+
+message CommReply {
+    common.Head head = 1;
 }
 
 message NewsRequest {
@@ -81,5 +86,10 @@ message ClickRequest {
 
 message ClickReply {
     common.Head head = 1;
+}
+
+message ApmacRequest {
+    common.Head head = 1;
+    string apmac = 2;
 }
 

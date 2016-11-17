@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 
 	"../../util"
 
@@ -136,6 +137,22 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 	}
 
 	return &modify.ClickReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*modify.CommReply, error) {
+	var aid int
+	mac := strings.Replace(strings.ToLower(in.Apmac), ":", "", -1)
+	log.Printf("ap mac origin:%s convert:%s\n", in.Apmac, mac)
+	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", in.Apmac, mac).Scan(&aid)
+	if err != nil {
+		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", in.Head.Uid, in.Apmac, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, in.Head.Uid)
+	if err != nil {
+		log.Printf("update user ap info failed uid:%d aid:%d\n", in.Head.Uid, aid)
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

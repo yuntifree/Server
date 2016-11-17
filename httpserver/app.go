@@ -178,6 +178,39 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	apmac := req.GetParamString("apmac")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.ReportApmac(context.Background(), &modify.ApmacRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Apmac: apmac})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "ReportApmac failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -857,6 +890,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))
 	mux.Handle("/report_wifi", appHandler(reportWifi))
 	mux.Handle("/report_click", appHandler(reportClick))
+	mux.Handle("/report_apmac", appHandler(reportApmac))
 	mux.Handle("/services", appHandler(getService))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
