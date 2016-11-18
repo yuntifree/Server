@@ -118,7 +118,7 @@ func getTotalTemplates(db *sql.DB) int64 {
 }
 
 func getTotalUsers(db *sql.DB) int64 {
-	query := "SELECT COUNT(id) FROM user "
+	query := "SELECT COUNT(uid) FROM user "
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
