@@ -151,7 +151,6 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 	ssid := req.GetParamString("ssid")
-	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
@@ -165,7 +164,7 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.AddWifi(context.Background(), &modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &common.WifiInfo{Ssid: ssid, Username: username, Password: password, Longitude: longitude, Latitude: latitude}})
+	res, err := c.AddWifi(context.Background(), &modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &common.WifiInfo{Ssid: ssid, Password: password, Longitude: longitude, Latitude: latitude}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
