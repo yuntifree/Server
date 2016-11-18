@@ -24,7 +24,7 @@ func main() {
 	}
 
 	log.Printf("temperature:%d info:%s date:%s\n", w.Temperature, w.Info, w.Date)
-	_, err = db.Exec("INSERT IGNORE INTO weather(temp, info, ctime, dtime) VALUES (?, ?, ?, NOW())", w.Temperature, w.Info, w.Date)
+	_, err = db.Exec("INSERT IGNORE INTO weather(temp, info, ctime, dtime, type) VALUES (?, ?, ?, NOW(), ?)", w.Temperature, w.Info, w.Date, w.Type)
 	if err != nil {
 		log.Printf("insert into weather failed:%v", err)
 	}
