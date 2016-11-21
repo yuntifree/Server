@@ -96,12 +96,12 @@ func GetAPInfoList(seq int) []APInfo {
 }
 
 //GetRealTimeInfo get realtime info
-func GetRealTimeInfo(aid string) (RealInfo, error) {
+func GetRealTimeInfo(aid int) (RealInfo, error) {
 	var realinfo RealInfo
 	infos := make([]UserInfo, util.MaxListSize)
 	data, err := genReqbody(map[string]interface{}{"aid": aid})
 
-	url := baseurl + "/apInfoList"
+	url := baseurl + "/realTime"
 	rspbody, err := util.HTTPRequest(url, string(data))
 	if err != nil {
 		log.Printf("HTTPRequest failed:%v", err)
