@@ -118,7 +118,7 @@ func getCategoryTitleIcon(category int) (string, string) {
 
 func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	var infos []*hot.ServiceCategory
-	rows, err := db.Query("SELECT title, dst, category FROM service WHERE category != 0 AND deleted = 0 AND dst != '' ORDER BY category")
+	rows, err := db.Query("SELECT title, dst, category, sid FROM service WHERE category != 0 AND deleted = 0 AND dst != '' ORDER BY category")
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos, err
@@ -130,7 +130,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	for rows.Next() {
 		var info hot.ServiceInfo
 		var cate int
-		err := rows.Scan(&info.Title, &info.Dst, &cate)
+		err := rows.Scan(&info.Title, &info.Dst, &cate, &info.Sid)
 		if err != nil {
 			continue
 		}

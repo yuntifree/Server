@@ -654,6 +654,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 			in, _ := simplejson.NewJson([]byte(`{}`))
 			in.Set("title", res.Services[i].Infos[j].Title)
 			in.Set("dst", res.Services[i].Infos[j].Dst)
+			in.Set("sid", res.Services[i].Infos[j].Sid)
 			items[j] = in
 		}
 		json.Set("items", items)

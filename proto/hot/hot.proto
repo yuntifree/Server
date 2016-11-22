@@ -38,6 +38,7 @@ message ServiceRequest {
 message ServiceInfo {
     string title = 1;
     string dst = 2;
+    int32 sid = 3;
 }
 
 message ServiceCategory {
