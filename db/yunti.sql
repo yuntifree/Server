@@ -234,6 +234,25 @@ CREATE TABLE IF NOT EXISTS banner (
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS service_click(
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    sid     int unsigned NOT NULL,
+    click   int unsigned NOT NULL DEFAULT 0,
+    ctime   date NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(sid, ctime)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS service_click_record (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    sid     int unsigned NOT NULL,
+    uid     int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(sid),
+    KEY(uid)
+) ENGINE = InnoDB;
+
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,

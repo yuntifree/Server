@@ -105,7 +105,13 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 }
 
 func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.CommReply, error) {
-	res, err := db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
+	var res sql.Result
+	var err error
+	if in.Type != 4 {
+		res, err = db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
+	} else {
+		res, err = db.Exec("INSERT INTO service_click_record(uid, sid, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Id)
+	}
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
@@ -126,6 +132,8 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 			_, err = db.Exec("UPDATE ads SET display = display + 1 WHERE id = ?", in.Id)
 		case 3:
 			_, err = db.Exec("UPDATE ads SET click = click + 1 WHERE id = ?", in.Id)
+		case 4:
+			_, err = db.Exec("INSERT INTO service_click(sid, click, ctime) VALUES (?, 1, CURDATE()) ON DUPLICATE KEY UPDATE click = click + 1", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 
