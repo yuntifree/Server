@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS user (
     aptime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     PRIMARY KEY(uid),
     UNIQUE KEY(username),
-    KEY(phone)
+    KEY(phone),
+    KEY(aptime)
 ) ENGINE = InnoDB;
 
 
@@ -151,8 +152,9 @@ CREATE TABLE IF NOT EXISTS ap (
     bd_lon      double NOT NULL,
     bd_lat      double NOT NULL,
     count       int unsigned NOT NULL DEFAULT 0,
-    bandwidth   int unsigned NOT NULL DEFAULT 0,
+    bandwidth   double NOT NULL DEFAULT 0,
     online      tinyint unsigned NOT NULL DEFAULT 0,
+    mtime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
 
@@ -170,12 +172,12 @@ CREATE TABLE IF NOT EXISTS ap_stat (
 
 CREATE TABLE IF NOT EXISTS user_record (
     rid     bigint unsigned NOT NULL AUTO_INCREMENT,
-    username    varchar(32) NOT NULL,
+    uid     int unsigned NOT NULL,
     aid     int unsigned NOT NULL,
     stime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     PRIMARY KEY(rid),
-    KEY(username),
+    KEY(uid),
     KEY(aid)
 ) ENGINE = InnoDB;
 
