@@ -15,13 +15,15 @@ const (
 	userTokenSet   = "user:req:token"
 	expireTime     = 3600 * 24 * 30
 	expireInterval = 300
+	redisHost      = "r-wz9191666aa18664.redis.rds.aliyuncs.com:6379"
+	redisPasswd    = "YXZHwifiredis01server"
 )
 
 //InitRedis return initialed redis client
 func InitRedis() *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     redisHost,
+		Password: redisPasswd,
 		DB:       0,
 	})
 }
