@@ -17,7 +17,7 @@ const (
 
 //YoukuFile youku video file information
 type YoukuFile struct {
-	ImgURL, PlayURL, Duration, ID, OriginID, Title, Source string
+	ImgURL, PlayURL, Duration, ID, OriginID, Title, Source, MD5 string
 }
 
 //GenYoukuURL generate youku play url
@@ -61,6 +61,7 @@ func GetYoukuFiles(start, size int) []YoukuFile {
 		info.ID, _ = json.Get("id").String()
 		info.OriginID, _ = json.Get("origin_id").String()
 		info.Title, _ = json.Get("title").String()
+		info.MD5 = util.GetMD5Hash(info.Title)
 		info.Source, _ = json.Get("source").String()
 		files = append(files, info)
 	}

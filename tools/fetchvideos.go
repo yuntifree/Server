@@ -26,7 +26,7 @@ func main() {
 			if f.Source == "乐视" {
 				dst = juhe.GenLetvURL(f.OriginID)
 			}
-			_, err := db.Exec("INSERT IGNORE INTO youku_video(id, origin_id, title, img, play_url, duration, source, dst, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())", f.ID, f.OriginID, f.Title, f.ImgURL, f.PlayURL, duration, f.Source, dst)
+			_, err := db.Exec("INSERT IGNORE INTO youku_video(id, origin_id, title, img, play_url, duration, source, dst, md5, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())", f.ID, f.OriginID, f.Title, f.ImgURL, f.PlayURL, duration, f.Source, dst, f.MD5)
 			if err != nil {
 				log.Printf("insert failed:%v", err)
 			}
