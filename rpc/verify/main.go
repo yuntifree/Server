@@ -186,18 +186,11 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
-
 	var uid int64
 	var epass string
 	var salt string
 	var wifipass string
-	err = db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt, &wifipass)
+	err := db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt, &wifipass)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -219,12 +212,6 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
-	db, err := util.InitDB(false)
-	if err != nil {
-		log.Printf("connect mysql failed:%v", err)
-		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
-	}
-	defer db.Close()
 	flag, err := checkPhoneCode(db, in.Username, in.Code)
 	if err != nil {
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
