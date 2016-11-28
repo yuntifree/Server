@@ -334,12 +334,14 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		json.Set("save", res.Uinfo.Save)
 		js.SetPath([]string{"data", "user"}, json)
 	}
-	{
+	binfos := make([]interface{}, len(res.Binfos))
+	for i := 0; i < len(res.Binfos); i++ {
 		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("img", res.Binfo.Img)
-		json.Set("dst", res.Binfo.Dst)
-		js.SetPath([]string{"data", "banner"}, json)
+		json.Set("img", res.Binfos[i].Img)
+		json.Set("dst", res.Binfos[i].Dst)
+		binfos[i] = json
 	}
+	js.SetPath([]string{"data", "banner"}, binfos)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
