@@ -60,7 +60,6 @@ message RegisterRequest {
     common.Head head = 1;
     string username = 2;
     string password = 3;
-    int32 code = 4;
     string model = 5;
     string udid = 6;
     string channel = 7;
@@ -72,7 +71,6 @@ message RegisterReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
-    string wifipass = 5;
 }
 
 message LogoutRequest {

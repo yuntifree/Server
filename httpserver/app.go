@@ -690,7 +690,6 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.init(r.Body)
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
-	code := req.GetParamInt("code")
 	udid := req.GetParamString("udid")
 	model := req.GetParamString("model")
 	channel := req.GetParamString("channel")
@@ -705,13 +704,13 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Code: int32(code), Udid: udid, Model: model, Channel: channel, Regip: regip})
+	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Udid: udid, Model: model, Channel: channel, Regip: regip})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_USED_PHONE {
-		return &util.AppError{util.LogicErr, 104, "该手机号已注册，请直接登录"}
+		return &util.AppError{util.LogicErr, 104, "该账号已注册，请直接登录"}
 	} else if res.Head.Retcode != 0 {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
@@ -725,7 +724,6 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	js.SetPath([]string{"data", "token"}, res.Token)
 	js.SetPath([]string{"data", "privdata"}, res.Privdata)
 	js.SetPath([]string{"data", "expire"}, res.Expire)
-	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
 	body, err := js.MarshalJSON()
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}

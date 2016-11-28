@@ -212,22 +212,12 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
-	flag, err := checkPhoneCode(db, in.Username, in.Code)
-	if err != nil {
-		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
-	}
-
-	if !flag {
-		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
-	}
-
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
-	wifipass := util.GenWifiPass()
 	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
-	res, err := db.Exec("INSERT IGNORE INTO user (username, phone, password, salt, wifi_passwd, token, private, model, udid, channel, reg_ip, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, in.Username, epass, salt, wifipass, token, privdata, in.Model, in.Udid, in.Channel, in.Regip)
+	res, err := db.Exec("INSERT IGNORE INTO user (username, password, salt, token, private, model, udid, channel, reg_ip, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, epass, salt, token, privdata, in.Model, in.Udid, in.Channel, in.Regip)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -241,12 +231,12 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	log.Printf("uid:%d\n", uid)
 
 	if uid == 0 {
-		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &wifipass)
+		err = db.QueryRow("SELECT uid FROM user WHERE username = ?", in.Username).Scan(&uid)
 		if err != nil {
 			log.Printf("get user id failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		log.Printf("scan uid:%d wifipass:%s\n", uid, wifipass)
+		log.Printf("scan uid:%d \n", uid)
 		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, in.Model, in.Udid, uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
@@ -254,7 +244,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		}
 	}
 	util.SetCachedToken(kv, uid, token)
-	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
