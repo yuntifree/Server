@@ -187,6 +187,7 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 	apmac := req.GetParamString("apmac")
+	log.Printf("report_apmac uid:%d apmac:%s\n", uid, apmac)
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -694,6 +695,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	model := req.GetParamString("model")
 	channel := req.GetParamString("channel")
 	regip := extractIP(r.RemoteAddr)
+	log.Printf("register request username:%s password:%s udid:%s model:%s channel:%s", username, password, udid, model, channel)
 
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -720,6 +722,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
 
+	log.Printf("register resp uid:%d token:%s privdata:%s", res.Head.Uid, res.Token, res.Privdata)
 	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
 	js.SetPath([]string{"data", "token"}, res.Token)
 	js.SetPath([]string{"data", "privdata"}, res.Privdata)
