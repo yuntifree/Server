@@ -32,8 +32,8 @@ type RealInfo struct {
 
 //OnlineRecord user online record
 type OnlineRecord struct {
-	Aid        int
-	Start, End string
+	Aid                 int
+	Start, End, Traffic string
 }
 
 func genReqbody(reqinfos map[string]interface{}) (string, error) {
@@ -203,6 +203,7 @@ func GetOnlineRecords(username, start, end string) []OnlineRecord {
 		rec.Aid, _ = tmp.Get("aid").Int()
 		rec.Start, _ = tmp.Get("start").String()
 		rec.End, _ = tmp.Get("end").String()
+		rec.Traffic, _ = tmp.Get("traffic").String()
 		records[i] = rec
 	}
 

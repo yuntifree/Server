@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	util "../util"
@@ -30,7 +31,7 @@ func main() {
 		log.Printf("InitDB failed:%v", err)
 		os.Exit(1)
 	}
-	rows, err := db.Query("SELECT uid, username, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY) FROM user WHERE aptime > DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
+	rows, err := db.Query("SELECT uid, username, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY) FROM user WHERE atime > DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
 	if err != nil {
 		log.Fatalf("query failed:%v", err)
 	}
@@ -48,19 +49,22 @@ func main() {
 		records := zte.GetOnlineRecords(username, start, end)
 		var duration int64
 		if len(records) > 0 {
+			total := 0
 			for i := 0; i < len(records); i++ {
-				_, err := db.Exec("INSERT INTO user_record(uid, aid, stime, etime) VALUES (?, ?, ?, ?)", uid, records[i].Aid, records[i].Start, records[i].End)
+				traffic, _ := strconv.Atoi(records[i].Traffic)
+				_, err := db.Exec("INSERT INTO user_record(uid, aid, stime, etime, traffic) VALUES (?, ?, ?, ?,?)", uid, records[i].Aid, records[i].Start, records[i].End, traffic)
 				if err != nil {
 					log.Printf("insert failed:%v", err)
 					continue
 				}
 				duration += diff(records[i].End, records[i].Start)
+				total += traffic
 			}
-			_, err := db.Exec("UPDATE user SET times = times + ?, duration = duration + ? WHERE uid = ?", len(records), duration, uid)
+			_, err := db.Exec("UPDATE user SET times = times + ?, duration = duration + ?, traffic = traffic + ? WHERE uid = ?", len(records), duration, total, uid)
 			if err != nil {
 				log.Printf("update user info failed:%v", err)
 			}
-			log.Printf("uid:%d username:%s times:%d duration:%d\n", uid, username, len(records), duration)
+			log.Printf("uid:%d username:%s times:%d duration:%d traffic:%d\n", uid, username, len(records), duration, total)
 		}
 	}
 }
