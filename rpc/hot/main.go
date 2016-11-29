@@ -16,7 +16,7 @@ import (
 
 const (
 	homeNewsNum = 6
-	saveRate    = 50 / 1000.0 * 0.3
+	saveRate    = 0.1 / (1024.0 * 1024.0)
 )
 
 const (
@@ -215,9 +215,9 @@ func (s *server) GetWeatherNews(ctx context.Context, in *hot.HotsRequest) (*hot.
 
 func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 	var info hot.UseInfo
-	err := db.QueryRow("SELECT times, duration FROM user WHERE uid = ?", uid).Scan(&info.Total, &info.Save)
+	err := db.QueryRow("SELECT times, traffic FROM user WHERE uid = ?", uid).Scan(&info.Total, &info.Save)
 	if err != nil {
-		log.Printf("select weather failed:%v", err)
+		log.Printf("select use info failed:%v", err)
 		return info, err
 	}
 	return info, nil
