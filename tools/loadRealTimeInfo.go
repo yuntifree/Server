@@ -36,19 +36,22 @@ func main() {
 			log.Printf("GetRealTimeInfo failed, aid:%d err:%v\n", i, info)
 			continue
 		}
-		var ainfo apInfo
-		ainfo.aid = i
-		ainfo.online = info.Online
-		if info.Bandwidth != "" {
-			ainfo.bandwidth, err = strconv.ParseFloat(info.Bandwidth, 64)
-			if err != nil {
-				log.Printf("ParseFloat failed:%s %v\n", info.Bandwidth, err)
-				continue
+		if info.Online > 0 {
+			var ainfo apInfo
+			ainfo.aid = i
+			ainfo.online = info.Online
+			if info.Bandwidth != "" {
+				ainfo.bandwidth, err = strconv.ParseFloat(info.Bandwidth, 64)
+				if err != nil {
+					log.Printf("ParseFloat failed:%s %v\n", info.Bandwidth, err)
+					continue
+				}
 			}
+			log.Printf("id:%d online:%d bandwidth:%s\n", i, info.Online, info.Bandwidth)
+			infos = append(infos, ainfo)
 		}
-		infos = append(infos, ainfo)
 	}
-	log.Printf("finish fetch ap realinfo\n")
+	log.Printf("finish fetch ap realinfo size:%d\n", len(infos))
 
 	for i := 0; i < len(infos); i++ {
 		if infos[i].online > 0 {
