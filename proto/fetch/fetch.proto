@@ -135,16 +135,8 @@ message VideoReply {
     int64 total = 3;
 }
 
-message BannerInfo {
-    int64 id = 1;
-    string img = 2;
-    string dst = 3;
-    int32 online = 4;
-    int32 priority = 5;
-}
-
 message BannerReply {
     common.Head head = 1;
-    repeated BannerInfo infos = 2;
+    repeated common.BannerInfo infos = 2;
     int64 total = 3;
 }

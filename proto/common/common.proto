@@ -27,3 +27,11 @@ message WifiInfo {
     double longitude = 4;
     double latitude = 5;
 }
+
+message BannerInfo {
+    int64 id = 1;
+    string img = 2;
+    string dst = 3;
+    int32 online = 4;
+    int32 priority = 5;
+}

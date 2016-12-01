@@ -411,8 +411,8 @@ func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch
 	return &fetch.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
-func getBanners(db *sql.DB, seq, num int32) []*fetch.BannerInfo {
-	var infos []*fetch.BannerInfo
+func getBanners(db *sql.DB, seq, num int32) []*common.BannerInfo {
+	var infos []*common.BannerInfo
 	query := "SELECT id, img, dst, online, priority FROM banner WHERE deleted = 0 ORDER BY priority DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
@@ -423,7 +423,7 @@ func getBanners(db *sql.DB, seq, num int32) []*fetch.BannerInfo {
 	defer rows.Close()
 
 	for rows.Next() {
-		var info fetch.BannerInfo
+		var info common.BannerInfo
 		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
