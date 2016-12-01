@@ -13,10 +13,12 @@ service Modify{
     rpc ReportClick(ClickRequest) returns (CommReply) {}
     rpc ReportApmac(ApmacRequest) returns (CommReply) {}
     rpc AddImage(ImageRequest) returns (CommReply) {}
+    rpc AddBanner(BannerRequest) returns (CommReply) {}
 }
 
 message CommReply {
     common.Head head = 1;
+    int64 id = 2;
 }
 
 message NewsRequest {
@@ -77,5 +79,10 @@ message ApmacRequest {
 message ImageRequest {
     common.Head head = 1;
     string name = 2;
+}
+
+message BannerRequest {
+    common.Head head = 1;
+    common.BannerInfo info = 2;
 }
 

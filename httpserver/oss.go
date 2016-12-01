@@ -527,6 +527,53 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	img := req.GetParamString("img")
+	dst := req.GetParamString("dst")
+	priority := req.GetParamInt("priority")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddBanner(context.Background(),
+		&modify.BannerRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority)}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "id"}, res.Id)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -631,6 +678,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_users", appHandler(getUsers))
 	mux.Handle("/get_templates", appHandler(getTemplates))
 	mux.Handle("/add_template", appHandler(addTemplate))
+	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))
 	mux.Handle("/review_news", appHandler(reviewNews))

@@ -171,6 +171,21 @@ func (s *server) AddImage(ctx context.Context, in *modify.ImageRequest) (*modify
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*modify.CommReply, error) {
+	res, err := db.Exec("INSERT INTO banner(img, dst, priority, ctime) VALUES(?, ?, ?, NOW())",
+		in.Info.Img, in.Info.Dst, in.Info.Priority)
+	if err != nil {
+		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("AddBanner get LastInsertId failed:%v\n", err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {
