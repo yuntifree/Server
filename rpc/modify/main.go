@@ -163,6 +163,14 @@ func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*mod
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
+	_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Name)
+	if err != nil {
+		log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Name, err)
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

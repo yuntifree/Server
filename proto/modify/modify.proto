@@ -12,6 +12,7 @@ service Modify{
     rpc AddWifi(WifiRequest) returns (CommReply) {}
     rpc ReportClick(ClickRequest) returns (CommReply) {}
     rpc ReportApmac(ApmacRequest) returns (CommReply) {}
+    rpc AddImage(ImageRequest) returns (CommReply) {}
 }
 
 message CommReply {
@@ -71,5 +72,10 @@ message ClickRequest {
 message ApmacRequest {
     common.Head head = 1;
     string apmac = 2;
+}
+
+message ImageRequest {
+    common.Head head = 1;
+    string name = 2;
 }
 
