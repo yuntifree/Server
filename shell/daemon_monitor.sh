@@ -53,5 +53,17 @@ function check_rpc()
     done
 }
 
+function check_ssdb()
+{
+    sbase=/usr/local/ssdb/
+    sname=ssdb-server
+    sconf=ssdb.conf
+    if [ -z "$(ps -ef |grep $sbase$sname| grep -v grep)" ]; then
+        err "Server $sbase$sname not running, restart."
+        nohup $sbase$sname -d $sbase$sconf -s restart
+    fi
+}
+
 check_http
 check_rpc
+check_ssdb
