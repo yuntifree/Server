@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -184,6 +185,24 @@ func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*modi
 		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+}
+
+func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*modify.CommReply, error) {
+	query := fmt.Sprintf("UPDATE banner SET priority = %d, online = %d, deleted = %d ",
+		in.Info.Priority, in.Info.Online, in.Info.Deleted)
+	if in.Info.Img != "" {
+		query += ", img = '" + in.Info.Img + "' "
+	}
+	if in.Info.Dst != "" {
+		query += ", dst = '" + in.Info.Dst + "' "
+	}
+	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

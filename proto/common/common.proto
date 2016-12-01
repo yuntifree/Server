@@ -34,4 +34,5 @@ message BannerInfo {
     string dst = 3;
     int32 online = 4;
     int32 priority = 5;
+    int32 deleted = 6;
 }

@@ -609,6 +609,46 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	img := req.GetParamStringDef("img", "")
+	dst := req.GetParamStringDef("dst", "")
+	online := req.GetParamIntDef("online", 0)
+	deleted := req.GetParamIntDef("delete", 0)
+	priority := req.GetParamIntDef("priority", 0)
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.ModBanner(context.Background(),
+		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
+				Online: int32(online), Deleted: int32(deleted)}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "修改Banner失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, true)
 }
@@ -680,6 +720,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/mod_template", appHandler(modTemplate))
+	mux.Handle("/mod_banner", appHandler(modBanner))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))
 	mux.Handle("/review_news", appHandler(reviewNews))
 	mux.Handle("/review_video", appHandler(reviewVideo))
