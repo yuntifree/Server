@@ -128,6 +128,17 @@ func getTotalUsers(db *sql.DB) int64 {
 	return total
 }
 
+func getTotalBanners(db *sql.DB) int64 {
+	query := "SELECT COUNT(id) FROM banner WHERE deleted = 0"
+	var total int64
+	err := db.QueryRow(query).Scan(&total)
+	if err != nil {
+		log.Printf("get total failed:%v", err)
+		return 0
+	}
+	return total
+}
+
 func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
 	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " + genTypeQuery(int32(ctype))
@@ -398,6 +409,37 @@ func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch
 	infos := getVideos(db, int32(in.Seq), in.Num, in.Type)
 	total := getTotalVideos(db, in.Type)
 	return &fetch.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+}
+
+func getBanners(db *sql.DB, seq, num int32) []*fetch.BannerInfo {
+	var infos []*fetch.BannerInfo
+	query := "SELECT id, img, dst, online FROM banner WHERE deleted = 0 ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info fetch.BannerInfo
+		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			return infos
+		}
+		infos = append(infos, &info)
+		log.Printf("id:%d img:%s dst:%s Online:%d ", info.Id, info.Img, info.Dst, info.Online)
+	}
+	return infos
+}
+
+func (s *server) FetchBanners(ctx context.Context, in *fetch.CommRequest) (*fetch.BannerReply, error) {
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	infos := getBanners(db, int32(in.Seq), in.Num)
+	total := getTotalBanners(db)
+	return &fetch.BannerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
 func main() {

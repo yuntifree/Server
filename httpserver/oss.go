@@ -566,6 +566,60 @@ func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, true)
 }
 
+func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	num = genReqNum(num)
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchBanners(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取Banner信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	infos := make([]interface{}, len(res.Infos))
+	for i := 0; i < len(res.Infos); i++ {
+		json, _ := simplejson.NewJson([]byte(`{}`))
+		json.Set("id", res.Infos[i].Id)
+		json.Set("img", res.Infos[i].Img)
+		json.Set("dst", res.Infos[i].Dst)
+		json.Set("online", res.Infos[i].Online)
+		infos[i] = json
+	}
+	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "total"}, res.Total)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 //NewOssServer return oss http handler
 func NewOssServer() http.Handler {
 	mux := http.NewServeMux()
@@ -581,6 +635,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/review_news", appHandler(reviewNews))
 	mux.Handle("/review_video", appHandler(reviewVideo))
 	mux.Handle("/get_videos", appHandler(getVideos))
+	mux.Handle("/get_banners", appHandler(getBanners))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	return mux
 }

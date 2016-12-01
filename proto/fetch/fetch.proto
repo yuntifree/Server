@@ -13,6 +13,7 @@ service Fetch{
     rpc FetchTemplates(CommRequest) returns (TemplateReply) {}
     rpc FetchWifi(WifiRequest) returns (WifiReply) {}
     rpc FetchVideos(CommRequest) returns (VideoReply) {}
+    rpc FetchBanners(CommRequest) returns (BannerReply) {}
 }
 
 message CommRequest {
@@ -131,5 +132,18 @@ message VideoInfo {
 message VideoReply {
     common.Head head = 1;
     repeated VideoInfo infos = 2;
+    int64 total = 3;
+}
+
+message BannerInfo {
+    int64 id = 1;
+    string img = 2;
+    string dst = 3;
+    int32 online = 4;
+}
+
+message BannerReply {
+    common.Head head = 1;
+    repeated BannerInfo infos = 2;
     int64 total = 3;
 }
