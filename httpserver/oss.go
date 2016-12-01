@@ -607,6 +607,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		json.Set("img", res.Infos[i].Img)
 		json.Set("dst", res.Infos[i].Dst)
 		json.Set("online", res.Infos[i].Online)
+		json.Set("priority", res.Infos[i].Priority)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)

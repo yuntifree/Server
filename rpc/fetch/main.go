@@ -413,7 +413,7 @@ func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch
 
 func getBanners(db *sql.DB, seq, num int32) []*fetch.BannerInfo {
 	var infos []*fetch.BannerInfo
-	query := "SELECT id, img, dst, online FROM banner WHERE deleted = 0 ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, img, dst, online, priority FROM banner WHERE deleted = 0 ORDER BY priority DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -424,13 +424,13 @@ func getBanners(db *sql.DB, seq, num int32) []*fetch.BannerInfo {
 
 	for rows.Next() {
 		var info fetch.BannerInfo
-		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online)
+		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%d img:%s dst:%s Online:%d ", info.Id, info.Img, info.Dst, info.Online)
+		log.Printf("id:%d img:%s dst:%s Online:%d priority:%d\n", info.Id, info.Img, info.Dst, info.Online, info.Priority)
 	}
 	return infos
 }

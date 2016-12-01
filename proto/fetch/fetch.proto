@@ -140,6 +140,7 @@ message BannerInfo {
     string img = 2;
     string dst = 3;
     int32 online = 4;
+    int32 priority = 5;
 }
 
 message BannerReply {

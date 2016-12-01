@@ -235,10 +235,12 @@ CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
+    priority    int unsigned NOT NULL DEFAULT 0,
     online  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
-    PRIMARY KEY(id)
+    PRIMARY KEY(id),
+    KEY(priority)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS service_click(
@@ -304,4 +306,20 @@ CREATE TABLE IF NOT EXISTS template (
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     mtime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS image
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(48) NOT NULL,
+    uid     int unsigned NOT NULL,
+    filesize    int unsigned NOT NULL,
+    height      int unsigned NOT NULL,
+    width       int unsigned NOT NULL,
+    status      tinyint unsigned NOT NULL default 0,
+    deleted     tinyint unsigned NOT NULL default 0,
+    ctime       datetime NOT NULL default '0000-00-00 00:00:00',
+    ftime       datetime NOT NULL default '0000-00-00 00:00:00',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
 ) ENGINE = InnoDB;
