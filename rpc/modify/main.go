@@ -165,9 +165,18 @@ func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*mod
 }
 
 func (s *server) AddImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
-	_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Name)
+	_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Info.Name)
 	if err != nil {
-		log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Name, err)
+		log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Info.Name, err)
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
+	_, err := db.Exec("UPDATE image SET size = ?, height = ?, width = ?, ftime = NOW(), status = 1 WHERE name = ?",
+		in.Info.Size, in.Info.Height, in.Info.Width, in.Info.Name)
+	if err != nil {
+		log.Printf("update image failed name:%s err:%v\n", in.Info.Name, err)
 	}
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }

@@ -13,6 +13,7 @@ service Modify{
     rpc ReportClick(ClickRequest) returns (CommReply) {}
     rpc ReportApmac(ApmacRequest) returns (CommReply) {}
     rpc AddImage(ImageRequest) returns (CommReply) {}
+    rpc FinImage(ImageRequest) returns (CommReply) {}
     rpc AddBanner(BannerRequest) returns (CommReply) {}
     rpc ModBanner(BannerRequest) returns (CommReply) {}
 }
@@ -77,9 +78,17 @@ message ApmacRequest {
     string apmac = 2;
 }
 
+message ImageInfo {
+    int64 id = 1;
+    string name = 2;
+    int64 size = 3;
+    int32 height = 4;
+    int32 width = 5;
+}
+
 message ImageRequest {
     common.Head head = 1;
-    string name = 2;
+    ImageInfo info = 2;
 }
 
 message BannerRequest {
