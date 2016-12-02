@@ -219,6 +219,11 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		json.Set("phone", res.Infos[i].Phone)
 		json.Set("active", res.Infos[i].Active)
 		json.Set("remark", res.Infos[i].Remark)
+		json.Set("times", res.Infos[i].Times)
+		json.Set("duration", res.Infos[i].Duration)
+		json.Set("traffic", res.Infos[i].Traffic)
+		json.Set("utime", res.Infos[i].Utime)
+		json.Set("address", res.Infos[i].Address)
 		infos[i] = json
 	}
 	js.SetPath([]string{"data", "infos"}, infos)

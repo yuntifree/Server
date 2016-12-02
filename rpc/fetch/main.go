@@ -320,7 +320,7 @@ func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch
 
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	var infos []*fetch.UserInfo
-	query := "SELECT uid, phone, udid, atime, remark FROM user ORDER BY uid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT uid, phone, udid, atime, remark, times, duration, traffic, aptime, aid FROM user ORDER BY uid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -331,10 +331,18 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 
 	for rows.Next() {
 		var info fetch.UserInfo
-		err = rows.Scan(&info.Id, &info.Phone, &info.Imei, &info.Active, &info.Remark)
+		var aid int
+		err = rows.Scan(&info.Id, &info.Phone, &info.Imei, &info.Active, &info.Remark,
+			&info.Times, &info.Duration, &info.Traffic, &info.Utime, &aid)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
-			return infos
+			continue
+		}
+		if aid != 0 {
+			err := db.QueryRow("SELECT address FROM ap WHERE id = ?", aid).Scan(&info.Address)
+			if err != nil {
+				log.Printf("get ap address failed aid:%d err:%v", aid, err)
+			}
 		}
 		infos = append(infos, &info)
 		log.Printf("uid:%d phone:%s udid:%s active:%s remark:%s", info.Id, info.Phone, info.Imei, info.Active, info.Remark)

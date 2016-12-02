@@ -81,6 +81,11 @@ message UserInfo {
     string imei = 3;
     string active = 4;
     string remark = 5;
+    int64 times = 6;
+    int64 duration = 7;
+    int64 traffic = 8;
+    string address = 9;
+    string utime = 10;
 }
 
 message TemplateInfo {
