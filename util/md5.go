@@ -56,6 +56,6 @@ func Sha1(content string) string {
 //HmacSha1 gen hex sha1 of conten with key
 func HmacSha1(content, key string) string {
 	mac := hmac.New(sha1.New, []byte(key))
-	hash := mac.Sum([]byte(content))
-	return hex.EncodeToString(hash[:])
+	mac.Write([]byte(content))
+	return hex.EncodeToString(mac.Sum(nil))
 }
