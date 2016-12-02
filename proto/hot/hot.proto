@@ -22,8 +22,9 @@ message HotsInfo {
     string dst = 4;
     string ctime = 5;
     int32 stype = 6;
-    int32 seq = 7;
+    int64 seq = 7;
     int64 play = 8;
+    int64 id = 9; 
 }
 
 message HotsReply {

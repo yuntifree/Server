@@ -415,27 +415,8 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.News))
-	for i := 0; i < len(res.News); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.News[i].Seq)
-		json.Set("title", res.News[i].Title)
-		if len(res.News[i].Images) > 0 {
-			json.Set("images", res.News[i].Images)
-		}
-		json.Set("source", res.News[i].Source)
-		json.Set("dst", res.News[i].Dst)
-		json.Set("ctime", res.News[i].Ctime)
-		json.Set("play", res.News[i].Play)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "news"}, infos)
-
-	json, _ := simplejson.NewJson([]byte(`{}`))
-	json.Set("temp", res.Weather.Temp)
-	json.Set("type", res.Weather.Type)
-	json.Set("info", res.Weather.Info)
-	js.SetPath([]string{"data", "weather"}, json)
+	js.SetPath([]string{"data", "news"}, res.News)
+	js.SetPath([]string{"data", "weather"}, res.Weather)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -556,25 +537,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("seq", res.Infos[i].Seq)
-		json.Set("id", res.Infos[i].Seq)
-		json.Set("title", res.Infos[i].Title)
-		if len(res.Infos[i].Images) > 0 {
-			json.Set("images", res.Infos[i].Images)
-		}
-		json.Set("source", res.Infos[i].Source)
-		json.Set("dst", res.Infos[i].Dst)
-		json.Set("ctime", res.Infos[i].Ctime)
-		if res.Infos[i].Stype == 11 {
-			json.Set("stype", 1)
-		}
-		json.Set("play", res.Infos[i].Play)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize {
 		js.SetPath([]string{"data", "hasmore"}, 1)
 	}

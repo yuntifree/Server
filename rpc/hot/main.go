@@ -65,8 +65,10 @@ func getNews(db *sql.DB, seq, num int32, isDgNews bool) []*hot.HotsInfo {
 		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Source, &info.Dst, &info.Ctime, &info.Stype)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
-			return infos
+			continue
 		}
+		info.Id = info.Seq
+		info.Stype = 0
 		var pics [3]string
 		j, k := 0, 0
 		for ; j < 3; j++ {
