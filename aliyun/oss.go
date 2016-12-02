@@ -1,10 +1,15 @@
 package aliyun
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"log"
 	"strings"
+	"time"
 
 	oss "github.com/aliyun/aliyun-oss-go-sdk/oss"
+	simplejson "github.com/bitly/go-simplejson"
 )
 
 const (
@@ -14,6 +19,12 @@ const (
 	yuntiBucket     = "yuntinews"
 	bucketURL       = "http://yuntinews.oss-cn-shenzhen.aliyuncs.com"
 	newsCdnURL      = "http://news.yunxingzh.com"
+	expireInterval  = 15 * 60
+	imgOuterHost    = "http://yuntiimgs.oss-cn-shenzhen.aliyuncs.com"
+	maxImageSize    = 4 * 1024 * 1024
+	ossCbURL        = "http://api.youcaitv.cn/upload_callback"
+	ossCbBody       = "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}"
+	ossCbBodyType   = "application/x-www-form-urlencoded"
 )
 
 //UploadOssFile upload content to aliyun oss
@@ -42,4 +53,51 @@ func UploadOssFile(filename, content string) bool {
 //GenOssNewsURL generate oss news download url
 func GenOssNewsURL(filename string) string {
 	return newsCdnURL + "/" + filename
+}
+
+func getISO8601Time(ts time.Time) string {
+	return ts.Format("2006-01-02T15:04:05Z")
+}
+
+func genPolicy(expire time.Time) string {
+	json, _ := simplejson.NewJson([]byte(`{}`))
+	expireStr := getISO8601Time(expire)
+	var c1 = [3]interface{}{"content-length-range", 0, maxImageSize}
+	var c2 = [3]interface{}{"starts-with", "$key", "/"}
+	var conditions = [2]interface{}{c1, c2}
+	json.Set("expiration", expireStr)
+	json.Set("conditions", conditions)
+	data, _ := json.Encode()
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func genSign(content, key string) string {
+	mac := hmac.New(sha1.New, []byte(key))
+	mac.Write([]byte(content))
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func genCallback() string {
+	json, _ := simplejson.NewJson([]byte(`{}`))
+	json.Set("callbackUrl", ossCbURL)
+	json.Set("callbackBody", ossCbBody)
+	json.Set("callbackBodyType", ossCbBodyType)
+	data, _ := json.Encode()
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+//FillPolicyResp generate upload policy response
+func FillPolicyResp(json *simplejson.Json) {
+	expire := time.Now().Add(expireInterval * time.Second)
+	json.Set("accessid", accessKeyID)
+	json.Set("host", imgOuterHost)
+	policy := genPolicy(expire)
+	json.Set("policy", policy)
+	sign := genSign(policy, accessKeySecret)
+	json.Set("signature", sign)
+	json.Set("dir", "/")
+	json.Set("expire", expire.Unix())
+	callback := genCallback()
+	json.Set("callback", callback)
+	return
 }

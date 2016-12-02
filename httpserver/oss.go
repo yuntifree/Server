@@ -2,8 +2,10 @@ package httpserver
 
 import (
 	"context"
+	"log"
 	"net/http"
 
+	aliyun "../aliyun"
 	common "../proto/common"
 	fetch "../proto/fetch"
 	modify "../proto/modify"
@@ -708,6 +710,56 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	format := req.GetParamString("format")
+	log.Printf("uid:%d format:%s\n", uid, format)
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	fname := util.GenUUID() + "." + format
+	res, err := c.AddImage(context.Background(),
+		&modify.ImageRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &modify.ImageInfo{Name: fname}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加图片失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	data, _ := simplejson.NewJson([]byte(`{}`))
+	aliyun.FillPolicyResp(data)
+	js.Set("errno", 0)
+	js.Set("data", data)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	log.Printf("body:%s\n", body)
+	w.Write(body)
+	return nil
+}
+
 //NewOssServer return oss http handler
 func NewOssServer() http.Handler {
 	mux := http.NewServeMux()
@@ -726,6 +778,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/review_video", appHandler(reviewVideo))
 	mux.Handle("/get_videos", appHandler(getVideos))
 	mux.Handle("/get_banners", appHandler(getBanners))
+	mux.Handle("/get_oss_image_policy", appHandler(getOssImagePolicy))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	return mux
 }
