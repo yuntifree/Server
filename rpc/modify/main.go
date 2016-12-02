@@ -217,6 +217,24 @@ func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*modi
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify.AddTagReply, error) {
+	var ids []int32
+	for i := 0; i < len(in.Tags); i++ {
+		res, err := db.Exec("INSERT INTO tags(content, ctime) VALUES (?, NOW())", in.Tags[i])
+		if err != nil {
+			log.Printf("add tag failed tag:%s err:%v\n", in.Tags[i], err)
+			continue
+		}
+		id, err := res.LastInsertId()
+		if err != nil {
+			log.Printf("get tag insert id failed:%v", err)
+			continue
+		}
+		ids = append(ids, int32(id))
+	}
+	return &modify.AddTagReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Ids: ids}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

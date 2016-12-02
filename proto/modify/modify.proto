@@ -16,6 +16,7 @@ service Modify{
     rpc FinImage(ImageRequest) returns (CommReply) {}
     rpc AddBanner(BannerRequest) returns (CommReply) {}
     rpc ModBanner(BannerRequest) returns (CommReply) {}
+    rpc AddTags(AddTagRequest) returns (AddTagReply) {}
 }
 
 message CommReply {
@@ -101,3 +102,12 @@ message BannerRequest {
     common.BannerInfo info = 2;
 }
 
+message AddTagRequest {
+    common.Head head = 1;
+    repeated string tags = 2;
+}
+
+message AddTagReply {
+    common.Head head = 1;
+    repeated int32 ids = 2;
+}

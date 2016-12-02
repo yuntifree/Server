@@ -581,6 +581,61 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	tags, err := req.Post.Get("data").Get("tags").Array()
+	if err != nil {
+		log.Printf("get tags failed:%v", err)
+		return &util.AppError{util.JSONErr, 2, err.Error()}
+	}
+
+	var cts []string
+	for i := 0; i < len(tags); i++ {
+		tag := tags[i].(string)
+		cts = append(cts, tag)
+	}
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddTags(context.Background(),
+		&modify.AddTagRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Tags: cts})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "ids"}, res.Ids)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -711,6 +766,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
+	log.Printf("getBanners body:%s\n", body)
 	w.Write(body)
 	return nil
 }
@@ -783,6 +839,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_templates", appHandler(getTemplates))
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
+	mux.Handle("/add_tags", appHandler(addTags))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))
