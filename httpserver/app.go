@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -208,6 +209,53 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	}
 
 	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	r.ParseForm()
+	fname := r.Form["filename"]
+	if len(fname) < 1 {
+		log.Printf("parse filename failed\n")
+		w.Write([]byte(`{"Status":"OK"}`))
+		return nil
+	}
+	size := r.Form["size"]
+	fsize, _ := strconv.Atoi(size[0])
+	height := r.Form["height"]
+	fheight, _ := strconv.Atoi(height[0])
+	width := r.Form["width"]
+	fwidth, _ := strconv.Atoi(width[0])
+	log.Printf("upload_callback fname:%s size:%d height:%d width:%d\n", fname, fsize,
+		fheight, fwidth)
+
+	address := getNameServer(0, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FinImage(context.Background(),
+		&modify.ImageRequest{Head: &common.Head{Sid: uuid},
+			Info: &modify.ImageInfo{Name: fname[0], Size: int64(fsize),
+				Height: int32(fheight), Width: int32(fwidth)}})
+	if err != nil {
+		log.Printf("FinImage failed:%v", err)
+	}
+
+	if res.Head.Retcode != 0 {
+		log.Printf("FinImage failed retcode:%d", res.Head.Retcode)
+	}
+
+	w.Write([]byte(`{"Status":"OK"}`))
 	return nil
 }
 
@@ -894,6 +942,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_wifi", appHandler(reportWifi))
 	mux.Handle("/report_click", appHandler(reportClick))
 	mux.Handle("/report_apmac", appHandler(reportApmac))
+	mux.Handle("/upload_callback", appHandler(uploadCallback))
 	mux.Handle("/services", appHandler(getService))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

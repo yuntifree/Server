@@ -173,7 +173,7 @@ func (s *server) AddImage(ctx context.Context, in *modify.ImageRequest) (*modify
 }
 
 func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
-	_, err := db.Exec("UPDATE image SET size = ?, height = ?, width = ?, ftime = NOW(), status = 1 WHERE name = ?",
+	_, err := db.Exec("UPDATE image SET filesize = ?, height = ?, width = ?, ftime = NOW(), status = 1 WHERE name = ?",
 		in.Info.Size, in.Info.Height, in.Info.Width, in.Info.Name)
 	if err != nil {
 		log.Printf("update image failed name:%s err:%v\n", in.Info.Name, err)
