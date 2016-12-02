@@ -719,8 +719,11 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
-	format := req.GetParamString("format")
-	log.Printf("uid:%d format:%s\n", uid, format)
+	formats, err := req.Post.Get("data").Get("formats").Array()
+	if err != nil {
+		log.Printf("get format failed:%v", err)
+		return &util.AppError{util.RPCErr, 2, err.Error()}
+	}
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -730,11 +733,15 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 
+	var names []string
+	for i := 0; i < len(formats); i++ {
+		format, _ := formats[i].(string)
+		fname := util.GenUUID() + "." + format
+		names = append(names, fname)
+	}
 	uuid := util.GenUUID()
-	fname := util.GenUUID() + "." + format
 	res, err := c.AddImage(context.Background(),
-		&modify.ImageRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &modify.ImageInfo{Name: fname}})
+		&modify.AddImageRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Fnames: names})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -748,7 +755,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	}
 	data, _ := simplejson.NewJson([]byte(`{}`))
 	aliyun.FillPolicyResp(data)
-	data.Set("name", fname)
+	data.Set("names", names)
 	js.Set("errno", 0)
 	js.Set("data", data)
 

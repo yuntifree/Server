@@ -12,7 +12,7 @@ service Modify{
     rpc AddWifi(WifiRequest) returns (CommReply) {}
     rpc ReportClick(ClickRequest) returns (CommReply) {}
     rpc ReportApmac(ApmacRequest) returns (CommReply) {}
-    rpc AddImage(ImageRequest) returns (CommReply) {}
+    rpc AddImage(AddImageRequest) returns (CommReply) {}
     rpc FinImage(ImageRequest) returns (CommReply) {}
     rpc AddBanner(BannerRequest) returns (CommReply) {}
     rpc ModBanner(BannerRequest) returns (CommReply) {}
@@ -84,6 +84,11 @@ message ImageInfo {
     int64 size = 3;
     int32 height = 4;
     int32 width = 5;
+}
+
+message AddImageRequest {
+    common.Head head = 1;
+    repeated string fnames = 2;
 }
 
 message ImageRequest {

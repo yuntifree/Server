@@ -164,10 +164,13 @@ func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*mod
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) AddImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
-	_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Info.Name)
-	if err != nil {
-		log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Info.Name, err)
+func (s *server) AddImage(ctx context.Context, in *modify.AddImageRequest) (*modify.CommReply, error) {
+	for i := 0; i < len(in.Fnames); i++ {
+		_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())",
+			in.Head.Uid, in.Fnames[i])
+		if err != nil {
+			log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Fnames[i], err)
+		}
 	}
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
