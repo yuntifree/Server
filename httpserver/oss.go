@@ -103,17 +103,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("title", res.Infos[i].Title)
-		json.Set("ctime", res.Infos[i].Ctime)
-		json.Set("source", res.Infos[i].Source)
-		json.Set("tag", res.Infos[i].Tag)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "news"}, infos)
+	js.SetPath([]string{"data", "news"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -159,14 +149,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("content", res.Infos[i].Content)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "tags"}, infos)
+	js.SetPath([]string{"data", "tags"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -211,22 +194,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("imei", res.Infos[i].Imei)
-		json.Set("phone", res.Infos[i].Phone)
-		json.Set("active", res.Infos[i].Active)
-		json.Set("remark", res.Infos[i].Remark)
-		json.Set("times", res.Infos[i].Times)
-		json.Set("duration", res.Infos[i].Duration)
-		json.Set("traffic", res.Infos[i].Traffic)
-		json.Set("utime", res.Infos[i].Utime)
-		json.Set("address", res.Infos[i].Address)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -357,18 +325,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("address", res.Infos[i].Address)
-		json.Set("mac", res.Infos[i].Mac)
-		json.Set("online", res.Infos[i].Online)
-		json.Set("count", res.Infos[i].Count)
-		json.Set("bandwidth", res.Infos[i].Bandwidth)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -414,19 +371,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("title", res.Infos[i].Title)
-		json.Set("img", res.Infos[i].Img)
-		json.Set("dst", res.Infos[i].Dst)
-		json.Set("ctime", res.Infos[i].Ctime)
-		json.Set("source", res.Infos[i].Source)
-		json.Set("duration", res.Infos[i].Duration)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -471,16 +416,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("title", res.Infos[i].Title)
-		json.Set("online", res.Infos[i].Online)
-		json.Set("content", res.Infos[i].Content)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()
@@ -749,17 +685,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("id", res.Infos[i].Id)
-		json.Set("img", res.Infos[i].Img)
-		json.Set("dst", res.Infos[i].Dst)
-		json.Set("online", res.Infos[i].Online)
-		json.Set("priority", res.Infos[i].Priority)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 	js.SetPath([]string{"data", "total"}, res.Total)
 
 	body, err := js.MarshalJSON()

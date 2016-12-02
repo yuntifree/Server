@@ -162,7 +162,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 			if len(srvs) > 0 {
 				var cateinfo hot.ServiceCategory
 				cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
-				cateinfo.Infos = srvs[:]
+				cateinfo.Items = srvs[:]
 				infos = append(infos, &cateinfo)
 				srvs = srvs[len(srvs):]
 			}
@@ -174,7 +174,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	if len(srvs) > 0 {
 		var cateinfo hot.ServiceCategory
 		cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
-		cateinfo.Infos = srvs[:]
+		cateinfo.Items = srvs[:]
 		infos = append(infos, &cateinfo)
 	}
 

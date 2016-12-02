@@ -44,7 +44,7 @@ message ServiceInfo {
 message ServiceCategory {
     string title = 1;
     string icon = 2;
-    repeated ServiceInfo infos = 3;
+    repeated ServiceInfo items = 3;
 }
 
 message ServiceReply {

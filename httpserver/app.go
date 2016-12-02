@@ -326,17 +326,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	infos := make([]interface{}, len(res.Infos))
-	for i := 0; i < len(res.Infos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("ssid", res.Infos[i].Ssid)
-		json.Set("username", res.Infos[i].Username)
-		json.Set("password", res.Infos[i].Password)
-		json.Set("longitude", res.Infos[i].Longitude)
-		json.Set("latitude", res.Infos[i].Latitude)
-		infos[i] = json
-	}
-	js.SetPath([]string{"data", "infos"}, infos)
+	js.SetPath([]string{"data", "infos"}, res.Infos)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -377,20 +367,8 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	{
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("total", res.Uinfo.Total)
-		json.Set("save", res.Uinfo.Save)
-		js.SetPath([]string{"data", "user"}, json)
-	}
-	binfos := make([]interface{}, len(res.Binfos))
-	for i := 0; i < len(res.Binfos); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("img", res.Binfos[i].Img)
-		json.Set("dst", res.Binfos[i].Dst)
-		binfos[i] = json
-	}
-	js.SetPath([]string{"data", "banner"}, binfos)
+	js.SetPath([]string{"data", "user"}, res.Uinfo)
+	js.SetPath([]string{"data", "banner"}, res.Binfos)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -695,23 +673,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "init json failed"}
 	}
-	services := make([]interface{}, len(res.Services))
-	for i := 0; i < len(res.Services); i++ {
-		json, _ := simplejson.NewJson([]byte(`{}`))
-		json.Set("title", res.Services[i].Title)
-		json.Set("icon", res.Services[i].Icon)
-		items := make([]interface{}, len(res.Services[i].Infos))
-		for j := 0; j < len(res.Services[i].Infos); j++ {
-			in, _ := simplejson.NewJson([]byte(`{}`))
-			in.Set("title", res.Services[i].Infos[j].Title)
-			in.Set("dst", res.Services[i].Infos[j].Dst)
-			in.Set("sid", res.Services[i].Infos[j].Sid)
-			items[j] = in
-		}
-		json.Set("items", items)
-		services[i] = json
-	}
-	js.SetPath([]string{"data", "services"}, services)
+	js.SetPath([]string{"data", "services"}, res.Services)
 	body, err := js.MarshalJSON()
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
