@@ -748,6 +748,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	}
 	data, _ := simplejson.NewJson([]byte(`{}`))
 	aliyun.FillPolicyResp(data)
+	data.Set("name", fname)
 	js.Set("errno", 0)
 	js.Set("data", data)
 
