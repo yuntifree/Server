@@ -22,7 +22,7 @@ const (
 	expireInterval  = 15 * 60
 	imgOuterHost    = "http://yuntiimgs.oss-cn-shenzhen.aliyuncs.com"
 	maxImageSize    = 4 * 1024 * 1024
-	ossCbURL        = "http://api.youcaitv.cn/upload_callback"
+	ossCbURL        = "http://api.yunxingzh.com/upload_callback"
 	ossCbBody       = "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}"
 	ossCbBodyType   = "application/x-www-form-urlencoded"
 )
@@ -63,7 +63,7 @@ func genPolicy(expire time.Time) string {
 	json, _ := simplejson.NewJson([]byte(`{}`))
 	expireStr := getISO8601Time(expire)
 	var c1 = [3]interface{}{"content-length-range", 0, maxImageSize}
-	var c2 = [3]interface{}{"starts-with", "$key", "/"}
+	var c2 = [3]interface{}{"starts-with", "$key", ""}
 	var conditions = [2]interface{}{c1, c2}
 	json.Set("expiration", expireStr)
 	json.Set("conditions", conditions)
@@ -95,7 +95,7 @@ func FillPolicyResp(json *simplejson.Json) {
 	json.Set("policy", policy)
 	sign := genSign(policy, accessKeySecret)
 	json.Set("signature", sign)
-	json.Set("dir", "/")
+	json.Set("dir", "")
 	json.Set("expire", expire.Unix())
 	callback := genCallback()
 	json.Set("callback", callback)
