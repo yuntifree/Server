@@ -235,6 +235,27 @@ func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify
 	return &modify.AddTagReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Ids: ids}, nil
 }
 
+func genIDStr(ids []int64) string {
+	var str string
+	for i := 0; i < len(ids); i++ {
+		str += strconv.Itoa(int(ids[i]))
+		if i < len(ids)-1 {
+			str += ","
+		}
+	}
+	return str
+}
+
+func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*modify.CommReply, error) {
+	str := genIDStr(in.Ids)
+	query := "UPDATE tags SET deleted = 1 WHERE id IN (" + str + ")"
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("DelTags failed:%v", err)
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

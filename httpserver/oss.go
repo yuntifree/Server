@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -572,6 +573,51 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	tags, err := req.Post.Get("data").Get("ids").Array()
+	if err != nil {
+		log.Printf("get tags failed:%v", err)
+		return &util.AppError{util.JSONErr, 2, err.Error()}
+	}
+
+	var cts []int64
+	for i := 0; i < len(tags); i++ {
+		tag, _ := tags[i].(json.Number).Int64()
+		cts = append(cts, tag)
+	}
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.DelTags(context.Background(),
+		&modify.DelTagRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Ids:  cts})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "删除标签失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -766,6 +812,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/add_tags", appHandler(addTags))
+	mux.Handle("/del_tags", appHandler(delTags))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))
