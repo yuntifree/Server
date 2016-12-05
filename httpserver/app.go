@@ -378,6 +378,63 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+	ssids, err := req.Post.Get("data").Get("ssids").Array()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 2, err.Error()}
+	}
+	var ids []string
+	for i := 0; i < len(ssids); i++ {
+		ssid := ssids[i].(string)
+		ids = append(ids, ssid)
+	}
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchWifiPass(context.Background(),
+		&fetch.WifiPassRequest{
+			Head:      &common.Head{Sid: uuid, Uid: uid},
+			Longitude: longitude,
+			Latitude:  latitude,
+			Ssids:     ids})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取Wifi密码失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "wifipass"}, res.Wifis)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -861,6 +918,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/hot", appHandler(getHot))
 	mux.Handle("/get_weather_news", appHandler(getWeatherNews))
 	mux.Handle("/get_front_info", appHandler(getFrontInfo))
+	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
 	mux.Handle("/auto_login", appHandler(autoLogin))
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))

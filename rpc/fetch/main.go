@@ -450,6 +450,42 @@ func (s *server) FetchBanners(ctx context.Context, in *fetch.CommRequest) (*fetc
 	return &fetch.BannerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
+func genSsidStr(ssids []string) string {
+	var str string
+	for i := 0; i < len(ssids); i++ {
+		str += ssids[i]
+		if i < len(ssids)-1 {
+			str += ","
+		}
+	}
+	return str
+}
+
+func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (*fetch.WifiPassReply, error) {
+	log.Printf("FetchWifiPass request uid:%d, longitude:%f latitude:%f", in.Head.Uid, in.Longitude, in.Latitude)
+	ssids := genSsidStr(in.Ssids)
+	rows, err := db.Query("SELECT ssid, password FROM wifi WHERE longitude > ? - 0.01 AND longitude < ? + 0.01 AND latitude > ? - 0.01 AND latitude < ? + 0.01 AND ssid IN (?) AND deleted = 0",
+		in.Longitude, in.Longitude, in.Latitude, in.Latitude, ssids)
+	if err != nil {
+		log.Printf("FetchWifiPass query failed:%v", err)
+		return &fetch.WifiPassReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	defer rows.Close()
+
+	var wifis []*fetch.WifiPass
+	for rows.Next() {
+		var info fetch.WifiPass
+		err := rows.Scan(&info.Ssid, &info.Pass)
+		if err != nil {
+			log.Printf("FetchWifiPass scan failed:%v", err)
+			continue
+		}
+		wifis = append(wifis, &info)
+	}
+
+	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifis: wifis}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

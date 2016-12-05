@@ -14,6 +14,7 @@ service Fetch{
     rpc FetchWifi(WifiRequest) returns (WifiReply) {}
     rpc FetchVideos(CommRequest) returns (VideoReply) {}
     rpc FetchBanners(CommRequest) returns (BannerReply) {}
+    rpc FetchWifiPass(WifiPassRequest) returns (WifiPassReply) {}
 }
 
 message CommRequest {
@@ -144,4 +145,21 @@ message BannerReply {
     common.Head head = 1;
     repeated common.BannerInfo infos = 2;
     int64 total = 3;
+}
+
+message WifiPassRequest {
+    common.Head head = 1;
+    double longitude = 2;
+    double latitude = 3;
+    repeated string ssids = 4;
+}
+
+message WifiPass {
+    string ssid = 1;
+    string pass = 2;
+}
+
+message WifiPassReply {
+    common.Head head = 1;
+    repeated WifiPass wifis = 2;
 }
