@@ -85,7 +85,7 @@ func getTotalVideos(db *sql.DB, ctype int32) int64 {
 }
 
 func getTotalTags(db *sql.DB) int64 {
-	query := "SELECT COUNT(id) FROM tags "
+	query := "SELECT COUNT(id) FROM tags WHERE deleted = 0"
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*f
 
 func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 	var infos []*fetch.TagInfo
-	query := "SELECT id, content FROM tags ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, content FROM tags WHERE deleted = 0 ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
