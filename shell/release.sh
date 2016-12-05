@@ -62,7 +62,7 @@ function install_rpc()
     rm -f $1 
 }
 
-IPLIST="10.27.178.90"
+IPLIST="10.27.178.90 10.27.168.11"
 
 if [ $# -lt 2 ]; then
     echo "not enough param"
