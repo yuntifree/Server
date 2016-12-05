@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc"
 
@@ -20,11 +21,10 @@ import (
 )
 
 const (
-	discoverAddress = "localhost:50054"
-	hotNewsKey      = "hot:news"
-	hotVideoKey     = "hot:video"
-	hotWeatherKey   = "hot:weather"
-	expireInterval  = 300
+	hotNewsKey     = "hot:news"
+	hotVideoKey    = "hot:video"
+	hotWeatherKey  = "hot:weather"
+	expireInterval = 300
 )
 
 type request struct {
@@ -207,19 +207,31 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 }
 
 func getDiscoverAddress() string {
-	return discoverAddress
+	ip := util.GetInnerIP()
+	if ip != util.DebugHost {
+		hosts := strings.Split(util.APIHosts, ",")
+		if len(hosts) > 0 {
+			idx := util.Randn(int32(len(hosts)))
+			return hosts[idx] + util.DiscoverServerPort
+		}
+	}
+	return "localhost" + util.DiscoverServerPort
 }
 
 func getNameServer(uid int64, name string) string {
 	address := getDiscoverAddress()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("did not connect %s: %v", discoverAddress, err)
+		log.Printf("did not connect %s: %v", address, err)
 		panic(util.AppError{util.RPCErr, 4, err.Error()})
 	}
 	defer conn.Close()
 	c := discover.NewDiscoverClient(conn)
 
+	ip := util.GetInnerIP()
+	if ip == util.DebugHost {
+		name += ":debug"
+	}
 	uuid := util.GenUUID()
 	res, err := c.Resolve(context.Background(), &discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
 	if err != nil {

@@ -32,6 +32,9 @@ func InitRedis() *redis.Client {
 func Report(client *redis.Client, name, port string) {
 	ip := GetInnerIP()
 	addr := ip + port
+	if ip == DebugHost {
+		name += ":debug"
+	}
 	ts := time.Now().Unix()
 	client.ZAdd(name, redis.Z{Member: addr, Score: float64(ts)})
 	client.ZRemRangeByScore(name, "0", strconv.Itoa(int(ts-20)))
