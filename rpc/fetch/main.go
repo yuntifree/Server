@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -12,9 +13,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	aliyun "../../aliyun"
 	common "../../proto/common"
 	fetch "../../proto/fetch"
 	util "../../util"
+	simplejson "github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -488,6 +491,27 @@ func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (
 	}
 
 	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifis: wifis}, nil
+}
+
+func (s *server) FetchStsCredentials(ctx context.Context, in *fetch.CommRequest) (*fetch.StsReply, error) {
+	res := aliyun.FetchStsCredentials()
+	log.Printf("FetchStsCredentials resp:%s", res)
+	if res == "" {
+		return &fetch.StsReply{Head: &common.Head{Retcode: 1}}, errors.New("fetch sts failed")
+	}
+	js, err := simplejson.NewJson([]byte(res))
+	if err != nil {
+		log.Printf("FetchStsCredentials parse resp failed:%v", err)
+		return &fetch.StsReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	credential := js.Get("Credentials")
+	var cred fetch.StsCredential
+	cred.Accesskeysecret, _ = credential.Get("AccessKeySecret").String()
+	cred.Accesskeyid, _ = credential.Get("AccessKeyId").String()
+	cred.Expiration, _ = credential.Get("Expiration").String()
+	cred.Securitytoken, _ = credential.Get("SecurityToken").String()
+	return &fetch.StsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Credential: &cred}, nil
 }
 
 func main() {

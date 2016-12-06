@@ -15,6 +15,7 @@ service Fetch{
     rpc FetchVideos(CommRequest) returns (VideoReply) {}
     rpc FetchBanners(CommRequest) returns (BannerReply) {}
     rpc FetchWifiPass(WifiPassRequest) returns (WifiPassReply) {}
+    rpc FetchStsCredentials(CommRequest) returns (StsReply) {}
 }
 
 message CommRequest {
@@ -162,4 +163,16 @@ message WifiPass {
 message WifiPassReply {
     common.Head head = 1;
     repeated WifiPass wifis = 2;
+}
+
+message StsCredential {
+    string accesskeysecret = 1;
+    string accesskeyid = 2;
+    string expiration = 3;
+    string securitytoken = 4;
+}
+
+message StsReply {
+    common.Head head = 1;
+    StsCredential credential = 2;
 }
