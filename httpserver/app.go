@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	aliyun "../aliyun"
+	pay "../pay"
 	common "../proto/common"
 	fetch "../proto/fetch"
 	hot "../proto/hot"
@@ -18,6 +20,7 @@ import (
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
+	pingpp "github.com/pingplusplus/pingpp-go/pingpp"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -214,6 +217,25 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
+	return nil
+}
+
+func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	amount := req.GetParamInt("amount")
+	channel := req.GetParamString("channel")
+	log.Printf("pingppPay uid:%d amount:%d channel:%s", uid, amount, channel)
+
+	res := pay.GetPingPPCharge(int(amount), channel)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(res))
 	return nil
 }
 
@@ -990,6 +1012,30 @@ func getJsapiSign(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func pingppWebhook(w http.ResponseWriter, r *http.Request) {
+	if strings.ToUpper(r.Method) == "POST" {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		webhook, err := pingpp.ParseWebhooks(buf.Bytes())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "fail")
+			return
+		}
+		fmt.Println(webhook.Type)
+		if webhook.Type == "charge.succeeded" {
+			//TODO for charge success
+			w.WriteHeader(http.StatusOK)
+		} else if webhook.Type == "refund.succeeded" {
+			//TODO for refund success
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+	return
+}
+
 //NewAppServer return app http handler
 func NewAppServer() http.Handler {
 	mux := http.NewServeMux()
@@ -1010,10 +1056,12 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_apmac", appHandler(reportApmac))
 	mux.Handle("/upload_callback", appHandler(uploadCallback))
 	mux.Handle("/apply_image_upload", appHandler(applyImageUpload))
+	mux.Handle("/pingpp_pay", appHandler(pingppPay))
 	mux.Handle("/services", appHandler(getService))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
+	mux.HandleFunc("/pingpp_webhook", pingppWebhook)
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux
 }
