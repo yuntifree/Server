@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +16,7 @@ import (
 	common "../proto/common"
 	discover "../proto/discover"
 	fetch "../proto/fetch"
+	modify "../proto/modify"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -255,4 +257,25 @@ func rspGzip(w http.ResponseWriter, body []byte) {
 	gw.Write(body)
 	gw.Close()
 	w.Write(buf.Bytes())
+}
+
+func addImages(uid int64, names []string) error {
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddImage(context.Background(),
+		&modify.AddImageRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Fnames: names})
+	if err != nil {
+		return err
+	}
+	if res.Head.Retcode != 0 {
+		return errors.New("添加图片失败")
+	}
+	return nil
 }

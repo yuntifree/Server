@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	aliyun "../aliyun"
 	common "../proto/common"
 	fetch "../proto/fetch"
 	hot "../proto/hot"
@@ -175,6 +176,44 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	}
 
 	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	format := req.GetParamString("format")
+
+	fname := util.GenUUID() + "." + format
+	var names = []string{fname}
+	err := addImages(uid, names)
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, err.Error()}
+	}
+	data, err := simplejson.NewJson([]byte(`{}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, err.Error()}
+	}
+	aliyun.FillCallbackInfo(data)
+	data.Set("name", fname)
+	js.Set("data", data)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
 	return nil
 }
 
@@ -970,6 +1009,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_click", appHandler(reportClick))
 	mux.Handle("/report_apmac", appHandler(reportApmac))
 	mux.Handle("/upload_callback", appHandler(uploadCallback))
+	mux.Handle("/apply_image_upload", appHandler(applyImageUpload))
 	mux.Handle("/services", appHandler(getService))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

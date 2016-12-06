@@ -22,6 +22,7 @@ const (
 	expireInterval  = 15 * 60
 	imgOuterHost    = "http://yuntiimgs.oss-cn-shenzhen.aliyuncs.com"
 	maxImageSize    = 4 * 1024 * 1024
+	imageBucket     = "yuntiimgs"
 	ossCbURL        = "http://api.yunxingzh.com/upload_callback"
 	ossCbBody       = "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}"
 	ossCbBodyType   = "application/x-www-form-urlencoded"
@@ -100,4 +101,11 @@ func FillPolicyResp(json *simplejson.Json) {
 	callback := genCallback()
 	json.Set("callback", callback)
 	return
+}
+
+//FillCallbackInfo for apply_image_upload fill callback info
+func FillCallbackInfo(js *simplejson.Json) {
+	js.Set("bucket", imageBucket)
+	js.Set("callbackurl", ossCbURL)
+	js.Set("callbackbody", ossCbBody)
 }

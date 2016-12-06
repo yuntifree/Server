@@ -758,28 +758,15 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 		return &util.AppError{util.RPCErr, 2, err.Error()}
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	var names []string
 	for i := 0; i < len(formats); i++ {
 		format, _ := formats[i].(string)
 		fname := util.GenUUID() + "." + format
 		names = append(names, fname)
 	}
-	uuid := util.GenUUID()
-	res, err := c.AddImage(context.Background(),
-		&modify.AddImageRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Fnames: names})
+	err = addImages(uid, names)
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加图片失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
