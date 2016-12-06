@@ -56,14 +56,20 @@ message VerifyReply {
     bool result = 2;
 }
 
+message ClientInfo {
+    string model = 1;
+    string udid = 2;
+    string channel = 3;
+    string regip = 4;
+    int32 version = 5;
+    int32 term = 6;
+}
+
 message RegisterRequest {
     common.Head head = 1;
     string username = 2;
     string password = 3;
-    string model = 5;
-    string udid = 6;
-    string channel = 7;
-    string regip = 8;
+    ClientInfo client = 4;
 }
 
 message RegisterReply {

@@ -828,8 +828,11 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	udid := req.GetParamString("udid")
 	model := req.GetParamString("model")
 	channel := req.GetParamString("channel")
+	version := req.GetParamInt("version")
+	term := req.GetParamInt("term")
 	regip := extractIP(r.RemoteAddr)
-	log.Printf("register request username:%s password:%s udid:%s model:%s channel:%s", username, password, udid, model, channel)
+	log.Printf("register request username:%s password:%s udid:%s model:%s channel:%s version:%d term:%d",
+		username, password, udid, model, channel, version, term)
 
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -840,7 +843,10 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Register(context.Background(), &verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Udid: udid, Model: model, Channel: channel, Regip: regip})
+	res, err := c.Register(context.Background(),
+		&verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password,
+			Client: &verify.ClientInfo{Udid: udid, Model: model, Channel: channel, Regip: regip,
+				Version: int32(version), Term: int32(term)}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}

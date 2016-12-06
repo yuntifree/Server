@@ -217,7 +217,11 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
-	res, err := db.Exec("INSERT IGNORE INTO user (username, password, salt, token, private, model, udid, channel, reg_ip, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY))", in.Username, epass, salt, token, privdata, in.Model, in.Udid, in.Channel, in.Regip)
+	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, token, private, model, udid,
+	channel, reg_ip, version, term, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
+	DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+		in.Username, epass, salt, token, privdata, in.Client.Model, in.Client.Udid, in.Client.Channel,
+		in.Client.Regip, in.Client.Version, in.Client.Term)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -237,7 +241,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 		log.Printf("scan uid:%d \n", uid)
-		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, privdata, epass, salt, in.Model, in.Udid, uid)
+		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+			token, privdata, epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version, in.Client.Term,
+			uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
