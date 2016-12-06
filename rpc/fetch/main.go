@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -453,7 +454,7 @@ func (s *server) FetchBanners(ctx context.Context, in *fetch.CommRequest) (*fetc
 func genSsidStr(ssids []string) string {
 	var str string
 	for i := 0; i < len(ssids); i++ {
-		str += ssids[i]
+		str += "'" + ssids[i] + "'"
 		if i < len(ssids)-1 {
 			str += ","
 		}
@@ -462,10 +463,13 @@ func genSsidStr(ssids []string) string {
 }
 
 func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (*fetch.WifiPassReply, error) {
-	log.Printf("FetchWifiPass request uid:%d, longitude:%f latitude:%f", in.Head.Uid, in.Longitude, in.Latitude)
+	log.Printf("FetchWifiPass request uid:%d, longitude:%f latitude:%f ssid:%v",
+		in.Head.Uid, in.Longitude, in.Latitude, in.Ssids)
 	ssids := genSsidStr(in.Ssids)
-	rows, err := db.Query("SELECT ssid, password FROM wifi WHERE longitude > ? - 0.01 AND longitude < ? + 0.01 AND latitude > ? - 0.01 AND latitude < ? + 0.01 AND ssid IN (?) AND deleted = 0",
+	query := fmt.Sprintf("SELECT ssid, password FROM wifi WHERE longitude > %f - 0.01 AND longitude < %f + 0.01 AND latitude > %f - 0.01 AND latitude < %f + 0.01 AND ssid IN (%s) AND deleted = 0",
 		in.Longitude, in.Longitude, in.Latitude, in.Latitude, ssids)
+	log.Printf("FetchWifiPass query:%s", query)
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("FetchWifiPass query failed:%v", err)
 		return &fetch.WifiPassReply{Head: &common.Head{Retcode: 1}}, nil

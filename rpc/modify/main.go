@@ -73,7 +73,8 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*m
 }
 
 func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.CommReply, error) {
-	_, err := db.Exec("INSERT INTO wifi(ssid, username, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?,?, NOW())", in.Info.Ssid, in.Info.Username, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
+	_, err := db.Exec("INSERT INTO wifi(ssid, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?, NOW())",
+		in.Info.Ssid, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
