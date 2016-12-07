@@ -84,7 +84,7 @@ func buildMipush(info *push.PushInfo) string {
 }
 
 func (s *server) Push(ctx context.Context, in *push.PushRequest) (*push.PushReply, error) {
-	log.Printf("resolve request uid:%d", in.Head.Uid)
+	log.Printf("push request uid:%d target:%s type:%d", in.Head.Uid, in.Info.Target, in.Info.PushType)
 	auth := genAuthStr(in.Info.TermType)
 	post := buildMipush(in.Info)
 	host := genHost(in.Info.PushType)

@@ -574,7 +574,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func sendAlias(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
 			apperr = extractError(r)
@@ -587,6 +587,7 @@ func sendAlias(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	content := req.GetParamString("content")
 	target := req.GetParamString("target")
 	term := req.GetParamInt("term")
+	pushtype := req.GetParamInt("pushtype")
 
 	address := getNameServer(uid, util.PushServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -600,7 +601,8 @@ func sendAlias(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.Push(context.Background(),
 		&push.PushRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &push.PushInfo{Target: target, TermType: int32(term), Desc: desc, Content: content}})
+			Info: &push.PushInfo{PushType: int32(pushtype), Target: target, TermType: int32(term),
+				Desc: desc, Content: content}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -838,7 +840,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/add_tags", appHandler(addTags))
-	mux.Handle("/send_alias", appHandler(sendAlias))
+	mux.Handle("/send_mipush", appHandler(sendMipush))
 	mux.Handle("/del_tags", appHandler(delTags))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
