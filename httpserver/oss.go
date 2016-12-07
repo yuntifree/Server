@@ -10,6 +10,7 @@ import (
 	common "../proto/common"
 	fetch "../proto/fetch"
 	modify "../proto/modify"
+	push "../proto/push"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -573,6 +574,44 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func sendAlias(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr = extractError(r)
+		}
+	}()
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	desc := req.GetParamString("desc")
+	content := req.GetParamString("content")
+	target := req.GetParamString("target")
+	term := req.GetParamInt("term")
+
+	address := getNameServer(uid, util.PushServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := push.NewPushClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.Push(context.Background(),
+		&push.PushRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &push.PushInfo{Target: target, TermType: int32(term), Desc: desc, Content: content}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "发送push消息失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -799,6 +838,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/add_tags", appHandler(addTags))
+	mux.Handle("/send_alias", appHandler(sendAlias))
 	mux.Handle("/del_tags", appHandler(delTags))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
