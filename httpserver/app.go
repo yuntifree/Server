@@ -25,6 +25,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	wxHost = "http://wx.yunxingzh.com/"
+)
+
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -930,7 +934,7 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	var echostr string
 	if len(file) > 0 {
 		echostr = file[0]
-		echostr = "http://wx.youcaitv.cn/" + echostr
+		echostr = wxHost + echostr
 	}
 	ck, err := r.Cookie("UNION")
 	if err == nil {
@@ -961,7 +965,7 @@ func jump(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 		return
 	}
-	redirect := "http://wx.youcaitv.cn/wx_mp_login"
+	redirect := wxHost + "wx_mp_login"
 	redirect += "?echostr=" + echostr
 	dst := util.GenRedirectURL(redirect)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
