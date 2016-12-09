@@ -777,6 +777,12 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
+	resp, err := getRspFromSSDB(hotServiceKey)
+	if err == nil {
+		log.Printf("getRspFromSSDB succ key:%s\n", hotServiceKey)
+		rspGzip(w, []byte(resp))
+		return nil
+	}
 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -806,7 +812,9 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
-	w.Write(body)
+	rspGzip(w, body)
+	data := js.Get("data")
+	setSSDBCache(hotServiceKey, data)
 	return nil
 }
 

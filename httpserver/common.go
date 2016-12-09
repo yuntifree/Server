@@ -26,6 +26,7 @@ const (
 	hotNewsKey     = "hot:news"
 	hotVideoKey    = "hot:video"
 	hotWeatherKey  = "hot:weather"
+	hotServiceKey  = "hot:service"
 	expireInterval = 300
 )
 
