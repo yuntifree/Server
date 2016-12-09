@@ -17,6 +17,8 @@ import (
 
 type server struct{}
 
+var kv *redis.Client
+
 //Server server ip and port
 type Server struct {
 	host string
@@ -41,8 +43,7 @@ func parseServer(name string) (Server, error) {
 }
 
 func fetchServers(name string) []string {
-	client := util.InitRedis()
-	vals, err := client.ZRangeByScore(name, redis.ZRangeBy{Min: "-inf", Max: "+inf", Offset: 0, Count: 10}).Result()
+	vals, err := kv.ZRangeByScore(name, redis.ZRangeBy{Min: "-inf", Max: "+inf", Offset: 0, Count: 10}).Result()
 	if err != nil {
 		log.Printf("zrangebyscore failed %s:%v", name, err)
 		return nil
@@ -77,7 +78,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	kv := util.InitRedis()
+	kv = util.InitRedis()
 	go util.ReportHandler(kv, util.DiscoverServerName, util.DiscoverServerPort)
 
 	s := grpc.NewServer()
