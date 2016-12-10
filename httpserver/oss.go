@@ -27,11 +27,6 @@ func genReqNum(num int64) int64 {
 }
 
 func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	username := req.GetParamString("username")
@@ -71,11 +66,6 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -117,12 +107,6 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
-
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -163,11 +147,6 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -208,11 +187,6 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -246,11 +220,6 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -294,11 +263,6 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -339,11 +303,6 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -385,11 +344,6 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -430,11 +384,6 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -473,11 +422,6 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -520,11 +464,6 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -575,11 +514,6 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -615,11 +549,6 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -660,11 +589,6 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -695,11 +619,6 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -739,11 +658,6 @@ func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
@@ -785,11 +699,6 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")

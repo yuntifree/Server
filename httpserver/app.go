@@ -30,11 +30,6 @@ const (
 )
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	username := req.GetParamString("username")
@@ -118,11 +113,6 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	uid := req.GetParamInt("uid")
@@ -151,11 +141,6 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -187,11 +172,6 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -225,11 +205,6 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 }
 
 func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -244,11 +219,6 @@ func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -278,11 +248,6 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	r.ParseForm()
 	fname := r.Form["filename"]
 	if len(fname) < 1 {
@@ -325,11 +290,6 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 }
 
 func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -359,11 +319,6 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -402,11 +357,6 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -444,11 +394,6 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -501,11 +446,6 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -544,11 +484,6 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -658,11 +593,6 @@ func setSSDBCache(key string, data *simplejson.Json) {
 }
 
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -721,11 +651,6 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	uid := req.GetParamInt("uid")
@@ -769,11 +694,6 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -828,11 +748,6 @@ func extractIP(addr string) string {
 }
 
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	username := req.GetParamString("username")
@@ -888,11 +803,6 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func wxMpLogin(w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		if r := recover(); r != nil {
-		}
-	}()
-
 	r.ParseForm()
 	code := r.Form["code"]
 	if len(code) == 0 {

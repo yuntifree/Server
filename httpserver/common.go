@@ -105,26 +105,36 @@ func extractError(r interface{}) *util.AppError {
 	return nil
 }
 
+func handleError(w http.ResponseWriter, e *util.AppError) {
+	log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
+
+	js, _ := simplejson.NewJson([]byte(`{}`))
+	js.Set("errno", e.Code)
+	if e.Code < 100 {
+		js.Set("desc", "服务器又傲娇了~")
+	} else {
+		js.Set("desc", e.Msg)
+	}
+	body, err := js.MarshalJSON()
+	if err != nil {
+		log.Printf("MarshalJSON failed: %v", err)
+		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		return
+	}
+	w.Write(body)
+}
+
 type appHandler func(http.ResponseWriter, *http.Request) *util.AppError
 
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			apperr := extractError(r)
+			handleError(w, apperr)
+		}
+	}()
 	if e := fn(w, r); e != nil {
-		log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
-
-		js, _ := simplejson.NewJson([]byte(`{}`))
-		js.Set("errno", e.Code)
-		if e.Code < 100 {
-			js.Set("desc", "服务器又傲娇了~")
-		} else {
-			js.Set("desc", e.Msg)
-		}
-		body, err := js.MarshalJSON()
-		if err != nil {
-			log.Printf("MarshalJSON failed: %v", err)
-			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
-			return
-		}
-		w.Write(body)
+		handleError(w, e)
 	}
 }
 
