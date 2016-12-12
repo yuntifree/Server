@@ -19,6 +19,8 @@ service Modify{
     rpc AddTags(AddTagRequest) returns (AddTagReply) {}
     rpc DelTags(DelTagRequest) returns (CommReply) {}
     rpc AddAddress(AddressRequest) returns (CommReply) {}
+    rpc DelAddress(AddressRequest) returns (CommReply) {}
+    rpc ModAddress(AddressRequest) returns (CommReply) {}
 }
 
 message CommReply {
@@ -123,3 +125,4 @@ message AddressRequest {
     common.Head head = 1;
     common.AddressInfo info = 2;
 }
+

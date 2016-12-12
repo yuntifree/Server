@@ -281,6 +281,29 @@ func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*mo
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
+func (s *server) ModAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+	log.Printf("ModAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
+	_, err := db.Exec("UPDATE address SET consignee = ?, phone = ?, province = ?, city = ?, district = ?, detail = ?, zip = ?, addr = ? WHERE uid = ? AND aid = ?",
+		in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
+		in.Info.Detail, in.Info.Zip, in.Info.Addr, in.Head.Uid, in.Info.Aid)
+	if err != nil {
+		log.Printf("modify address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+	log.Printf("DelAddress uid:%d aid:%d", in.Head.Uid, in.Info.Aid)
+	_, err := db.Exec("UPDATE address SET deleted = 1 WHERE uid = ? AND aid = ?",
+		in.Head.Uid, in.Info.Aid)
+	if err != nil {
+		log.Printf("del address failed uid:%d aid:%d err:%v\n", in.Head.Uid, in.Info.Aid, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

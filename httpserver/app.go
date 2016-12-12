@@ -224,6 +224,79 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	aid := req.GetParamInt("aid")
+	province := req.GetParamInt("province")
+	city := req.GetParamInt("city")
+	zone := req.GetParamInt("zone")
+	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
+		return &util.AppError{util.JSONErr, 2, "illegal zipcode"}
+	}
+	zip := req.GetParamInt("zip")
+	detail := req.GetParamString("detail")
+	mobile := req.GetParamString("mobile")
+	user := req.GetParamString("user")
+	addr := req.GetParamString("addr")
+	def := req.GetParamBoolDef("def", false)
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.ModAddress(context.Background(),
+		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.AddressInfo{Aid: aid, Province: province, City: city, Zone: zone,
+				Zip: zip, Addr: addr, Detail: detail, Def: def, User: user, Mobile: mobile}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "ModAddress failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	aid := req.GetParamInt("aid")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.DelAddress(context.Background(),
+		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.AddressInfo{Aid: aid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "DelAddress failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1108,6 +1181,8 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/add_address", appHandler(addAddress))
+	mux.Handle("/delete_address", appHandler(delAddress))
+	mux.Handle("/update_address", appHandler(modAddress))
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
 	mux.Handle("/auto_login", appHandler(autoLogin))
