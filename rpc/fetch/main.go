@@ -24,6 +24,9 @@ import (
 const (
 	maxDistance   = 3000
 	addressPrefix = "广东省东莞市东莞市市辖区"
+	provinceType  = 0
+	townType      = 1
+	districtType  = 2
 )
 
 type server struct{}
@@ -512,6 +515,42 @@ func (s *server) FetchStsCredentials(ctx context.Context, in *fetch.CommRequest)
 	cred.Securitytoken, _ = credential.Get("SecurityToken").String()
 	return &fetch.StsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Credential: &cred}, nil
+}
+
+func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*fetch.ZipcodeReply, error) {
+	log.Printf("FetchZipcode request uid:%d, type:%d code:%d",
+		in.Head.Uid, in.Type, in.Code)
+	query := "SELECT code, address FROM zipcode WHERE"
+	switch in.Type {
+	default:
+		query += " code % 10000 = 0"
+	case townType:
+		query += " code % 100 = 0 AND code % 10000 != 0 AND FLOOR(code/10000) = " +
+			strconv.Itoa(int(in.Code/10000))
+	case districtType:
+		query += " code % 100 != 0 AND FLOOR(code/100) = " +
+			strconv.Itoa(int(in.Code/100))
+	}
+	log.Printf("query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("FetchZipcode query failed:%v", err)
+		return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+
+	defer rows.Close()
+	var infos []*fetch.ZipcodeInfo
+	for rows.Next() {
+		var info fetch.ZipcodeInfo
+		err := rows.Scan(&info.Code, &info.Address)
+		if err != nil {
+			log.Printf("FetchZipcode scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+
+	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
 func main() {

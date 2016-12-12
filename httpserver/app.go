@@ -528,6 +528,46 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	return nil
 }
 
+func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	ziptype := req.GetParamInt("type")
+	code := req.GetParamInt("code")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchZipcode(context.Background(),
+		&fetch.ZipcodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Type: int32(ziptype), Code: int32(code)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取邮政编码失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "zipcode"}, res.Infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func genSsdbKey(ctype int64) string {
 	switch ctype {
 	default:
@@ -975,6 +1015,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_weather_news", appHandler(getWeatherNews))
 	mux.Handle("/get_front_info", appHandler(getFrontInfo))
 	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
+	mux.Handle("/get_zipcode", appHandler(getZipcode))
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
 	mux.Handle("/auto_login", appHandler(autoLogin))
