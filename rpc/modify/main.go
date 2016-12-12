@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -255,6 +256,29 @@ func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*modify
 		log.Printf("DelTags failed:%v", err)
 	}
 	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+	log.Printf("AddAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
+	res, err := db.Exec("INSERT INTO address(uid, consignee, phone, province, city, district, detail, zip, addr, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+		in.Head.Uid, in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
+		in.Info.Detail, in.Info.Zip, in.Info.Addr)
+	if err != nil {
+		log.Printf("add address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("add address get insert id failed:%v", err)
+		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+	}
+	if in.Info.Def {
+		_, err = db.Exec("UPDATE user SET address = ? WHERE uid = ?", id, in.Head.Uid)
+		if err != nil {
+			log.Printf("update user address failed, uid:%d aid:%d", in.Head.Uid, id)
+		}
+	}
+	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func main() {

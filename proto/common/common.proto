@@ -36,3 +36,16 @@ message BannerInfo {
     int32 priority = 5;
     int32 deleted = 6;
 }
+
+message AddressInfo {
+    int64 aid = 1;
+    int64 province = 2;
+    int64 city = 3;
+    int64 zone = 4;
+    int64 zip = 5;
+    string addr = 6;
+    string detail = 7;
+    bool def = 8;
+    string user = 9;
+    string mobile = 10;
+}

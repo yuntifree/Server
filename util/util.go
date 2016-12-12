@@ -128,6 +128,30 @@ func GetJSONIntDef(js *simplejson.Json, key string, def int64) int64 {
 	return def
 }
 
+//GetJSONBool get json value of bool
+func GetJSONBool(js *simplejson.Json, key string) bool {
+	if val, err := js.Get(key).Bool(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Bool(); err == nil {
+		return val
+	}
+	panic(ParamError{Val: key})
+}
+
+//GetJSONBoolDef get json value of bool with default value
+func GetJSONBoolDef(js *simplejson.Json, key string, def bool) bool {
+	if val, err := js.Get(key).Bool(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Bool(); err == nil {
+		return val
+	}
+	return def
+}
+
 //GetJSONFloat get json value of float
 func GetJSONFloat(js *simplejson.Json, key string) float64 {
 	if val, err := js.Get(key).Float64(); err == nil {

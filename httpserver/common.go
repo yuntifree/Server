@@ -78,6 +78,14 @@ func (r *request) GetParamIntDef(key string, def int64) int64 {
 	return util.GetJSONIntDef(r.Post, key, def)
 }
 
+func (r *request) GetParamBool(key string) bool {
+	return util.GetJSONBool(r.Post, key)
+}
+
+func (r *request) GetParamBoolDef(key string, def bool) bool {
+	return util.GetJSONBoolDef(r.Post, key, def)
+}
+
 func (r *request) GetParamString(key string) string {
 	return util.GetJSONString(r.Post, key)
 }
