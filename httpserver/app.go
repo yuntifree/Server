@@ -621,6 +621,43 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchAddress(context.Background(),
+		&fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取用户地址失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "address"}, res.Infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func genSsdbKey(ctype int64) string {
 	switch ctype {
 	default:
@@ -1069,6 +1106,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_front_info", appHandler(getFrontInfo))
 	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
+	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))

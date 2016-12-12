@@ -553,6 +553,31 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func (s *server) FetchAddress(ctx context.Context, in *fetch.CommRequest) (*fetch.AddressReply, error) {
+	log.Printf("FetchAddress request uid:%d", in.Head.Uid)
+	rows, err := db.Query("SELECT aid, consignee, phone, province, city, district, addr, detail, flag, zip FROM address WHERE uid = ?",
+		in.Head.Uid)
+	if err != nil {
+		log.Printf("FetchAddress query failed uid:%d, %v", in.Head.Uid, err)
+		return &fetch.AddressReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	defer rows.Close()
+	var infos []*common.AddressInfo
+	for rows.Next() {
+		var info common.AddressInfo
+		err := rows.Scan(&info.Aid, &info.User, &info.Mobile, &info.Province, &info.City,
+			&info.Zone, &info.Addr, &info.Detail, &info.Def, &info.Zip)
+		if err != nil {
+			log.Printf("FetchAddress scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+
+	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

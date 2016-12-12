@@ -17,6 +17,7 @@ service Fetch{
     rpc FetchWifiPass(WifiPassRequest) returns (WifiPassReply) {}
     rpc FetchStsCredentials(CommRequest) returns (StsReply) {}
     rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
+    rpc FetchAddress(CommRequest) returns (AddressReply) {}
 }
 
 message CommRequest {
@@ -192,4 +193,9 @@ message ZipcodeInfo {
 message ZipcodeReply {
     common.Head head = 1;
     repeated ZipcodeInfo infos = 2;
+}
+
+message AddressReply {
+    common.Head head = 1;
+    repeated common.AddressInfo infos = 2;
 }
