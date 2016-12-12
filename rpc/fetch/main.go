@@ -555,7 +555,7 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 
 func (s *server) FetchAddress(ctx context.Context, in *fetch.CommRequest) (*fetch.AddressReply, error) {
 	log.Printf("FetchAddress request uid:%d", in.Head.Uid)
-	rows, err := db.Query("SELECT aid, consignee, phone, province, city, district, addr, detail, flag, zip FROM address WHERE uid = ?",
+	rows, err := db.Query("SELECT aid, consignee, phone, province, city, district, addr, detail, flag, zip FROM address WHERE deleted = 0 AND uid = ?",
 		in.Head.Uid)
 	if err != nil {
 		log.Printf("FetchAddress query failed uid:%d, %v", in.Head.Uid, err)
