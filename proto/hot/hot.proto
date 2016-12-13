@@ -7,6 +7,7 @@ service Hot {
     rpc GetServices(common.CommRequest) returns (ServiceReply) {}
     rpc GetWeatherNews(common.CommRequest) returns (WeatherNewsReply) {}
     rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
+    rpc GetLatest(common.CommRequest) returns (LatestReply) {}
 }
 
 message HotsInfo {
@@ -69,4 +70,35 @@ message FrontReply {
     common.Head head = 1;
     UseInfo uinfo = 2;
     repeated BannerInfo binfos = 3;
+}
+
+message AwardInfo {
+    int64 uid = 1;
+    string nickname = 2;
+    string awardcode = 3;
+    string head = 4;
+    int32 num = 5;
+}
+
+message BidInfo {
+    int64 bid = 1;
+    int64 gid = 2;
+    int32 period = 3;
+    string title = 4;
+    string subtitle = 5;
+    int64 start = 6;
+    int64 end = 7;
+    int32 total = 8;
+    string image = 9;
+    int64 seq = 10;
+    int32 rest = 11;
+    int32 status = 12;
+    AwardInfo award = 13;
+}
+
+message LatestReply {
+    common.Head head = 1;
+    repeated BidInfo opening = 2;
+    repeated BidInfo opened = 3;
+    int32 reddot = 4;
 }

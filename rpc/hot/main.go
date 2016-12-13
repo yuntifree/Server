@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	common "../../proto/common"
 	hot "../../proto/hot"
@@ -261,6 +263,163 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 	}
 
 	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo, Binfos: binfos}, nil
+}
+
+func getSalesCount(db *sql.DB, sid, uid int64) int32 {
+	var num int32
+	err := db.QueryRow("SELECT COUNT(*) FROM sales_history WHERE uid = ? AND sid = ?", uid, sid).
+		Scan(&num)
+	if err != nil {
+		log.Printf("getSalesCount query failed:%v", err)
+	}
+	return num
+}
+
+func getOpenedSales(db *sql.DB, num int32, seq int64) []*hot.BidInfo {
+	var opened []*hot.BidInfo
+	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime),
+	 image, total, win_uid, win_code, nickname, s.status, sub_title FROM sales s, 
+	 goods g, user i WHERE s.gid = g.gid AND s.win_uid = i.uid AND s.status >= 3 `
+	if seq != 0 {
+		query += fmt.Sprintf(" AND UNIX_TIMESTAMP(etime) < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY s.etime DESC LIMIT %d", num)
+	log.Printf("getOpenedSales query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getOpenedSales query failed:%v", err)
+		return opened
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.BidInfo
+		var award hot.AwardInfo
+		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start,
+			&info.End, &info.Image, &info.Total, &award.Uid, &award.Awardcode,
+			&award.Nickname, &info.Status, &info.Subtitle)
+		if err != nil {
+			log.Printf("getOpenedSales scan failed:%v", err)
+			continue
+		}
+		info.Start *= 1000
+		info.End *= 1000
+		log.Printf("bid:%d gid:%d", info.Bid, info.Gid)
+		award.Num = getSalesCount(db, info.Bid, award.Uid)
+		info.Award = &award
+		opened = append(opened, &info)
+	}
+	return opened
+}
+
+func getRemainSeconds(tt time.Time) int32 {
+	award := util.GetNextCqssc(tt)
+	award = award.Add(120 * time.Second)
+	return int32(award.Unix() - tt.Unix())
+}
+
+func getOpeningSales(db *sql.DB, num int32) []*hot.BidInfo {
+	var opening []*hot.BidInfo
+	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(etime), 
+	image, s.total, s.status, sub_title FROM sales s, goods g WHERE s.gid = g.gid 
+	AND s.status = 2  ORDER BY etime DESC `
+	if num != 0 {
+		query += fmt.Sprintf(" LIMIT %d", num)
+	}
+	log.Printf("getOpening query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getOpening query failed:%v", err)
+		return opening
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.BidInfo
+		var end int64
+		err = rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start, &end,
+			&info.Image, &info.Total, &info.Status, &info.Subtitle)
+		if err != nil {
+			log.Printf("getOpening scan failed:%v", err)
+			continue
+		}
+		info.Start *= 1000
+		info.Seq = info.Bid
+		tt := time.Unix(end, 0)
+		info.Rest = getRemainSeconds(tt)
+		opening = append(opening, &info)
+	}
+	if len(opening) < int(num) {
+		opened := getOpenedSales(db, num-int32(len(opening)), 0)
+		opening = append(opening, opened...)
+	}
+	return opening
+}
+
+func hasPhone(db *sql.DB, uid int64) bool {
+	var phone string
+	err := db.QueryRow("SELECT phone FROM user WHERE uid = ?", uid).
+		Scan(&phone)
+	if err != nil {
+		return false
+	}
+	if phone == "" {
+		return false
+	}
+	return true
+}
+
+func hasReceipt(db *sql.DB, uid int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE status = 5 AND uid = ?", uid).
+		Scan(&num)
+	if err != nil {
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+func hasShare(db *sql.DB, uid int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE share = 0 AND status >= 6 AND uid = ?", uid).
+		Scan(&num)
+	if err != nil {
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+func hasReddot(db *sql.DB, uid int64) bool {
+	if uid == 0 {
+		return false
+	}
+
+	if !hasPhone(db, uid) || hasReceipt(db, uid) || hasShare(db, uid) {
+		return true
+	}
+
+	return false
+}
+
+func (s *server) GetLatest(ctx context.Context, in *common.CommRequest) (*hot.LatestReply, error) {
+	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	var opening, opened []*hot.BidInfo
+	if in.Seq == 0 {
+		opening = getOpeningSales(db, 0)
+	}
+	opened = getOpenedSales(db, in.Num, in.Seq)
+	reddot := 0
+	if hasReddot(db, in.Head.Uid) {
+		reddot = 1
+	}
+	return &hot.LatestReply{Head: &common.Head{Retcode: 0},
+		Opening: opening, Opened: opened, Reddot: int32(reddot)}, nil
 }
 
 func main() {
