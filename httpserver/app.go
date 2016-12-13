@@ -496,7 +496,8 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	c := hot.NewHotClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.GetFrontInfo(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	res, err := c.GetFrontInfo(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -665,7 +666,8 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	c := hot.NewHotClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.GetWeatherNews(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	res, err := c.GetWeatherNews(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -859,7 +861,9 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := hot.NewHotClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.GetHots(context.Background(), &hot.HotsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Type: int32(ctype), Seq: int32(seq)})
+	res, err := c.GetHots(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Type: int32(ctype), Seq: seq})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -951,7 +955,8 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
 	uuid := util.GenUUID()
-	res, err := c.GetServices(context.Background(), &hot.ServiceRequest{Head: &common.Head{Uid: uid, Sid: uuid}})
+	res, err := c.GetServices(context.Background(),
+		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}

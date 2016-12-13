@@ -3,16 +3,10 @@ syntax = "proto3";
 import "common/common.proto";
 
 service Hot {
-    rpc GetHots(HotsRequest) returns (HotsReply) {}
-    rpc GetServices(ServiceRequest) returns (ServiceReply) {}
-    rpc GetWeatherNews(HotsRequest) returns (WeatherNewsReply) {}
-    rpc GetFrontInfo(HotsRequest) returns (FrontReply) {}
-}
-
-message HotsRequest {
-    common.Head head = 1;
-    int32 type = 2;
-    int32 seq = 3;
+    rpc GetHots(common.CommRequest) returns (HotsReply) {}
+    rpc GetServices(common.CommRequest) returns (ServiceReply) {}
+    rpc GetWeatherNews(common.CommRequest) returns (WeatherNewsReply) {}
+    rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
 }
 
 message HotsInfo {
@@ -30,10 +24,6 @@ message HotsInfo {
 message HotsReply {
     common.Head head = 1;
     repeated HotsInfo infos = 2;
-}
-
-message ServiceRequest {
-    common.Head head = 1;
 }
 
 message ServiceInfo {

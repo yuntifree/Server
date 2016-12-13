@@ -31,15 +31,15 @@ type server struct{}
 
 var db *sql.DB
 
-func getDgNews(db *sql.DB, seq, num int32) []*hot.HotsInfo {
+func getDgNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 	return getNews(db, seq, num, true)
 }
 
-func getHotNews(db *sql.DB, seq, num int32) []*hot.HotsInfo {
+func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 	return getNews(db, seq, num, false)
 }
 
-func getNews(db *sql.DB, seq, num int32, isDgNews bool) []*hot.HotsInfo {
+func getNews(db *sql.DB, seq, num int64, isDgNews bool) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
 	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 "
 	if isDgNews {
@@ -85,7 +85,7 @@ func getNews(db *sql.DB, seq, num int32, isDgNews bool) []*hot.HotsInfo {
 	return infos
 }
 
-func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
+func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
 	query := "SELECT vid, title, img, source, dst, ctime, play FROM youku_video WHERE 1 = 1 AND duration < 300 "
 	if seq != 0 {
@@ -115,7 +115,7 @@ func getVideos(db *sql.DB, seq int32) []*hot.HotsInfo {
 	return infos
 }
 
-func (s *server) GetHots(ctx context.Context, in *hot.HotsRequest) (*hot.HotsReply, error) {
+func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
 	if in.Type == typeHotNews {
@@ -183,7 +183,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 	return infos, nil
 }
 
-func (s *server) GetServices(ctx context.Context, in *hot.ServiceRequest) (*hot.ServiceReply, error) {
+func (s *server) GetServices(ctx context.Context, in *common.CommRequest) (*hot.ServiceReply, error) {
 	categories, err := getService(db)
 	if err != nil {
 		log.Printf("getServie failed:%v", err)
@@ -203,7 +203,7 @@ func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
 	return info, nil
 }
 
-func (s *server) GetWeatherNews(ctx context.Context, in *hot.HotsRequest) (*hot.WeatherNewsReply, error) {
+func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*hot.WeatherNewsReply, error) {
 	weather, err := getWeather(db)
 	if err != nil {
 		log.Printf("getWeather failed:%v", err)
@@ -246,7 +246,7 @@ func getBanners(db *sql.DB) ([]*hot.BannerInfo, error) {
 	return infos, nil
 }
 
-func (s *server) GetFrontInfo(ctx context.Context, in *hot.HotsRequest) (*hot.FrontReply, error) {
+func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot.FrontReply, error) {
 	uinfo, err := getUseInfo(db, in.Head.Uid)
 	if err != nil {
 		log.Printf("getUseInfo failed:%v", err)
