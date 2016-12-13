@@ -9,8 +9,8 @@ service Verify{
      rpc Login(LoginRequest) returns (LoginReply) {}
      rpc BackLogin(LoginRequest) returns (LoginReply) {}
      rpc Register(RegisterRequest) returns (RegisterReply) {}
-     rpc Logout(LogoutRequest) returns (LogoutReply) {}
-     rpc CheckToken(TokenRequest) returns (TokenReply) {}
+     rpc Logout(LogoutRequest) returns (common.CommReply) {}
+     rpc CheckToken(TokenRequest) returns (common.CommReply) {}
      rpc AutoLogin(AutoRequest) returns (AutoReply) {}
      rpc WxMpLogin(LoginRequest) returns (LoginReply) {}
      rpc UnionLogin(LoginRequest) returns (LoginReply) {}
@@ -21,10 +21,6 @@ message TokenRequest {
     common.Head head = 1;
     string token = 2;
     int32 type = 3;
-}
-
-message TokenReply {
-    common.Head head = 1;
 }
 
 message CodeRequest {
@@ -82,10 +78,6 @@ message RegisterReply {
 message LogoutRequest {
     common.Head head = 1;
     string token = 2;
-}
-
-message LogoutReply {
-    common.Head head = 1;
 }
 
 message AutoRequest {

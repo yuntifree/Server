@@ -5,7 +5,7 @@ import "common/common.proto";
 package push;
 
 service Push {
-    rpc Push(PushRequest) returns (PushReply) {}
+    rpc Push(PushRequest) returns (common.CommReply) {}
 }
 
 message PushInfo {
@@ -27,9 +27,5 @@ message PushInfo {
 message PushRequest {
     common.Head head = 1;
     PushInfo info = 2;
-}
-
-message PushReply {
-    common.Head head = 1;
 }
 

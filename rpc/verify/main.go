@@ -253,49 +253,49 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
 }
 
-func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*verify.LogoutReply, error) {
+func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
-		return &verify.LogoutReply{Head: &common.Head{Retcode: 1}}, errors.New("check token failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, errors.New("check token failed")
 	}
 	util.ClearToken(db, in.Head.Uid)
-	return &verify.LogoutReply{Head: &common.Head{Retcode: 0}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
-func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*verify.TokenReply, error) {
+func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*common.CommReply, error) {
 	if in.Type == 0 {
 		token, err := util.GetCachedToken(kv, in.Head.Uid)
 		if err == nil {
 			if token == in.Token {
-				return &verify.TokenReply{Head: &common.Head{Retcode: 0}}, nil
+				return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 			}
-			return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, nil
+			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 		}
 		var tk string
 		var expire bool
 		err = db.QueryRow("SELECT token, IF(etime > NOW(), false, true) FROM user WHERE deleted = 0 AND uid = ?", in.Head.Uid).Scan(&tk, &expire)
 		if err != nil {
 			log.Printf("CheckToken select failed:%v", err)
-			return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, nil
+			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 		}
 		util.SetCachedToken(kv, in.Head.Uid, tk)
 		if expire {
 			log.Printf("CheckToken token expired, uid:%d\n", in.Head.Uid)
-			return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, nil
+			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 		}
 		if tk == in.Token {
-			return &verify.TokenReply{Head: &common.Head{Retcode: 0}}, nil
+			return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 		}
 		log.Printf("CheckToken token not match, uid:%d token:%s real:%s\n", in.Head.Uid, in.Token, tk)
-		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, nil
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, in.Type)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
-		return &verify.TokenReply{Head: &common.Head{Retcode: 1}}, errors.New("checkToken failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, errors.New("checkToken failed")
 	}
-	return &verify.TokenReply{Head: &common.Head{Retcode: 0}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
 func checkPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
