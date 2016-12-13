@@ -243,6 +243,8 @@ CREATE TABLE IF NOT EXISTS banner (
     KEY(priority)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS flash_ad LIKE banner;
+
 CREATE TABLE IF NOT EXISTS service_click(
     id      int unsigned NOT NULL AUTO_INCREMENT,
     sid     int unsigned NOT NULL,

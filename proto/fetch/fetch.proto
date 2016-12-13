@@ -18,6 +18,7 @@ service Fetch{
     rpc FetchStsCredentials(CommRequest) returns (StsReply) {}
     rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
     rpc FetchAddress(CommRequest) returns (AddressReply) {}
+    rpc FetchFlashAd(CommRequest) returns (AdReply) {}
 }
 
 message CommRequest {
@@ -198,4 +199,14 @@ message ZipcodeReply {
 message AddressReply {
     common.Head head = 1;
     repeated common.AddressInfo infos = 2;
+}
+
+message AdInfo {
+    string img = 1;
+    string target = 2;
+}
+
+message AdReply {
+    common.Head head = 1;
+    AdInfo info = 2;
 }

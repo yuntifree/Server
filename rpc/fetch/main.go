@@ -578,6 +578,19 @@ func (s *server) FetchAddress(ctx context.Context, in *fetch.CommRequest) (*fetc
 	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
+func (s *server) FetchFlashAd(ctx context.Context, in *fetch.CommRequest) (*fetch.AdReply, error) {
+	log.Printf("FetchFlashAd request uid:%d", in.Head.Uid)
+	var info fetch.AdInfo
+	err := db.QueryRow("SELECT img, dst FROM flash_ad WHERE deleted = 0 ORDER BY id DESC LIMIT 1").
+		Scan(&info.Img, &info.Target)
+	if err != nil {
+		log.Printf("FetchFlashAd query failed uid:%d, %v", in.Head.Uid, err)
+		return &fetch.AdReply{Head: &common.Head{Retcode: 1}}, err
+	}
+
+	return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Info: &info}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {
