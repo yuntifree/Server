@@ -22,7 +22,7 @@ type server struct{}
 
 var db *sql.DB
 
-func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modify.CommReply, error) {
+func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*common.CommReply, error) {
 	if in.Reject {
 		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?", in.Head.Uid, in.Id)
 	} else {
@@ -39,10 +39,10 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*modif
 		}
 	}
 
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*modify.CommReply, error) {
+func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*common.CommReply, error) {
 	if in.Reject {
 		db.Exec("UPDATE youku_video SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE vid = ?", in.Head.Uid, in.Id)
 	} else {
@@ -54,37 +54,38 @@ func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*mod
 		db.Exec(query)
 	}
 
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*modify.AddTempReply, error) {
-	res, err := db.Exec("INSERT INTO template(title, content, ruid, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW())", in.Info.Title, in.Info.Content, in.Head.Uid)
+func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*common.CommReply, error) {
+	res, err := db.Exec("INSERT INTO template(title, content, ruid, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW())",
+		in.Info.Title, in.Info.Content, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.AddTempReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &modify.AddTempReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: int32(id)}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
-func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*modify.CommReply, error) {
+func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*common.CommReply, error) {
 	_, err := db.Exec("INSERT INTO wifi(ssid, password, longitude, latitude, uid, ctime) VALUES (?, ?, ?, ?,?, NOW())",
 		in.Info.Ssid, in.Info.Password, in.Info.Longitude, in.Info.Latitude, in.Head.Uid)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*modify.CommReply, error) {
+func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*common.CommReply, error) {
 	query := "UPDATE template SET "
 	if in.Info.Title != "" {
 		query += " title = '" + in.Info.Title + "', "
@@ -101,13 +102,13 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*m
 
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*modify.CommReply, error) {
+func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*common.CommReply, error) {
 	var res sql.Result
 	var err error
 	if in.Type != 4 {
@@ -117,12 +118,12 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 	}
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("get last insert id failed:%v", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
 	if id != 0 {
@@ -143,30 +144,30 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*mod
 		}
 		if err != nil {
 			log.Printf("update click count failed type:%d id:%d:%v", in.Type, in.Id, err)
-			return &modify.CommReply{Head: &common.Head{Retcode: 1}}, err
+			return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 		}
 	}
 
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*modify.CommReply, error) {
+func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*common.CommReply, error) {
 	var aid int
 	mac := strings.Replace(strings.ToLower(in.Apmac), ":", "", -1)
 	log.Printf("ap mac origin:%s convert:%s\n", in.Apmac, mac)
 	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", in.Apmac, mac).Scan(&aid)
 	if err != nil {
 		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", in.Head.Uid, in.Apmac, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 	}
 	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, in.Head.Uid)
 	if err != nil {
 		log.Printf("update user ap info failed uid:%d aid:%d\n", in.Head.Uid, aid)
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) AddImage(ctx context.Context, in *modify.AddImageRequest) (*modify.CommReply, error) {
+func (s *server) AddImage(ctx context.Context, in *modify.AddImageRequest) (*common.CommReply, error) {
 	for i := 0; i < len(in.Fnames); i++ {
 		_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())",
 			in.Head.Uid, in.Fnames[i])
@@ -174,34 +175,34 @@ func (s *server) AddImage(ctx context.Context, in *modify.AddImageRequest) (*mod
 			log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Fnames[i], err)
 		}
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*modify.CommReply, error) {
+func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*common.CommReply, error) {
 	_, err := db.Exec("UPDATE image SET filesize = ?, height = ?, width = ?, ftime = NOW(), status = 1 WHERE name = ?",
 		in.Info.Size, in.Info.Height, in.Info.Width, in.Info.Name)
 	if err != nil {
 		log.Printf("update image failed name:%s err:%v\n", in.Info.Name, err)
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*modify.CommReply, error) {
+func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
 	res, err := db.Exec("INSERT INTO banner(img, dst, priority, ctime) VALUES(?, ?, ?, NOW())",
 		in.Info.Img, in.Info.Dst, in.Info.Priority)
 	if err != nil {
 		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("AddBanner get LastInsertId failed:%v\n", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
-func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*modify.CommReply, error) {
+func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
 	query := fmt.Sprintf("UPDATE banner SET priority = %d, online = %d, deleted = %d ",
 		in.Info.Priority, in.Info.Online, in.Info.Deleted)
 	if in.Info.Img != "" {
@@ -214,9 +215,9 @@ func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*modi
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify.AddTagReply, error) {
@@ -248,29 +249,29 @@ func genIDStr(ids []int64) string {
 	return str
 }
 
-func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*modify.CommReply, error) {
+func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*common.CommReply, error) {
 	str := genIDStr(in.Ids)
 	query := "UPDATE tags SET deleted = 1 WHERE id IN (" + str + ")"
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Printf("DelTags failed:%v", err)
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
 	log.Printf("AddAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
 	res, err := db.Exec("INSERT INTO address(uid, consignee, phone, province, city, district, detail, zip, addr, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
 		in.Head.Uid, in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
 		in.Info.Detail, in.Info.Zip, in.Info.Addr)
 	if err != nil {
 		log.Printf("add address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("add address get insert id failed:%v", err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
 	}
 	if in.Info.Def {
 		_, err = db.Exec("UPDATE user SET address = ? WHERE uid = ?", id, in.Head.Uid)
@@ -278,30 +279,30 @@ func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*mo
 			log.Printf("update user address failed, uid:%d aid:%d", in.Head.Uid, id)
 		}
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
-func (s *server) ModAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+func (s *server) ModAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
 	log.Printf("ModAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
 	_, err := db.Exec("UPDATE address SET consignee = ?, phone = ?, province = ?, city = ?, district = ?, detail = ?, zip = ?, addr = ? WHERE uid = ? AND aid = ?",
 		in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
 		in.Info.Detail, in.Info.Zip, in.Info.Addr, in.Head.Uid, in.Info.Aid)
 	if err != nil {
 		log.Printf("modify address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*modify.CommReply, error) {
+func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
 	log.Printf("DelAddress uid:%d aid:%d", in.Head.Uid, in.Info.Aid)
 	_, err := db.Exec("UPDATE address SET deleted = 1 WHERE uid = ? AND aid = ?",
 		in.Head.Uid, in.Info.Aid)
 	if err != nil {
 		log.Printf("del address failed uid:%d aid:%d err:%v\n", in.Head.Uid, in.Info.Aid, err)
-		return &modify.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
 	}
-	return &modify.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

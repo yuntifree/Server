@@ -5,27 +5,22 @@ import "common/common.proto";
 package modify;
 
 service Modify{
-    rpc ReviewNews(NewsRequest) returns (CommReply) {}
-    rpc ReviewVideo(VideoRequest) returns (CommReply) {}
-    rpc AddTemplate(AddTempRequest) returns (AddTempReply) {}
-    rpc ModTemplate(ModTempRequest) returns (CommReply) {}
-    rpc AddWifi(WifiRequest) returns (CommReply) {}
-    rpc ReportClick(ClickRequest) returns (CommReply) {}
-    rpc ReportApmac(ApmacRequest) returns (CommReply) {}
-    rpc AddImage(AddImageRequest) returns (CommReply) {}
-    rpc FinImage(ImageRequest) returns (CommReply) {}
-    rpc AddBanner(BannerRequest) returns (CommReply) {}
-    rpc ModBanner(BannerRequest) returns (CommReply) {}
+    rpc ReviewNews(NewsRequest) returns (common.CommReply) {}
+    rpc ReviewVideo(VideoRequest) returns (common.CommReply) {}
+    rpc AddTemplate(AddTempRequest) returns (common.CommReply) {}
+    rpc ModTemplate(ModTempRequest) returns (common.CommReply) {}
+    rpc AddWifi(WifiRequest) returns (common.CommReply) {}
+    rpc ReportClick(ClickRequest) returns (common.CommReply) {}
+    rpc ReportApmac(ApmacRequest) returns (common.CommReply) {}
+    rpc AddImage(AddImageRequest) returns (common.CommReply) {}
+    rpc FinImage(ImageRequest) returns (common.CommReply) {}
+    rpc AddBanner(BannerRequest) returns (common.CommReply) {}
+    rpc ModBanner(BannerRequest) returns (common.CommReply) {}
     rpc AddTags(AddTagRequest) returns (AddTagReply) {}
-    rpc DelTags(DelTagRequest) returns (CommReply) {}
-    rpc AddAddress(AddressRequest) returns (CommReply) {}
-    rpc DelAddress(AddressRequest) returns (CommReply) {}
-    rpc ModAddress(AddressRequest) returns (CommReply) {}
-}
-
-message CommReply {
-    common.Head head = 1;
-    int64 id = 2;
+    rpc DelTags(DelTagRequest) returns (common.CommReply) {}
+    rpc AddAddress(AddressRequest) returns (common.CommReply) {}
+    rpc DelAddress(AddressRequest) returns (common.CommReply) {}
+    rpc ModAddress(AddressRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -55,11 +50,6 @@ message TemplateInfo {
 message AddTempRequest {
     common.Head head = 1;
     TemplateInfo info = 2;
-}
-
-message AddTempReply {
-    common.Head head = 1;
-    int32 id = 2;
 }
 
 message ModTempRequest {

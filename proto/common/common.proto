@@ -27,6 +27,12 @@ message CommRequest {
     int32 type = 4;
 }
 
+message CommReply {
+    Head head = 1;
+    int64 id = 2;
+}
+
+
 message WifiInfo {
     string ssid = 1;
     string username = 2;
