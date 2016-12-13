@@ -5,27 +5,20 @@ import "common/common.proto";
 package fetch;
 
 service Fetch{
-    rpc FetchReviewNews(CommRequest) returns (NewsReply) {}
-    rpc FetchTags(CommRequest) returns (TagsReply) {}
+    rpc FetchReviewNews(common.CommRequest) returns (NewsReply) {}
+    rpc FetchTags(common.CommRequest) returns (TagsReply) {}
     rpc FetchAps(ApRequest) returns (ApReply) {}
-    rpc FetchUsers(CommRequest) returns (UserReply) {}
-    rpc FetchApStat(CommRequest) returns (ApStatReply) {}
-    rpc FetchTemplates(CommRequest) returns (TemplateReply) {}
+    rpc FetchUsers(common.CommRequest) returns (UserReply) {}
+    rpc FetchApStat(common.CommRequest) returns (ApStatReply) {}
+    rpc FetchTemplates(common.CommRequest) returns (TemplateReply) {}
     rpc FetchWifi(WifiRequest) returns (WifiReply) {}
-    rpc FetchVideos(CommRequest) returns (VideoReply) {}
-    rpc FetchBanners(CommRequest) returns (BannerReply) {}
+    rpc FetchVideos(common.CommRequest) returns (VideoReply) {}
+    rpc FetchBanners(common.CommRequest) returns (BannerReply) {}
     rpc FetchWifiPass(WifiPassRequest) returns (WifiPassReply) {}
-    rpc FetchStsCredentials(CommRequest) returns (StsReply) {}
+    rpc FetchStsCredentials(common.CommRequest) returns (StsReply) {}
     rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
-    rpc FetchAddress(CommRequest) returns (AddressReply) {}
-    rpc FetchFlashAd(CommRequest) returns (AdReply) {}
-}
-
-message CommRequest {
-    common.Head head = 1;
-    int64 seq = 2;
-    int32 num = 3;
-    int32 type = 4;
+    rpc FetchAddress(common.CommRequest) returns (AddressReply) {}
+    rpc FetchFlashAd(common.CommRequest) returns (AdReply) {}
 }
 
 message NewsInfo {

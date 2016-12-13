@@ -175,7 +175,7 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	return infos
 }
 
-func (s *server) FetchReviewNews(ctx context.Context, in *fetch.CommRequest) (*fetch.NewsReply, error) {
+func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num, in.Type)
 	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
 	total := getTotalNews(db, in.Type)
@@ -206,7 +206,7 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 	return infos
 }
 
-func (s *server) FetchTags(ctx context.Context, in *fetch.CommRequest) (*fetch.TagsReply, error) {
+func (s *server) FetchTags(ctx context.Context, in *common.CommRequest) (*fetch.TagsReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	tags := getTags(db, in.Seq, int64(in.Num))
 	total := getTotalTags(db)
@@ -318,7 +318,7 @@ func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 	return infos
 }
 
-func (s *server) FetchApStat(ctx context.Context, in *fetch.CommRequest) (*fetch.ApStatReply, error) {
+func (s *server) FetchApStat(ctx context.Context, in *common.CommRequest) (*fetch.ApStatReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getApStat(db, int32(in.Seq), in.Num)
 	total := getTotalAps(db)
@@ -357,7 +357,7 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	return infos
 }
 
-func (s *server) FetchUsers(ctx context.Context, in *fetch.CommRequest) (*fetch.UserReply, error) {
+func (s *server) FetchUsers(ctx context.Context, in *common.CommRequest) (*fetch.UserReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getUsers(db, in.Seq, int64(in.Num))
 	total := getTotalUsers(db)
@@ -388,7 +388,7 @@ func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 	return infos
 }
 
-func (s *server) FetchTemplates(ctx context.Context, in *fetch.CommRequest) (*fetch.TemplateReply, error) {
+func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*fetch.TemplateReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getTemplates(db, int32(in.Seq), in.Num)
 	total := getTotalTemplates(db)
@@ -419,7 +419,8 @@ func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 	}
 	return infos
 }
-func (s *server) FetchVideos(ctx context.Context, in *fetch.CommRequest) (*fetch.VideoReply, error) {
+
+func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetch.VideoReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getVideos(db, int32(in.Seq), in.Num, in.Type)
 	total := getTotalVideos(db, in.Type)
@@ -450,7 +451,7 @@ func getBanners(db *sql.DB, seq, num int32) []*common.BannerInfo {
 	return infos
 }
 
-func (s *server) FetchBanners(ctx context.Context, in *fetch.CommRequest) (*fetch.BannerReply, error) {
+func (s *server) FetchBanners(ctx context.Context, in *common.CommRequest) (*fetch.BannerReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
 	infos := getBanners(db, int32(in.Seq), in.Num)
 	total := getTotalBanners(db)
@@ -496,7 +497,7 @@ func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (
 	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifis: wifis}, nil
 }
 
-func (s *server) FetchStsCredentials(ctx context.Context, in *fetch.CommRequest) (*fetch.StsReply, error) {
+func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest) (*fetch.StsReply, error) {
 	res := aliyun.FetchStsCredentials()
 	log.Printf("FetchStsCredentials resp:%s", res)
 	if res == "" {
@@ -553,7 +554,7 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
-func (s *server) FetchAddress(ctx context.Context, in *fetch.CommRequest) (*fetch.AddressReply, error) {
+func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fetch.AddressReply, error) {
 	log.Printf("FetchAddress request uid:%d", in.Head.Uid)
 	rows, err := db.Query("SELECT aid, consignee, phone, province, city, district, addr, detail, flag, zip FROM address WHERE deleted = 0 AND uid = ?",
 		in.Head.Uid)
@@ -578,7 +579,7 @@ func (s *server) FetchAddress(ctx context.Context, in *fetch.CommRequest) (*fetc
 	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
-func (s *server) FetchFlashAd(ctx context.Context, in *fetch.CommRequest) (*fetch.AdReply, error) {
+func (s *server) FetchFlashAd(ctx context.Context, in *common.CommRequest) (*fetch.AdReply, error) {
 	log.Printf("FetchFlashAd request uid:%d", in.Head.Uid)
 	var info fetch.AdInfo
 	err := db.QueryRow("SELECT img, dst FROM flash_ad WHERE deleted = 0 ORDER BY id DESC LIMIT 1").

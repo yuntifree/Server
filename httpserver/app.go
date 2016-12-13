@@ -533,7 +533,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchFlashAd(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	res, err := c.FetchFlashAd(context.Background(), &common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -622,7 +622,7 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	uuid := util.GenUUID()
 	res, err := c.FetchStsCredentials(context.Background(),
-		&fetch.CommRequest{
+		&common.CommRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -745,7 +745,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	uuid := util.GenUUID()
 	res, err := c.FetchAddress(context.Background(),
-		&fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}

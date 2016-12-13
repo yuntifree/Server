@@ -83,7 +83,9 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchReviewNews(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num), Type: int32(ctype)})
+	res, err := c.FetchReviewNews(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num), Type: int32(ctype)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -123,7 +125,9 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchTags(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchTags(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -163,7 +167,9 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchUsers(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchUsers(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -279,7 +285,9 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchApStat(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchApStat(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -320,7 +328,9 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchVideos(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num), Type: int32(ctype)})
+	res, err := c.FetchVideos(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num), Type: int32(ctype)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -360,7 +370,9 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchTemplates(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchTemplates(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -674,7 +686,9 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchBanners(context.Background(), &fetch.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq, Num: int32(num)})
+	res, err := c.FetchBanners(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
