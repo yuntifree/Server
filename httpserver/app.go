@@ -421,6 +421,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	ctype := req.GetParamInt("type")
+	log.Printf("reportClick uid:%d type:%d id:%d", uid, ctype, id)
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())

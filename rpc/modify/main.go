@@ -109,6 +109,7 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*c
 }
 
 func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*common.CommReply, error) {
+	log.Printf("ReportClick uid:%d type:%d id:%d", in.Head.Uid, in.Type, in.Id)
 	var res sql.Result
 	var err error
 	if in.Type != 4 {

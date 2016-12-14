@@ -112,6 +112,7 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 			return infos
 		}
 		info.Images = img[:1]
+		info.Id = info.Seq
 		infos = append(infos, &info)
 		log.Printf("title:%s source:%s", info.Title, info.Source)
 	}
