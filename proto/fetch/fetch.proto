@@ -19,6 +19,7 @@ service Fetch{
     rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
     rpc FetchAddress(common.CommRequest) returns (AddressReply) {}
     rpc FetchFlashAd(common.CommRequest) returns (AdReply) {}
+    rpc FetchConf(common.CommRequest) returns (ConfReply) {}
 }
 
 message NewsInfo {
@@ -202,4 +203,9 @@ message AdInfo {
 message AdReply {
     common.Head head = 1;
     AdInfo info = 2;
+}
+
+message ConfReply {
+    common.Head head = 1;
+    repeated common.KvInfo infos = 2;
 }

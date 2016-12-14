@@ -259,6 +259,27 @@ func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*common
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func genConfStr(names []string) string {
+	var str string
+	for i := 0; i < len(names); i++ {
+		str += "'" + names[i] + "'"
+		if i < len(names)-1 {
+			str += ","
+		}
+	}
+	return str
+}
+
+func (s *server) DelConf(ctx context.Context, in *modify.DelConfRequest) (*common.CommReply, error) {
+	str := genConfStr(in.Names)
+	query := "UPDATE kv_config SET deleted = 1 WHERE name IN (" + str + ")"
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("DelTags failed:%v", err)
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
 	log.Printf("AddAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
 	res, err := db.Exec("INSERT INTO address(uid, consignee, phone, province, city, district, detail, zip, addr, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
@@ -301,6 +322,17 @@ func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*co
 	if err != nil {
 		log.Printf("del address failed uid:%d aid:%d err:%v\n", in.Head.Uid, in.Info.Aid, err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) AddConf(ctx context.Context, in *modify.ConfRequest) (*common.CommReply, error) {
+	log.Printf("AddConf uid:%d key:%s", in.Head.Uid, in.Info.Key)
+	_, err := db.Exec("INSERT INTO kv_config(name, val, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE val = ?",
+		in.Info.Key, in.Info.Val, in.Info.Val)
+	if err != nil {
+		log.Printf("add config failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Info.Key, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add conf failed")
 	}
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }

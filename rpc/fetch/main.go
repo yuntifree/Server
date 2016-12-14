@@ -592,6 +592,30 @@ func (s *server) FetchFlashAd(ctx context.Context, in *common.CommRequest) (*fet
 	return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Info: &info}, nil
 }
 
+func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.ConfReply, error) {
+	log.Printf("FetchConf request uid:%d", in.Head.Uid)
+	var infos []*common.KvInfo
+	rows, err := db.Query("SELECT name, val FROM kv_config WHERE deleted = 0")
+	if err != nil {
+		log.Printf("FetchConf query failed uid:%d, %v", in.Head.Uid, err)
+		return &fetch.ConfReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info common.KvInfo
+		err := rows.Scan(&info.Key, &info.Val)
+		if err != nil {
+			log.Printf("FetchConf scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+
+	return &fetch.ConfReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

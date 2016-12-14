@@ -395,6 +395,43 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchConf(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取配置信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -472,6 +509,37 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
 	w.Write(body)
+	return nil
+}
+
+func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	key := req.GetParamString("key")
+	val := req.GetParamString("val")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddConf(context.Background(),
+		&modify.ConfRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.KvInfo{Key: key, Val: val}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加配置失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
@@ -594,6 +662,46 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	}
 	if res.Head.Retcode != 0 {
 		return &util.AppError{util.DataErr, 4, "删除标签失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	keys, err := req.Post.Get("data").Get("keys").Array()
+	if err != nil {
+		log.Printf("get tags failed:%v", err)
+		return &util.AppError{util.JSONErr, 2, err.Error()}
+	}
+
+	var names []string
+	for i := 0; i < len(keys); i++ {
+		key, _ := keys[i].(string)
+		names = append(names, key)
+	}
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.DelConf(context.Background(),
+		&modify.DelConfRequest{
+			Head:  &common.Head{Sid: uuid, Uid: uid},
+			Names: names})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "删除配置失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -760,11 +868,14 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_ap_stat", appHandler(getApStat))
 	mux.Handle("/get_users", appHandler(getUsers))
 	mux.Handle("/get_templates", appHandler(getTemplates))
+	mux.Handle("/get_conf", appHandler(getConf))
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
+	mux.Handle("/set_conf", appHandler(addConf))
 	mux.Handle("/add_tags", appHandler(addTags))
 	mux.Handle("/send_mipush", appHandler(sendMipush))
 	mux.Handle("/del_tags", appHandler(delTags))
+	mux.Handle("/del_conf", appHandler(delConf))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))

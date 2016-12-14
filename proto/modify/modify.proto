@@ -21,6 +21,8 @@ service Modify{
     rpc AddAddress(AddressRequest) returns (common.CommReply) {}
     rpc DelAddress(AddressRequest) returns (common.CommReply) {}
     rpc ModAddress(AddressRequest) returns (common.CommReply) {}
+    rpc AddConf(ConfRequest) returns (common.CommReply) {}
+    rpc DelConf(DelConfRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -116,3 +118,12 @@ message AddressRequest {
     common.AddressInfo info = 2;
 }
 
+message ConfRequest {
+    common.Head head = 1;
+    common.KvInfo info = 2;
+}
+
+message DelConfRequest {
+    common.Head head = 1;
+    repeated string names = 2;
+}

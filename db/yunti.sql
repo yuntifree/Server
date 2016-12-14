@@ -325,3 +325,14 @@ CREATE TABLE IF NOT EXISTS image
     PRIMARY KEY(id),
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS kv_config
+(
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    val     varchar(4096) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;
