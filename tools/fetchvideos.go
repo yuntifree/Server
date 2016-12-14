@@ -22,6 +22,9 @@ func main() {
 		for j := 0; j < len(files); j++ {
 			f := files[j]
 			duration, _ := strconv.Atoi(f.Duration)
+			if f.OriginID == "" {
+				continue
+			}
 			dst := juhe.GenYoukuURL(f.OriginID)
 			if f.Source == "乐视" {
 				dst = juhe.GenLetvURL(f.OriginID)
