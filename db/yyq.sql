@@ -69,7 +69,8 @@ CREATE TABLE IF NOT EXISTS goods (
     deleted     tinyint unsigned NOT NULL DEFAULT 0,
     -- 0:实物 1:充值卡
     type        tinyint unsigned NOT NULL DEFAULT 0,
-    prority     int unsigned NOT NULL DEFAULT 0,
+    priority     int unsigned NOT NULL DEFAULT 0,
+    new_rank    int unsigned NOT NULL DEFAULT 0,
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(gid)
 ) ENGINE = InnoDB;
@@ -92,4 +93,24 @@ CREATE TABLE IF NOT EXISTS logistics (
     ftime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(lid),
     UNIQUE KEY(sid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS promotion (
+    id          int unsigned NOT NULL AUTO_INCREMENT,
+    title       varchar(256) NOT NULL,
+    target      varchar(256) NOT NULL,
+    online      tinyint unsigned NOT NULL DEFAULT 0,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS slides (
+    id          int unsigned NOT NULL AUTO_INCREMENT,
+    image       varchar(256) NOT NULL,
+    target      varchar(256) NOT NULL,
+    online      tinyint unsigned NOT NULL DEFAULT 0,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
 ) ENGINE = InnoDB;

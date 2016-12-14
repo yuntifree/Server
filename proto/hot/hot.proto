@@ -8,6 +8,7 @@ service Hot {
     rpc GetWeatherNews(common.CommRequest) returns (WeatherNewsReply) {}
     rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
     rpc GetLatest(common.CommRequest) returns (LatestReply) {}
+    rpc GetHotList(common.CommRequest) returns (HotListReply) {}
 }
 
 message HotsInfo {
@@ -94,6 +95,7 @@ message BidInfo {
     int32 rest = 11;
     int32 status = 12;
     AwardInfo award = 13;
+    int32 remain = 14;
 }
 
 message LatestReply {
@@ -101,4 +103,32 @@ message LatestReply {
     repeated BidInfo opening = 2;
     repeated BidInfo opened = 3;
     int32 reddot = 4;
+}
+
+message SlideInfo {
+    string image = 1;
+    string target = 2;
+}
+
+message MarqueeInfo {
+    int64 uid = 1;
+    int64 bid = 2;
+    string nickname = 3;
+    int32 type = 4;
+    string gname = 5;
+}
+
+message PromotionInfo {
+    string title = 1;
+    string target = 2;
+}
+
+message HotListReply {
+    common.Head head = 1;
+    repeated BidInfo opening = 2;
+    repeated SlideInfo slides = 3;
+    repeated MarqueeInfo marquee = 4;
+    repeated BidInfo list = 5;
+    PromotionInfo promotion = 6;
+    int32 reddot = 7;
 }

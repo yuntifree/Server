@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	homeNewsNum = 6
-	saveRate    = 0.1 / (1024.0 * 1024.0)
+	homeNewsNum     = 6
+	saveRate        = 0.1 / (1024.0 * 1024.0)
+	marqueeInterval = 30
 )
 
 const (
@@ -420,6 +421,165 @@ func (s *server) GetLatest(ctx context.Context, in *common.CommRequest) (*hot.La
 	}
 	return &hot.LatestReply{Head: &common.Head{Retcode: 0},
 		Opening: opening, Opened: opened, Reddot: int32(reddot)}, nil
+}
+
+func isNewUser(db *sql.DB, uid int64) bool {
+	if uid == 0 {
+		return false
+	}
+
+	var flag bool
+	err := db.QueryRow("SELECT IF(ctime > CURDATE(), true, false) FROM user WHERE uid = ?", uid).
+		Scan(&flag)
+	if err != nil {
+		return false
+	}
+	return flag
+}
+
+func getRunningSales(db *sql.DB, uid int64, num int32, seq int64) []*hot.BidInfo {
+	var infos []*hot.BidInfo
+	flag := isNewUser(db, uid)
+	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime), 
+		image, total, remain, g.priority, sub_title, g.new_rank FROM sales s, goods g 
+		WHERE s.gid = g.gid AND s.status = 1`
+	if seq > 0 {
+		if flag {
+			query += fmt.Sprintf(" AND g.new_rank < %d ORDER BY g.new_rank DESC ", seq)
+		} else {
+			query += fmt.Sprintf(" AND g.priority < %d ORDER BY g.priority DESC ", seq)
+		}
+		if num > 0 {
+			query += fmt.Sprintf(" LIMIT %d", num)
+		}
+	}
+
+	log.Printf("getRunningSales query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getRunningSales query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.BidInfo
+		var rank int64
+		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title,
+			&info.Image, &info.Total, &info.Remain, &info.Seq, &info.Subtitle,
+			&rank)
+		if err != nil {
+			log.Printf("getRunningSales scan failed:%v", err)
+			continue
+		}
+		if flag {
+			info.Seq = rank
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getGrapInfo(db *sql.DB, interval int) []*hot.MarqueeInfo {
+	var infos []*hot.MarqueeInfo
+	query := fmt.Sprintf("SELECT h.uid, u.nickname, g.name FROM sales_hisotry h, user u, sales s, goods g WHERE h.uid = u.uid AND h.sid = s.sid AND s.gid = g.gid AND h.ctime > DATE_SUB(NOW(), INTERVAL %d MINUTE) ORDER BY h.ctime DESC LIMIT 50", interval)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getGrapInfo query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.MarqueeInfo
+		err := rows.Scan(&info.Uid, &info.Nickname, &info.Gname)
+		if err != nil {
+			log.Printf("getGrapInfo scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getAwardInfo(db *sql.DB, interval int) []*hot.MarqueeInfo {
+	var infos []*hot.MarqueeInfo
+	query := fmt.Sprintf("SELECT s.sid, s.win_uid, s.num, g.name, u.nickname FROM sales s, goods g, user u WHERE s.win_uid = u.uid AND s.gid = g.gid AND s.etime > DATE_SUB(NOW(), INTERVAL %d MINUTE)", interval)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getAwardInfo query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.MarqueeInfo
+		err := rows.Scan(&info.Bid, &info.Uid, &info.Nickname, &info.Gname)
+		if err != nil {
+			log.Printf("getAwardInfo scan failed:%v", err)
+			continue
+		}
+		info.Type = 1
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getMarquee(db *sql.DB, interval int) []*hot.MarqueeInfo {
+	grap := getGrapInfo(db, interval)
+	award := getAwardInfo(db, interval)
+	marquee := append(grap, award...)
+	return marquee
+}
+
+func getPromotion(db *sql.DB) hot.PromotionInfo {
+	var info hot.PromotionInfo
+	err := db.QueryRow("SELECT title, target FROM promotion WHERE online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1").
+		Scan(&info.Title, &info.Target)
+	if err != nil {
+		log.Printf("get promotion failed:%v", err)
+	}
+	return info
+}
+
+func getSlides(db *sql.DB) []*hot.SlideInfo {
+	var infos []*hot.SlideInfo
+	rows, err := db.Query("SELECT image, target FROM slides WHERE online = 1 AND deleted = 0 ORDER BY id DESC")
+	if err != nil {
+		log.Printf("getSlides failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info hot.SlideInfo
+		err := rows.Scan(&info.Image, &info.Target)
+		if err != nil {
+			log.Printf("getSlides scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.HotListReply, error) {
+	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	var opening, running []*hot.BidInfo
+	if in.Seq == 0 {
+		opening = getOpeningSales(db, 4)
+	}
+	running = getRunningSales(db, in.Head.Uid, in.Num, in.Seq)
+	reddot := 0
+	if hasReddot(db, in.Head.Uid) {
+		reddot = 1
+	}
+	marquee := getMarquee(db, marqueeInterval)
+	slides := getSlides(db)
+	promotion := getPromotion(db)
+	return &hot.HotListReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Opening: opening, Slides: slides, Marquee: marquee, List: running,
+		Promotion: &promotion, Reddot: int32(reddot)}, nil
 }
 
 func main() {
