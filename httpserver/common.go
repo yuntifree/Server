@@ -27,7 +27,7 @@ const (
 	hotVideoKey    = "hot:video"
 	hotWeatherKey  = "hot:weather"
 	hotServiceKey  = "hot:service"
-	expireInterval = 300
+	expireInterval = 30
 )
 
 type request struct {
