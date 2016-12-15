@@ -9,6 +9,8 @@ service Hot {
     rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
     rpc GetOpening(common.CommRequest) returns (OpeningReply) {}
     rpc GetOpened(common.CommRequest) returns (OpenedReply) {}
+    rpc GetMarquee(common.CommRequest) returns (MarqueeReply) {}
+    rpc GetRunning(common.CommRequest) returns (RunningReply) {}
     rpc GetHotList(common.CommRequest) returns (HotListReply) {}
 }
 
@@ -132,8 +134,16 @@ message HotListReply {
     common.Head head = 1;
     repeated BidInfo opening = 2;
     repeated SlideInfo slides = 3;
-    repeated MarqueeInfo marquee = 4;
-    repeated BidInfo list = 5;
-    PromotionInfo promotion = 6;
-    int32 reddot = 7;
+    PromotionInfo promotion = 4;
+    int32 reddot = 5;
+}
+
+message MarqueeReply {
+    common.Head head = 1;
+    repeated MarqueeInfo marquee = 2;
+}
+
+message RunningReply {
+    common.Head head = 1;
+    repeated BidInfo running = 2;
 }

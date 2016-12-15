@@ -626,6 +626,9 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 	js.SetPath([]string{"data", "opened"}, res.Opened)
+	if len(res.Opened) >= int(num) {
+		js.SetPath([]string{"data", "hasmore"}, 1)
+	}
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -635,7 +638,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
@@ -651,9 +654,86 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := hot.NewHotClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.GetHotList(context.Background(),
+	res, err := c.GetRunning(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取正在抢购数据失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "running"}, res.Running)
+	if len(res.Running) >= int(num) {
+		js.SetPath([]string{"data", "hasmore"}, 1)
+	}
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
+func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	address := getNameServer(uid, util.HotServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetMarquee(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取跑马灯数据失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "marquee"}, res.Marquee)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
+func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	address := getNameServer(uid, util.HotServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetHotList(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -667,13 +747,8 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	}
 	js.SetPath([]string{"data", "opening"}, res.Opening)
 	js.SetPath([]string{"data", "slides"}, res.Slides)
-	js.SetPath([]string{"data", "marquee"}, res.Marquee)
-	js.SetPath([]string{"data", "list"}, res.List)
 	js.SetPath([]string{"data", "promotion"}, res.Promotion)
 	js.SetPath([]string{"data", "reddot"}, res.Reddot)
-	if len(res.List) >= int(num) {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
 
 	body, err := js.MarshalJSON()
 	if err != nil {

@@ -518,21 +518,30 @@ func getSlides(db *sql.DB) []*hot.SlideInfo {
 
 func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.HotListReply, error) {
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
-	var opening, running []*hot.BidInfo
-	if in.Seq == 0 {
-		opening = getOpeningSales(db, 4)
-	}
-	running = getRunningSales(db, in.Head.Uid, in.Num, in.Seq)
+	opening := getOpeningSales(db, 4)
 	reddot := 0
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
-	marquee := getMarquee(db, marqueeInterval)
 	slides := getSlides(db)
 	promotion := getPromotion(db)
 	return &hot.HotListReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Opening: opening, Slides: slides, Marquee: marquee, List: running,
+		Opening: opening, Slides: slides,
 		Promotion: &promotion, Reddot: int32(reddot)}, nil
+}
+
+func (s *server) GetMarquee(ctx context.Context, in *common.CommRequest) (*hot.MarqueeReply, error) {
+	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	marquee := getMarquee(db, marqueeInterval)
+	return &hot.MarqueeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Marquee: marquee}, nil
+}
+
+func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.RunningReply, error) {
+	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	running := getRunningSales(db, in.Head.Uid, in.Num, in.Seq)
+	return &hot.RunningReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Running: running}, nil
 }
 
 func main() {
