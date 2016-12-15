@@ -824,6 +824,8 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		stype = util.GidShareType
 	} else if path == "/get_share_list" {
 		stype = util.ListShareType
+	} else if path == "/get_share_uid" {
+		stype = util.UidShareType
 	}
 
 	address := getNameServer(uid, util.FetchServerName)
@@ -1520,6 +1522,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
+	mux.Handle("/get_share_uid", appHandler(getShare))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/delete_address", appHandler(delAddress))
 	mux.Handle("/update_address", appHandler(modAddress))

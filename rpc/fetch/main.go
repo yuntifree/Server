@@ -691,11 +691,42 @@ func getShareInfo(db *sql.DB, uid, stype, id, num, seq int64) []*fetch.ShareInfo
 	return infos
 }
 
+func getMyShare(db *sql.DB, uid, num, seq int64) []*fetch.ShareInfo {
+	var infos []*fetch.ShareInfo
+	query := "SELECT s.sid, s.num, g.image, g.title, l.share FROM sales s, goods g, logistics l WHERE s.gid = g.gid AND s.sid = l.sid AND l.status >= 6 AND s.win_uid = " + strconv.Itoa(int(uid))
+	if seq > 0 {
+		query += fmt.Sprintf(" AND s.sid = %d", seq)
+	}
+	query += " ORDER BY s.sid DESC "
+	if num > 0 {
+		query += fmt.Sprintf(" LIMIT %d", num)
+	}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("FetchShare query failed:%v", err)
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info fetch.ShareInfo
+		err := rows.Scan(&info.Bid, &info.Period, &info.Image, &info.Title, &info.Share)
+		if err != nil {
+			log.Printf("FetchShare scan failed:%v", err)
+			continue
+		}
+		info.Seq = info.Bid
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
 	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
 		in.Type, in.Seq, in.Num, in.Id)
 	var reddot int32
-	if util.HasReddot(db, in.Head.Uid) {
+	if in.Type != util.UidShareType && util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
 	var infos []*fetch.ShareInfo
@@ -707,6 +738,8 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 		top := getShareInfo(db, in.Head.Uid, util.TopShareType, 0, int64(in.Num), in.Seq)
 		list := getShareInfo(db, in.Head.Uid, util.ListShareType, 0, int64(in.Num), in.Seq)
 		infos = append(top, list...)
+	case util.UidShareType:
+		infos = getMyShare(db, in.Head.Uid, int64(in.Num), in.Seq)
 	}
 
 	return &fetch.ShareReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},

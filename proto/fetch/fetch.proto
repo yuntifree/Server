@@ -232,6 +232,8 @@ message ShareInfo {
     int64 sharetime = 9;
     string image = 10;
     string text = 11;
+    int64 share = 12;
+    int64 period = 13;
 }
 
 message ShareReply {
