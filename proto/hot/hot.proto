@@ -7,7 +7,8 @@ service Hot {
     rpc GetServices(common.CommRequest) returns (ServiceReply) {}
     rpc GetWeatherNews(common.CommRequest) returns (WeatherNewsReply) {}
     rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
-    rpc GetLatest(common.CommRequest) returns (LatestReply) {}
+    rpc GetOpening(common.CommRequest) returns (OpeningReply) {}
+    rpc GetOpened(common.CommRequest) returns (OpenedReply) {}
     rpc GetHotList(common.CommRequest) returns (HotListReply) {}
 }
 
@@ -98,11 +99,15 @@ message BidInfo {
     int32 remain = 14;
 }
 
-message LatestReply {
+message OpeningReply {
     common.Head head = 1;
     repeated BidInfo opening = 2;
-    repeated BidInfo opened = 3;
-    int32 reddot = 4;
+    int32 reddot = 3;
+}
+
+message OpenedReply {
+    common.Head head = 1;
+    repeated BidInfo opened = 2;
 }
 
 message SlideInfo {

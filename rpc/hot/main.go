@@ -358,19 +358,22 @@ func getOpeningSales(db *sql.DB, num int32) []*hot.BidInfo {
 	return opening
 }
 
-func (s *server) GetLatest(ctx context.Context, in *common.CommRequest) (*hot.LatestReply, error) {
-	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
-	var opening, opened []*hot.BidInfo
-	if in.Seq == 0 {
-		opening = getOpeningSales(db, 0)
-	}
-	opened = getOpenedSales(db, in.Num, in.Seq)
-	reddot := 0
+func (s *server) GetOpening(ctx context.Context, in *common.CommRequest) (*hot.OpeningReply, error) {
+	log.Printf("GetOpening uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	opening := getOpeningSales(db, 0)
+	var reddot int32
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
-	return &hot.LatestReply{Head: &common.Head{Retcode: 0},
-		Opening: opening, Opened: opened, Reddot: int32(reddot)}, nil
+	return &hot.OpeningReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Opening: opening, Reddot: reddot}, nil
+}
+
+func (s *server) GetOpened(ctx context.Context, in *common.CommRequest) (*hot.OpenedReply, error) {
+	log.Printf("GetOpened uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
+	opened := getOpenedSales(db, in.Num, in.Seq)
+	return &hot.OpenedReply{Head: &common.Head{Retcode: 0},
+		Opened: opened}, nil
 }
 
 func isNewUser(db *sql.DB, uid int64) bool {
