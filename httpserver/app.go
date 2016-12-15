@@ -866,6 +866,45 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	key := req.GetParamString("key")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchKvConf(context.Background(),
+		&fetch.KvRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Key: key})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取配置失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "val"}, res.Val)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1351,6 +1390,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/logout", appHandler(logout))
 	mux.Handle("/hot", appHandler(getHot))
 	mux.Handle("/get_weather_news", appHandler(getWeatherNews))
+	mux.Handle("/get_conf", appHandler(getKvConf))
 	mux.Handle("/get_front_info", appHandler(getFrontInfo))
 	mux.Handle("/get_flash_ad", appHandler(getFlashAd))
 	mux.Handle("/get_latest", appHandler(getLatest))

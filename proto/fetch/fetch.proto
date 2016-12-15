@@ -21,6 +21,7 @@ service Fetch{
     rpc FetchFlashAd(common.CommRequest) returns (AdReply) {}
     rpc FetchConf(common.CommRequest) returns (ConfReply) {}
     rpc FetchShare(ShareRequest) returns (ShareReply) {}
+    rpc FetchKvConf(KvRequest) returns (KvReply) {}
 }
 
 message NewsInfo {
@@ -237,4 +238,14 @@ message ShareReply {
     common.Head head = 1;
     repeated ShareInfo infos = 2;
     int32 reddot = 3;
+}
+
+message KvRequest {
+    common.Head head = 1;
+    string key = 2;
+}
+
+message KvReply {
+    common.Head head = 1;
+    string val = 2;
 }

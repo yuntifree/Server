@@ -616,6 +616,19 @@ func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.
 		Infos: infos}, nil
 }
 
+func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.KvReply, error) {
+	log.Printf("FetchKvConf request uid:%d", in.Head.Uid)
+	var val string
+	err := db.QueryRow("SELECT val FROM kv_config WHERE deleted = 0 AND name = ?", in.Key).
+		Scan(&val)
+	if err != nil {
+		log.Printf("FetchKvConf query failed uid:%d, %v", in.Head.Uid, err)
+		return &fetch.KvReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	return &fetch.KvReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Val: val}, nil
+}
+
 func getShareImage(db *sql.DB, sid int64) string {
 	query := fmt.Sprintf("SELECT url FROM share_image WHERE deleted = 0 AND sid = %d LIMIT 1", sid)
 	var url string
