@@ -640,33 +640,31 @@ func getShareImage(db *sql.DB, sid int64) string {
 	return url
 }
 
-func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
-	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
-		in.Type, in.Seq, in.Num, in.Id)
+func getShareInfo(db *sql.DB, uid, stype, id, num, seq int64) []*fetch.ShareInfo {
 	query := `SELECT hid, s.sid, s.uid, gid, title, nickname, headurl, UNIX_TIMESTAMP(s.ctime),
 		s.image_num, LEFT(s.content, 100) FROM share_history s, user u WHERE s.uid = u.uid`
-	switch in.Type {
+	switch stype {
 	default:
-		query += fmt.Sprintf(" AND s.uid = %d ", in.Id)
+		query += fmt.Sprintf(" AND s.uid = %d ", id)
 	case util.GidShareType:
-		query += fmt.Sprintf(" AND s.gid = %d ", in.Id)
+		query += fmt.Sprintf(" AND s.gid = %d ", id)
 	case util.ListShareType:
 		query += " AND s.top_flag = 0 "
 	case util.TopShareType:
 		query += " AND s.top_flag = 1 "
 	}
-	if in.Seq > 0 && in.Type != util.TopShareType {
-		query += fmt.Sprintf(" AND hid < %d ", in.Seq)
+	if seq > 0 && stype != util.TopShareType {
+		query += fmt.Sprintf(" AND hid < %d ", seq)
 	}
 	query += " AND s.reviewed = 1 AND s.deleted = 0 ORDER by hid DESC "
-	if in.Num > 0 {
-		query += fmt.Sprintf(" LIMIT %d ", in.Num)
+	if num > 0 {
+		query += fmt.Sprintf(" LIMIT %d ", num)
 	}
 	log.Printf("FetchShare query:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("FetchShare query failed:%v", err)
-		return &fetch.ShareReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid, Sid: in.Head.Sid}}, err
+		return nil
 	}
 	defer rows.Close()
 
@@ -680,7 +678,7 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 			log.Printf("FetchShare scan failed:%v", err)
 			continue
 		}
-		if in.Type == util.TopShareType {
+		if stype == util.TopShareType {
 			info.Seq = info.Sid + 1000000
 		} else {
 			info.Seq = info.Sid
@@ -690,9 +688,25 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 		}
 		infos = append(infos, &info)
 	}
+	return infos
+}
+
+func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
+	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
+		in.Type, in.Seq, in.Num, in.Id)
 	var reddot int32
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
+	}
+	var infos []*fetch.ShareInfo
+	switch in.Type {
+	case util.GidShareType:
+		infos = getShareInfo(db, in.Head.Uid, util.GidShareType, in.Id, int64(in.Num),
+			in.Seq)
+	case util.ListShareType:
+		top := getShareInfo(db, in.Head.Uid, util.TopShareType, 0, int64(in.Num), in.Seq)
+		list := getShareInfo(db, in.Head.Uid, util.ListShareType, 0, int64(in.Num), in.Seq)
+		infos = append(top, list...)
 	}
 
 	return &fetch.ShareReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},

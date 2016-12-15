@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS share_history (
     reviewed    tinyint unsigned NOT NULL DEFAULT 0,
     deleted     tinyint unsigned NOT NULL DEFAULT 0,
     award       int unsigned NOT NULL DEFAULT 0,
+    top_flag    tinyint unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(hid),
     KEY(sid)
 ) ENGINE = InnoDB;

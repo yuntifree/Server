@@ -810,13 +810,21 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
-func getShareGid(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
-	gid := req.GetParamInt("gid")
+	gid := req.GetParamIntDef("gid", 0)
 	seq := req.GetParamInt("seq")
 	num := req.GetParamIntDef("num", util.MaxListSize)
+	path := r.URL.Path
+	log.Printf("path:%s", path)
+	var stype int32
+	if path == "/get_share_gid" {
+		stype = util.GidShareType
+	} else if path == "/get_share_list" {
+		stype = util.ListShareType
+	}
 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -830,7 +838,7 @@ func getShareGid(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.FetchShare(context.Background(),
 		&fetch.ShareRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: util.GidShareType, Seq: seq, Num: int32(num), Id: gid})
+			Type: stype, Seq: seq, Num: int32(num), Id: gid})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -1510,7 +1518,8 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
 	mux.Handle("/get_address", appHandler(getAddress))
-	mux.Handle("/get_share_gid", appHandler(getShareGid))
+	mux.Handle("/get_share_gid", appHandler(getShare))
+	mux.Handle("/get_share_list", appHandler(getShare))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/delete_address", appHandler(delAddress))
 	mux.Handle("/update_address", appHandler(modAddress))
