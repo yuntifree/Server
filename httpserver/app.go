@@ -699,6 +699,49 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getShareGid(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	gid := req.GetParamInt("gid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamIntDef("num", util.MaxListSize)
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchShare(context.Background(),
+		&fetch.ShareRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Type: util.GidShareType, Seq: seq, Num: int32(num), Id: gid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取晒单信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "shares"}, res.Infos)
+	js.SetPath([]string{"data", "reddot"}, res.Reddot)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1315,6 +1358,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
 	mux.Handle("/get_address", appHandler(getAddress))
+	mux.Handle("/get_share_gid", appHandler(getShareGid))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/delete_address", appHandler(delAddress))
 	mux.Handle("/update_address", appHandler(modAddress))

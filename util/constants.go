@@ -16,4 +16,8 @@ const (
 	MaxIdleConns       = 3
 	DebugHost          = "10.26.210.175"
 	APIHosts           = "10.27.178.90,10.27.178.90"
+	UidShareType       = 1
+	GidShareType       = 2
+	ListShareType      = 3
+	TopShareType       = 4
 )

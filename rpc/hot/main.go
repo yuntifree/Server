@@ -358,57 +358,6 @@ func getOpeningSales(db *sql.DB, num int32) []*hot.BidInfo {
 	return opening
 }
 
-func hasPhone(db *sql.DB, uid int64) bool {
-	var phone string
-	err := db.QueryRow("SELECT phone FROM user WHERE uid = ?", uid).
-		Scan(&phone)
-	if err != nil {
-		return false
-	}
-	if phone == "" {
-		return false
-	}
-	return true
-}
-
-func hasReceipt(db *sql.DB, uid int64) bool {
-	var num int
-	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE status = 5 AND uid = ?", uid).
-		Scan(&num)
-	if err != nil {
-		return false
-	}
-	if num > 0 {
-		return true
-	}
-	return false
-}
-
-func hasShare(db *sql.DB, uid int64) bool {
-	var num int
-	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE share = 0 AND status >= 6 AND uid = ?", uid).
-		Scan(&num)
-	if err != nil {
-		return false
-	}
-	if num > 0 {
-		return true
-	}
-	return false
-}
-
-func hasReddot(db *sql.DB, uid int64) bool {
-	if uid == 0 {
-		return false
-	}
-
-	if !hasPhone(db, uid) || hasReceipt(db, uid) || hasShare(db, uid) {
-		return true
-	}
-
-	return false
-}
-
 func (s *server) GetLatest(ctx context.Context, in *common.CommRequest) (*hot.LatestReply, error) {
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	var opening, opened []*hot.BidInfo
@@ -417,7 +366,7 @@ func (s *server) GetLatest(ctx context.Context, in *common.CommRequest) (*hot.La
 	}
 	opened = getOpenedSales(db, in.Num, in.Seq)
 	reddot := 0
-	if hasReddot(db, in.Head.Uid) {
+	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
 	return &hot.LatestReply{Head: &common.Head{Retcode: 0},
@@ -572,7 +521,7 @@ func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.H
 	}
 	running = getRunningSales(db, in.Head.Uid, in.Num, in.Seq)
 	reddot := 0
-	if hasReddot(db, in.Head.Uid) {
+	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
 	marquee := getMarquee(db, marqueeInterval)

@@ -616,6 +616,76 @@ func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.
 		Infos: infos}, nil
 }
 
+func getShareImage(db *sql.DB, sid int64) string {
+	query := fmt.Sprintf("SELECT url FROM share_image WHERE deleted = 0 AND sid = %d LIMIT 1", sid)
+	var url string
+	err := db.QueryRow(query).Scan(&url)
+	if err != nil {
+		log.Printf("getShareImage failed:%v", err)
+		return ""
+	}
+	return url
+}
+
+func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
+	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
+		in.Type, in.Seq, in.Num, in.Id)
+	query := `SELECT hid, s.sid, s.uid, gid, title, nickname, headurl, UNIX_TIMESTAMP(s.ctime),
+		s.image_num, LEFT(s.content, 100) FROM share_history s, user u WHERE s.uid = u.uid`
+	switch in.Type {
+	default:
+		query += fmt.Sprintf(" AND s.uid = %d ", in.Id)
+	case util.GidShareType:
+		query += fmt.Sprintf(" AND s.gid = %d ", in.Id)
+	case util.ListShareType:
+		query += " AND s.top_flag = 0 "
+	case util.TopShareType:
+		query += " AND s.top_flag = 1 "
+	}
+	if in.Seq > 0 && in.Type != util.TopShareType {
+		query += fmt.Sprintf(" AND hid < %d ", in.Seq)
+	}
+	query += " AND s.reviewed = 1 AND s.deleted = 0 ORDER by hid DESC "
+	if in.Num > 0 {
+		query += fmt.Sprintf(" LIMIT %d ", in.Num)
+	}
+	log.Printf("FetchShare query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("FetchShare query failed:%v", err)
+		return &fetch.ShareReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid, Sid: in.Head.Sid}}, err
+	}
+	defer rows.Close()
+
+	var infos []*fetch.ShareInfo
+	for rows.Next() {
+		var info fetch.ShareInfo
+		var imageNum int
+		err := rows.Scan(&info.Sid, &info.Bid, &info.Uid, &info.Gid, &info.Title,
+			&info.Nickname, &info.Head, &info.Sharetime, &imageNum, &info.Text)
+		if err != nil {
+			log.Printf("FetchShare scan failed:%v", err)
+			continue
+		}
+		if in.Type == util.TopShareType {
+			info.Seq = info.Sid + 1000000
+		} else {
+			info.Seq = info.Sid
+		}
+		if imageNum > 0 {
+			info.Image = getShareImage(db, info.Bid)
+		}
+		infos = append(infos, &info)
+	}
+	var reddot int32
+	if util.HasReddot(db, in.Head.Uid) {
+		reddot = 1
+	}
+
+	return &fetch.ShareReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Reddot: reddot}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

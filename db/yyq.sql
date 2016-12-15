@@ -114,3 +114,37 @@ CREATE TABLE IF NOT EXISTS slides (
     ctime       datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS share_image (
+    id          bigint unsigned NOT NULL AUTO_INCREMENT,
+    hid         bigint unsigned NOT NULL,
+    sid         bigint unsigned NOT NULL,
+    url         varchar(128) NOT NULL,
+    review      tinyint unsigned NOT NULL,
+    deleted     tinyint unsigned NOT NULL,
+    ruid        int unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    rtime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(sid),
+    KEY(hid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS share_history (
+    hid         bigint unsigned NOT NULL AUTO_INCREMENT,
+    sid         bigint unsigned NOT NULL,
+    uid         int unsigned NOT NULL,
+    gid         int unsigned NOT NULL,
+    title       varchar(256) NOT NULL,
+    content     varchar(1024) NOT NULL,
+    image_num   tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    ruid        int unsigned NOT NULL DEFAULT 0,
+    review_time       datetime NOT NULL DEFAULT '2016-01-01',
+    reviewed    tinyint unsigned NOT NULL DEFAULT 0,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    award       int unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(hid),
+    KEY(sid)
+) ENGINE = InnoDB;
+

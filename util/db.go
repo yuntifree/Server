@@ -91,3 +91,55 @@ func GetUserInfo(db *sql.DB, uinfo *UserInfo) (err error) {
 	err = db.QueryRow(query).Scan(&uinfo.UID, &uinfo.UserName, &uinfo.NickName, &uinfo.HeadURL, &uinfo.Sex)
 	return
 }
+
+func hasPhone(db *sql.DB, uid int64) bool {
+	var phone string
+	err := db.QueryRow("SELECT phone FROM user WHERE uid = ?", uid).
+		Scan(&phone)
+	if err != nil {
+		return false
+	}
+	if phone == "" {
+		return false
+	}
+	return true
+}
+
+func hasReceipt(db *sql.DB, uid int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE status = 5 AND uid = ?", uid).
+		Scan(&num)
+	if err != nil {
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+func hasShare(db *sql.DB, uid int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE share = 0 AND status >= 6 AND uid = ?", uid).
+		Scan(&num)
+	if err != nil {
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+//HasReddot check reddot
+func HasReddot(db *sql.DB, uid int64) bool {
+	if uid == 0 {
+		return false
+	}
+
+	if !hasPhone(db, uid) || hasReceipt(db, uid) || hasShare(db, uid) {
+		return true
+	}
+
+	return false
+}
