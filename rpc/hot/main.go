@@ -544,6 +544,149 @@ func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.R
 		Running: running}, nil
 }
 
+func getSalesCodes(db *sql.DB, sid, uid int64) []int64 {
+	var codes []int64
+	rows, err := db.Query("SELECT num FROM sales_history WHERE sid = ? AND uid = ?",
+		sid, uid)
+	if err != nil {
+		log.Printf("getSalesCodes failed:%v", err)
+		return codes
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var code int64
+		err := rows.Scan(&code)
+		if err != nil {
+			log.Printf("getSalesCodes scan failed:%v", err)
+			continue
+		}
+		codes = append(codes, code)
+
+	}
+	return codes
+}
+
+func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) hot.AwardInfo {
+	var award hot.AwardInfo
+	award.Uid = uid
+	award.Awardcode = awardcode
+	err := db.QueryRow("SELECT nickname, headurl FROM user WHERE uid = ?", uid).
+		Scan(&award.Nickname, &award.Head)
+	if err != nil {
+		log.Printf("getAwardDetail failed:%v", err)
+	}
+	award.Num = getSalesCount(db, sid, uid)
+	award.Codes = getSalesCodes(db, sid, uid)
+
+	return award
+}
+
+func getSalesDetail(db *sql.DB, sid, uid int64) (hot.BidInfo, hot.AwardInfo) {
+	var bet hot.BidInfo
+	var award hot.AwardInfo
+	query := `SELECT sid, num, status, s.gid, total, remain, 
+		UNIX_TIMESTAMP(atime), title, win_uid, win_code, g.image, g.sub_title, 
+		UNIX_TIMESTAMP(s.etime) FROM sales s, goods g WHERE s.gid = g.gid 
+		AND s.sid = `
+	query += strconv.Itoa(int(sid))
+	var winuid, awardcode, rest int64
+	err := db.QueryRow(query).Scan(&bet.Bid, &bet.Period, &bet.Status, &bet.Gid,
+		&bet.Total, &bet.Remain, &bet.End, &bet.Title, &winuid, &awardcode, &bet.Image,
+		&bet.Subtitle, &rest)
+	if err != nil {
+		log.Printf("getSalesDetail scan failed:%v", err)
+		return bet, award
+	}
+	if bet.Status == 2 {
+		tt := time.Unix(rest, 0)
+		bet.Rest = getRemainSeconds(tt)
+	} else {
+		bet.End *= 1000
+	}
+	if bet.Status >= 3 {
+		award = getAwardDetail(db, sid, winuid, awardcode)
+	}
+	return bet, award
+}
+
+func getNextSale(db *sql.DB, gid int64) hot.NextInfo {
+	var next hot.NextInfo
+	err := db.QueryRow("SELECT sid, num FROM sales WHERE status = 1 AND gid = ?", gid).
+		Scan(&next.Bid, &next.Period)
+	if err != nil {
+		log.Printf("getNextSale failed:%v", err)
+		return next
+	}
+	return next
+}
+
+func getGoodsImages(db *sql.DB, gid int64) []string {
+	var images []string
+	rows, err := db.Query("SELECT image FROM goods_image WHERE type = 0 AND deleted = 0 AND gid = ?",
+		gid)
+	if err != nil {
+		log.Printf("getGoodsImages query failed gid:%d %v", gid, err)
+		return images
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var img string
+		err := rows.Scan(&img)
+		if err != nil {
+			log.Printf("getGoodsImages scan failed:%v", err)
+			continue
+		}
+		images = append(images, img)
+	}
+	return images
+}
+
+func getUserJoin(db *sql.DB, uid, sid int64) hot.JoinInfo {
+	var info hot.JoinInfo
+	info.Uid = uid
+	codes := getSalesCodes(db, sid, uid)
+	if len(codes) > 0 {
+		info.Join = 1
+		info.Codes = codes
+	}
+	return info
+}
+
+func getRunningGoodsSid(db *sql.DB, gid int64) int64 {
+	var bid int64
+	err := db.QueryRow("SELECT sid FROM sales WHERE status = 1 AND gid = ? ORDER BY sid DESC LIMIT 1",
+		gid).Scan(&bid)
+	if err != nil {
+		log.Printf("getRunningGoodsSid failed gid:%d %v", gid, err)
+	}
+	return bid
+}
+
+func (s *server) GetDetail(ctx context.Context, in *hot.DetailRequest) (*hot.DetailReply, error) {
+	log.Printf("GetLatest uid:%d bid:%d, gid:%d", in.Head.Uid, in.Bid, in.Gid)
+	bid := in.Bid
+	if in.Bid == 0 && in.Gid != 0 {
+		bid = getRunningGoodsSid(db, in.Gid)
+	}
+	if bid == 0 {
+		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	bet, award := getSalesDetail(db, bid, in.Head.Uid)
+	if bet.Gid == 0 {
+		log.Printf("getSalesDetail failed, bid:%d uid:%d", bid, in.Head.Uid)
+		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	var next hot.NextInfo
+	if bet.Status > 1 {
+		next = getNextSale(db, bet.Gid)
+	}
+	slides := getGoodsImages(db, bet.Gid)
+	join := getUserJoin(db, in.Head.Uid, in.Bid)
+	return &hot.DetailReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Bet: &bet, Award: &award, Next: &next, Slides: slides, Mine: &join}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.HotServerPort)
 	if err != nil {

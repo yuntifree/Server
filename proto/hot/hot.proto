@@ -12,6 +12,7 @@ service Hot {
     rpc GetMarquee(common.CommRequest) returns (MarqueeReply) {}
     rpc GetRunning(common.CommRequest) returns (RunningReply) {}
     rpc GetHotList(common.CommRequest) returns (HotListReply) {}
+    rpc GetDetail(DetailRequest) returns (DetailReply) {}
 }
 
 message HotsInfo {
@@ -79,9 +80,10 @@ message FrontReply {
 message AwardInfo {
     int64 uid = 1;
     string nickname = 2;
-    string awardcode = 3;
+    int64 awardcode = 3;
     string head = 4;
     int32 num = 5;
+    repeated int64 codes = 6;
 }
 
 message BidInfo {
@@ -146,4 +148,30 @@ message MarqueeReply {
 message RunningReply {
     common.Head head = 1;
     repeated BidInfo running = 2;
+}
+
+message DetailRequest {
+    common.Head head = 1;
+    int64 bid = 2;
+    int64 gid = 3;
+}
+
+message JoinInfo {
+    int64 uid = 1;
+    int32 join = 2;
+    repeated int64 codes = 3;
+}
+
+message NextInfo {
+    int64 bid = 1;
+    int64 period = 2;
+}
+
+message DetailReply {
+    common.Head head = 1;
+    BidInfo bet = 2;
+    repeated string slides = 3;
+    AwardInfo award = 4;
+    JoinInfo mine = 5;
+    NextInfo next = 6;
 }

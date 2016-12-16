@@ -863,6 +863,54 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	gid := req.GetParamIntDef("gid", 0)
+	bid := req.GetParamIntDef("bid", 0)
+	if gid == 0 && bid == 0 {
+		return &util.AppError{util.JSONErr, 2, "invalid param"}
+	}
+
+	address := getNameServer(uid, util.HotServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := hot.NewHotClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetDetail(context.Background(),
+		&hot.DetailRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Bid:  bid, Gid: gid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取详情信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "bet"}, res.Bet)
+	js.SetPath([]string{"data", "award"}, res.Award)
+	js.SetPath([]string{"data", "mine"}, res.Mine)
+	js.SetPath([]string{"data", "next"}, res.Next)
+	js.SetPath([]string{"data", "slides"}, res.Slides)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1523,6 +1571,8 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
 	mux.Handle("/get_share_uid", appHandler(getShare))
+	mux.Handle("/get_detail", appHandler(getDetail))
+	mux.Handle("/get_detail_gid", appHandler(getDetail))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/delete_address", appHandler(delAddress))
 	mux.Handle("/update_address", appHandler(modAddress))
