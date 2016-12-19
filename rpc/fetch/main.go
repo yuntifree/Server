@@ -629,6 +629,19 @@ func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.K
 		Val: val}, nil
 }
 
+func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fetch.ActivityReply, error) {
+	log.Printf("FetchActivity request uid:%d", in.Head.Uid)
+	var info fetch.ActivityInfo
+	err := db.QueryRow("SELECT title, dst FROM activity WHERE deleted = 0 ORDER BY id DESC LIMIT 1").
+		Scan(&info.Title, &info.Dst)
+	if err != nil {
+		log.Printf("FetchActivity query failed uid:%d, %v", in.Head.Uid, err)
+		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	return &fetch.ActivityReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Activity: &info}, nil
+}
+
 func getShareImage(db *sql.DB, sid int64) string {
 	query := fmt.Sprintf("SELECT url FROM share_image WHERE deleted = 0 AND sid = %d LIMIT 1", sid)
 	var url string

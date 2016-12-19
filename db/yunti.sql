@@ -336,3 +336,13 @@ CREATE TABLE IF NOT EXISTS kv_config
     PRIMARY KEY(id),
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS activity
+(
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    dst     varchar(256) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;

@@ -1035,6 +1035,43 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchActivity(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取活动页面失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.Set("data", res.Activity)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1567,6 +1604,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_hotlist", appHandler(getHotList))
 	mux.Handle("/get_wifi_pass", appHandler(getWifiPass))
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
+	mux.Handle("/get_activity", appHandler(getActivity))
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
