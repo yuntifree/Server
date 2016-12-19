@@ -149,3 +149,14 @@ CREATE TABLE IF NOT EXISTS share_history (
     KEY(sid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS purchase_history (
+    hid         bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid         int unsigned NOT NULL,
+    sid         bigint unsigned NOT NULL,
+    num         int unsigned NOT NULL DEFAULT 1,
+    ctime       bigint unsigned NOT NULL DEFAULT 0,
+    ack_flag    tinyint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(hid),
+    KEY(uid, sid)
+) ENGINE = InnoDB;
+

@@ -682,6 +682,43 @@ func (s *server) FetchGoodsIntro(ctx context.Context, in *common.CommRequest) (*
 		Info: &info}, nil
 }
 
+func getPurchaseRecords(db *sql.DB, sid, seq, num int64) []*fetch.PurchaseRecord {
+	var infos []*fetch.PurchaseRecord
+	query := `SELECT hid, h.uid, nickname, headurl, num, ctime FROM purchase_history h, user u
+		WHERE h.uid = u.uid AND h.ack_flag = 1 AND h.sid = `
+	query += strconv.Itoa(int(sid))
+	if seq > 0 {
+		query += fmt.Sprintf(" AND hid < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY hid DESC LIMIT %d", num)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getPurchaseRecords query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info fetch.PurchaseRecord
+		err = rows.Scan(&info.Rid, &info.Uid, &info.Nickname, &info.Head,
+			&info.Num, &info.Ctime)
+		if err != nil {
+			log.Printf("getPurchaseRecords scan failed:%v", err)
+			continue
+		}
+		info.Seq = info.Rid
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest) (*fetch.PurchaseRecordReply, error) {
+	log.Printf("FetchPurchaseRecord request uid:%d gid:%d", in.Head.Uid, in.Id)
+	infos := getPurchaseRecords(db, in.Id, in.Seq, int64(in.Num))
+	return &fetch.PurchaseRecordReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
 func getShareImage(db *sql.DB, sid int64) string {
 	query := fmt.Sprintf("SELECT url FROM share_image WHERE deleted = 0 AND sid = %d LIMIT 1", sid)
 	var url string

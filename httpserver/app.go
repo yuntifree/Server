@@ -1111,6 +1111,47 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	bid := req.GetParamInt("bid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchPurchaseRecord(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num), Id: bid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取抢购记录失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "records"}, res.Infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1645,6 +1686,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_zipcode", appHandler(getZipcode))
 	mux.Handle("/get_activity", appHandler(getActivity))
 	mux.Handle("/get_intro", appHandler(getGoodsIntro))
+	mux.Handle("/get_record", appHandler(getPurchaseRecord))
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))

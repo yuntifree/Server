@@ -24,6 +24,7 @@ service Fetch{
     rpc FetchKvConf(KvRequest) returns (KvReply) {}
     rpc FetchActivity(common.CommRequest) returns (ActivityReply) {}
     rpc FetchGoodsIntro(common.CommRequest) returns (GoodsIntroReply) {}
+    rpc FetchPurchaseRecord(common.CommRequest) returns (PurchaseRecordReply) {}
 }
 
 message NewsInfo {
@@ -272,4 +273,19 @@ message GoodsIntro {
 message GoodsIntroReply {
     common.Head head = 1;
     GoodsIntro info = 2;
+}
+
+message PurchaseRecord {
+    int64 rid = 1;
+    int64 ctime = 2;
+    int64 uid = 3;
+    string nickname = 4;
+    string head = 5;
+    int64 num = 6;
+    int64 seq = 7;
+}
+
+message PurchaseRecordReply {
+    common.Head head = 1;
+    repeated PurchaseRecord infos = 2;
 }
