@@ -25,6 +25,7 @@ message CommRequest {
     int64 seq = 2;
     int32 num = 3;
     int32 type = 4;
+    int64 id = 5;
 }
 
 message CommReply {

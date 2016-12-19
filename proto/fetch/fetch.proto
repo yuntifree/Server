@@ -23,6 +23,7 @@ service Fetch{
     rpc FetchShare(ShareRequest) returns (ShareReply) {}
     rpc FetchKvConf(KvRequest) returns (KvReply) {}
     rpc FetchActivity(common.CommRequest) returns (ActivityReply) {}
+    rpc FetchGoodsIntro(common.CommRequest) returns (GoodsIntroReply) {}
 }
 
 message NewsInfo {
@@ -261,4 +262,14 @@ message ActivityInfo {
 message ActivityReply {
     common.Head head = 1;
     ActivityInfo activity = 2;
+}
+
+message GoodsIntro {
+    repeated string images = 1;
+    string text = 2;
+}
+
+message GoodsIntroReply {
+    common.Head head = 1;
+    GoodsIntro info = 2;
 }

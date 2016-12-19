@@ -27,6 +27,8 @@ const (
 	provinceType  = 0
 	townType      = 1
 	districtType  = 2
+	highPrice     = 500000
+	priceTips     = "温馨提示:获奖者拥有奖品10年免费使用权"
 )
 
 type server struct{}
@@ -638,8 +640,46 @@ func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fe
 		log.Printf("FetchActivity query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	log.Printf("title:%s dst:%s", info.Title, info.Dst)
 	return &fetch.ActivityReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Activity: &info}, nil
+}
+
+func getGoodsIntro(db *sql.DB, gid int64) fetch.GoodsIntro {
+	var info fetch.GoodsIntro
+	rows, err := db.Query("SELECT g.price, i.image FROM goods g, goods_image i WHERE g.gid = i.gid AND i.type = 1 AND i.deleted = 0 AND g.gid = ?", gid)
+	if err != nil {
+		log.Printf("getGoodsIntro failed, gid:%d %v", gid, err)
+		return info
+	}
+
+	flag := false
+	var images []string
+	for rows.Next() {
+		var price int
+		var image string
+		err := rows.Scan(&price, &image)
+		if err != nil {
+			log.Printf("getGoodsIntro scan failed:%v", err)
+			continue
+		}
+		if price > highPrice {
+			flag = true
+		}
+		images = append(images, image)
+	}
+	if flag {
+		info.Text = priceTips
+	}
+	info.Images = images
+	return info
+}
+
+func (s *server) FetchGoodsIntro(ctx context.Context, in *common.CommRequest) (*fetch.GoodsIntroReply, error) {
+	log.Printf("FetchGoodsIntro request uid:%d gid:%d", in.Head.Uid, in.Id)
+	info := getGoodsIntro(db, in.Id)
+	return &fetch.GoodsIntroReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Info: &info}, nil
 }
 
 func getShareImage(db *sql.DB, sid int64) string {
