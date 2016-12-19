@@ -2,12 +2,9 @@ package juhe
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,9 +23,7 @@ const (
 	baseurl    = "http://v.juhe.cn/toutiao/index"
 	appkey     = "730e17291fa5e25bd40483f795af4a23"
 	dgurl      = "http://news.sun0769.com/dg/"
-	weatherurl = "http://op.juhe.cn/onebox/weather/query"
-	weatherkey = "ef10f2457a44285270011a38e775076c"
-	city       = "东莞"
+	weatherurl = "https://api.thinkpage.cn/v3/weather/now.json?key=uixmdugjglekq1ng&location=dongguan&language=zh-Hans&unit=c"
 )
 
 //News information for news
@@ -333,12 +328,9 @@ func GetImages(d *goquery.Document, url string) ([]string, error) {
 //GetRealWeather get realtime weather of dongguan
 func GetRealWeather() (Weather, error) {
 	var w Weather
-	url := fmt.Sprintf("%s?cityname=%s&key=%s", weatherurl, url.QueryEscape(city), weatherkey)
-	log.Printf("url:%s\n", url)
-
-	res, err := util.HTTPRequest(url, "")
+	res, err := util.HTTPRequest(weatherurl, "")
 	if err != nil {
-		log.Printf("request failed %s:%v", url, err)
+		log.Printf("request failed %s:%v", weatherurl, err)
 		return w, err
 	}
 
@@ -348,33 +340,19 @@ func GetRealWeather() (Weather, error) {
 		return w, err
 	}
 
-	errcode, err := js.Get("error_code").Int()
-	if err != nil {
-		log.Printf("get error_code failed:%v", err)
-		return w, err
-	}
-	if errcode != 0 {
-		log.Printf("get weather failed, errcode:%d", errcode)
-		return w, errors.New("get weather failed")
-	}
-	wth := js.Get("result").Get("data").Get("realtime")
-	dt, err := wth.Get("date").String()
-	if err != nil {
-		log.Printf("get date failed:%v", err)
-		return w, err
-	}
-	tm, err := wth.Get("time").String()
+	result := js.Get("results").GetIndex(0)
+	tm, err := result.Get("last_update").String()
 	if err != nil {
 		log.Printf("get time failed:%v", err)
 		return w, err
 	}
-	tmp, err := wth.Get("weather").Get("temperature").String()
+	tmp, err := result.Get("now").Get("temperature").String()
 	if err != nil {
 		log.Printf("get temperature failed:%v", err)
 		return w, err
 	}
 
-	info, err := wth.Get("weather").Get("info").String()
+	info, err := result.Get("now").Get("text").String()
 	if err != nil {
 		log.Printf("get info failed:%v", err)
 		return w, err
@@ -382,15 +360,15 @@ func GetRealWeather() (Weather, error) {
 
 	w.Temperature, _ = strconv.Atoi(tmp)
 	w.Info = info
-	w.Date = dt + " " + tm
+	w.Date = tm
 	switch info {
 	default:
 		w.Type = 0
-	case "阴", "多云":
+	case "阴", "多云", "大部多云":
 		w.Type = 1
-	case "阵雨":
+	case "阵雨", "雷阵雨", "小雨", "中雨", "大雨", "暴雨", "特大暴雨":
 		w.Type = 2
-	case "雪":
+	case "雪", "小雪", "中雪", "大雪", "暴雪", "阵雪":
 		w.Type = 3
 	}
 
