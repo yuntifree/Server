@@ -306,6 +306,7 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*hot.BidInfo {
 		}
 		info.Start *= 1000
 		info.End *= 1000
+		info.Seq = info.Bid
 		log.Printf("bid:%d gid:%d", info.Bid, info.Gid)
 		award.Num = getSalesCount(db, info.Bid, award.Uid)
 		info.Award = &award
