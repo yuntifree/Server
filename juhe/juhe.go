@@ -24,7 +24,7 @@ import (
 
 const (
 	baseurl    = "http://v.juhe.cn/toutiao/index"
-	appkey     = "ab30c7f450f8322c1e1be4efe2e3d084"
+	appkey     = "730e17291fa5e25bd40483f795af4a23"
 	dgurl      = "http://news.sun0769.com/dg/"
 	weatherurl = "http://op.juhe.cn/onebox/weather/query"
 	weatherkey = "ef10f2457a44285270011a38e775076c"
