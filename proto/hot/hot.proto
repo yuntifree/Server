@@ -53,6 +53,7 @@ message WeatherInfo {
     int32 type = 1;
     int32 temp = 2;
     string info = 3;
+    string dst = 4;
 }
 
 message WeatherNewsReply {

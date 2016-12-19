@@ -20,6 +20,7 @@ const (
 	homeNewsNum     = 6
 	saveRate        = 0.1 / (1024.0 * 1024.0)
 	marqueeInterval = 30
+	weatherDst      = "http://www.dg121.com/mobile"
 )
 
 const (
@@ -204,6 +205,7 @@ func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
 		log.Printf("select weather failed:%v", err)
 		return info, err
 	}
+	info.Dst = weatherDst
 	return info, nil
 }
 
