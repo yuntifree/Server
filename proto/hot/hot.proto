@@ -78,41 +78,15 @@ message FrontReply {
     repeated BannerInfo binfos = 3;
 }
 
-message AwardInfo {
-    int64 uid = 1;
-    string nickname = 2;
-    int64 awardcode = 3;
-    string head = 4;
-    int32 num = 5;
-    repeated int64 codes = 6;
-}
-
-message BidInfo {
-    int64 bid = 1;
-    int64 gid = 2;
-    int32 period = 3;
-    string title = 4;
-    string subtitle = 5;
-    int64 start = 6;
-    int64 end = 7;
-    int32 total = 8;
-    string image = 9;
-    int64 seq = 10;
-    int32 rest = 11;
-    int32 status = 12;
-    AwardInfo award = 13;
-    int32 remain = 14;
-}
-
 message OpeningReply {
     common.Head head = 1;
-    repeated BidInfo opening = 2;
+    repeated common.BidInfo opening = 2;
     int32 reddot = 3;
 }
 
 message OpenedReply {
     common.Head head = 1;
-    repeated BidInfo opened = 2;
+    repeated common.BidInfo opened = 2;
 }
 
 message SlideInfo {
@@ -135,7 +109,7 @@ message PromotionInfo {
 
 message HotListReply {
     common.Head head = 1;
-    repeated BidInfo opening = 2;
+    repeated common.BidInfo opening = 2;
     repeated SlideInfo slides = 3;
     PromotionInfo promotion = 4;
     int32 reddot = 5;
@@ -148,7 +122,7 @@ message MarqueeReply {
 
 message RunningReply {
     common.Head head = 1;
-    repeated BidInfo running = 2;
+    repeated common.BidInfo running = 2;
 }
 
 message DetailRequest {
@@ -170,9 +144,9 @@ message NextInfo {
 
 message DetailReply {
     common.Head head = 1;
-    BidInfo bet = 2;
+    common.BidInfo bet = 2;
     repeated string slides = 3;
-    AwardInfo award = 4;
+    common.AwardInfo award = 4;
     JoinInfo mine = 5;
     NextInfo next = 6;
 }

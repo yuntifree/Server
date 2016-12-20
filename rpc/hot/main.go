@@ -279,8 +279,8 @@ func getSalesCount(db *sql.DB, sid, uid int64) int32 {
 	return num
 }
 
-func getOpenedSales(db *sql.DB, num int32, seq int64) []*hot.BidInfo {
-	var opened []*hot.BidInfo
+func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
+	var opened []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime),
 	 image, total, win_uid, win_code, nickname, s.status, sub_title FROM sales s, 
 	 goods g, user i WHERE s.gid = g.gid AND s.win_uid = i.uid AND s.status >= 3 `
@@ -297,8 +297,8 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*hot.BidInfo {
 	defer rows.Close()
 
 	for rows.Next() {
-		var info hot.BidInfo
-		var award hot.AwardInfo
+		var info common.BidInfo
+		var award common.AwardInfo
 		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start,
 			&info.End, &info.Image, &info.Total, &award.Uid, &award.Awardcode,
 			&award.Nickname, &info.Status, &info.Subtitle)
@@ -323,8 +323,8 @@ func getRemainSeconds(tt time.Time) int32 {
 	return int32(award.Unix() - tt.Unix())
 }
 
-func getOpeningSales(db *sql.DB, num int32) []*hot.BidInfo {
-	var opening []*hot.BidInfo
+func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
+	var opening []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(etime), 
 	image, s.total, s.status, sub_title FROM sales s, goods g WHERE s.gid = g.gid 
 	AND s.status = 2  ORDER BY etime DESC `
@@ -340,7 +340,7 @@ func getOpeningSales(db *sql.DB, num int32) []*hot.BidInfo {
 	defer rows.Close()
 
 	for rows.Next() {
-		var info hot.BidInfo
+		var info common.BidInfo
 		var end int64
 		err = rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start, &end,
 			&info.Image, &info.Total, &info.Status, &info.Subtitle)
@@ -393,8 +393,8 @@ func isNewUser(db *sql.DB, uid int64) bool {
 	return flag
 }
 
-func getRunningSales(db *sql.DB, uid int64, num int32, seq int64) []*hot.BidInfo {
-	var infos []*hot.BidInfo
+func getRunningSales(db *sql.DB, uid int64, num int32, seq int64) []*common.BidInfo {
+	var infos []*common.BidInfo
 	flag := isNewUser(db, uid)
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime), 
 		image, total, remain, g.priority, sub_title, g.new_rank FROM sales s, goods g 
@@ -419,7 +419,7 @@ func getRunningSales(db *sql.DB, uid int64, num int32, seq int64) []*hot.BidInfo
 	defer rows.Close()
 
 	for rows.Next() {
-		var info hot.BidInfo
+		var info common.BidInfo
 		var rank int64
 		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title,
 			&info.Image, &info.Total, &info.Remain, &info.Seq, &info.Subtitle,
@@ -570,8 +570,8 @@ func getSalesCodes(db *sql.DB, sid, uid int64) []int64 {
 	return codes
 }
 
-func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) hot.AwardInfo {
-	var award hot.AwardInfo
+func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
+	var award common.AwardInfo
 	award.Uid = uid
 	award.Awardcode = awardcode
 	err := db.QueryRow("SELECT nickname, headurl FROM user WHERE uid = ?", uid).
@@ -585,9 +585,9 @@ func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) hot.AwardInfo {
 	return award
 }
 
-func getSalesDetail(db *sql.DB, sid, uid int64) (hot.BidInfo, hot.AwardInfo) {
-	var bet hot.BidInfo
-	var award hot.AwardInfo
+func getSalesDetail(db *sql.DB, sid, uid int64) (common.BidInfo, common.AwardInfo) {
+	var bet common.BidInfo
+	var award common.AwardInfo
 	query := `SELECT sid, num, status, s.gid, total, remain, 
 		UNIX_TIMESTAMP(atime), title, win_uid, win_code, g.image, g.sub_title, 
 		UNIX_TIMESTAMP(s.etime) FROM sales s, goods g WHERE s.gid = g.gid 
