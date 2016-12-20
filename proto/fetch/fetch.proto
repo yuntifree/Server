@@ -25,6 +25,7 @@ service Fetch{
     rpc FetchActivity(common.CommRequest) returns (ActivityReply) {}
     rpc FetchGoodsIntro(common.CommRequest) returns (GoodsIntroReply) {}
     rpc FetchPurchaseRecord(common.CommRequest) returns (PurchaseRecordReply) {}
+    rpc FetchBetHistory(common.CommRequest) returns (BetHistoryReply) {}
 }
 
 message NewsInfo {
@@ -288,4 +289,9 @@ message PurchaseRecord {
 message PurchaseRecordReply {
     common.Head head = 1;
     repeated PurchaseRecord infos = 2;
+}
+
+message BetHistoryReply {
+    common.Head head = 1;
+    repeated common.BidInfo infos = 2;
 }

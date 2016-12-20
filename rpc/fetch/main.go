@@ -719,6 +719,49 @@ func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest
 		Infos: infos}, nil
 }
 
+func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
+	var infos []*common.BidInfo
+	query := `SELECT sid, num, UNIX_TIMESTAMP(atime), win_uid, win_code, u.nickname, u.headurl 
+		FROM sales s, user u WHERE s.win_uid = u.uid AND s.status >= 3 AND gid = `
+	query += strconv.Itoa(int(gid))
+	if seq > 0 {
+		query += fmt.Sprintf(" AND sid < %d ", seq)
+	}
+	query += " ORDER BY sid DESC "
+	if num > 0 {
+		query += fmt.Sprintf(" LIMIT %d", num)
+	}
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getBetHistory query failed:%v", err)
+		return infos
+	}
+
+	for rows.Next() {
+		var info common.BidInfo
+		var award common.AwardInfo
+		err := rows.Scan(&info.Bid, &info.Period, &info.End,
+			&award.Uid, &award.Awardcode, &award.Nickname,
+			&award.Head)
+		if err != nil {
+			log.Printf("getBetHistory scan failed:%v", err)
+			continue
+		}
+		info.Seq = info.Bid
+		info.End *= 1000
+		info.Award = &award
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchBetHistory(ctx context.Context, in *common.CommRequest) (*fetch.BetHistoryReply, error) {
+	log.Printf("FetchBetHistory request uid:%d gid:%d", in.Head.Uid, in.Id)
+	infos := getBetHistory(db, in.Id, in.Seq, int64(in.Num))
+	return &fetch.BetHistoryReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
 func getShareImage(db *sql.DB, sid int64) string {
 	query := fmt.Sprintf("SELECT url FROM share_image WHERE deleted = 0 AND sid = %d LIMIT 1", sid)
 	var url string
