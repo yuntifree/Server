@@ -269,16 +269,6 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo, Binfos: binfos}, nil
 }
 
-func getSalesCount(db *sql.DB, sid, uid int64) int32 {
-	var num int32
-	err := db.QueryRow("SELECT COUNT(*) FROM sales_history WHERE uid = ? AND sid = ?", uid, sid).
-		Scan(&num)
-	if err != nil {
-		log.Printf("getSalesCount query failed:%v", err)
-	}
-	return num
-}
-
 func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
 	var opened []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime),
@@ -310,7 +300,7 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
 		info.End *= 1000
 		info.Seq = info.Bid
 		log.Printf("bid:%d gid:%d", info.Bid, info.Gid)
-		award.Num = getSalesCount(db, info.Bid, award.Uid)
+		award.Num = util.GetSalesCount(db, info.Bid, award.Uid)
 		info.Award = &award
 		opened = append(opened, &info)
 	}
@@ -579,7 +569,7 @@ func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
 	if err != nil {
 		log.Printf("getAwardDetail failed:%v", err)
 	}
-	award.Num = getSalesCount(db, sid, uid)
+	award.Num = util.GetSalesCount(db, sid, uid)
 	award.Codes = getSalesCodes(db, sid, uid)
 
 	return award

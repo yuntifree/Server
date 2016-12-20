@@ -143,3 +143,14 @@ func HasReddot(db *sql.DB, uid int64) bool {
 
 	return false
 }
+
+//GetSalesCount return purchase sales count
+func GetSalesCount(db *sql.DB, sid, uid int64) int32 {
+	var num int32
+	err := db.QueryRow("SELECT COUNT(*) FROM sales_history WHERE uid = ? AND sid = ?", uid, sid).
+		Scan(&num)
+	if err != nil {
+		log.Printf("getSalesCount query failed:%v", err)
+	}
+	return num
+}

@@ -863,6 +863,47 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	sid := req.GetParamInt("sid")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchShareDetail(context.Background(),
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Id:   sid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取晒单详情失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "share"}, res.Share)
+	js.SetPath([]string{"data", "bet"}, res.Bet)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1733,6 +1774,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
 	mux.Handle("/get_share_uid", appHandler(getShare))
+	mux.Handle("/get_share_detail", appHandler(getShareDetail))
 	mux.Handle("/get_detail", appHandler(getDetail))
 	mux.Handle("/get_detail_gid", appHandler(getDetail))
 	mux.Handle("/add_address", appHandler(addAddress))

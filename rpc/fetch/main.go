@@ -879,6 +879,54 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 		Infos: infos, Reddot: reddot}, nil
 }
 
+func getShareImages(db *sql.DB, sid int64) []string {
+	var images []string
+	rows, err := db.Query("SELECT url FROM share_image WHERE review = 1 AND deleted = 0 AND sid = ?", sid)
+	if err != nil {
+		log.Printf("getShareImages failed:%v", err)
+		return images
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var url string
+		err = rows.Scan(&url)
+		if err != nil {
+			log.Printf("getShareImages scan failed:%v", err)
+			continue
+		}
+		images = append(images, url)
+	}
+	return images
+}
+
+func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (*fetch.ShareDetailReply, error) {
+	log.Printf("FetchShareDetail request uid:%d sid:%d", in.Head.Uid, in.Id)
+	var share fetch.ShareInfo
+	var imageNum int
+	err := db.QueryRow("SELECT hid, h.uid, h.title, content, image_num, UNIX_TIMESTAMP(h.ctime), nickname FROM share_history h, user u WHERE h.uid = u.uid AND h.deleted = 0 AND h.reviewed = 1 AND h.sid = ?", in.Id).
+		Scan(&share.Sid, &share.Uid, &share.Title, &share.Text, &imageNum, &share.Sharetime, &share.Nickname)
+	if err != nil {
+		log.Printf("FetchShareDetail query share failed sid:%d %v", in.Id, err)
+		return &fetch.ShareDetailReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	share.Images = getShareImages(db, in.Id)
+	var bet common.BidInfo
+	var award common.AwardInfo
+	err = db.QueryRow("SELECT num, title, win_code, UNIX_TIMESTAMP(atime) FROM sales s, goods g WHERE s.gid = g.gid AND s.sid = ?", in.Id).
+		Scan(&bet.Period, &bet.Title, &award.Awardcode, &bet.End)
+	if err != nil {
+		log.Printf("FetchShareDetail query bet failed sid:%d %v", in.Id, err)
+		return &fetch.ShareDetailReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	bet.Bid = in.Id
+	award.Num = util.GetSalesCount(db, in.Id, share.Uid)
+	bet.Award = &award
+
+	return &fetch.ShareDetailReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Share: &share, Bet: &bet}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

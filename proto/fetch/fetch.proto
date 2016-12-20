@@ -26,6 +26,7 @@ service Fetch{
     rpc FetchGoodsIntro(common.CommRequest) returns (GoodsIntroReply) {}
     rpc FetchPurchaseRecord(common.CommRequest) returns (PurchaseRecordReply) {}
     rpc FetchBetHistory(common.CommRequest) returns (BetHistoryReply) {}
+    rpc FetchShareDetail(common.CommRequest) returns (ShareDetailReply) {}
 }
 
 message NewsInfo {
@@ -233,6 +234,7 @@ message ShareInfo {
     string text = 11;
     int64 share = 12;
     int64 period = 13;
+    repeated string images = 14;
 }
 
 message ShareReply {
@@ -284,4 +286,10 @@ message PurchaseRecordReply {
 message BetHistoryReply {
     common.Head head = 1;
     repeated common.BidInfo infos = 2;
+}
+
+message ShareDetailReply {
+    common.Head head = 1;
+    ShareInfo share = 2;
+    common.BidInfo bet = 3;
 }
