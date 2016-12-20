@@ -204,6 +204,7 @@ message AddressReply {
 message AdInfo {
     string img = 1;
     string target = 2;
+    string title = 3;
 }
 
 message AdReply {
