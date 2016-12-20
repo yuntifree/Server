@@ -201,15 +201,9 @@ message AddressReply {
     repeated common.AddressInfo infos = 2;
 }
 
-message AdInfo {
-    string img = 1;
-    string dst = 2;
-    string title = 3;
-}
-
 message AdReply {
     common.Head head = 1;
-    AdInfo info = 2;
+    common.BannerInfo info = 2;
 }
 
 message ConfReply {
@@ -257,14 +251,9 @@ message KvReply {
     string val = 2;
 }
 
-message ActivityInfo {
-    string title = 1;
-    string dst = 2;
-}
-
 message ActivityReply {
     common.Head head = 1;
-    ActivityInfo activity = 2;
+    common.BannerInfo activity = 2;
 }
 
 message GoodsIntro {

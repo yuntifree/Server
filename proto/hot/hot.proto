@@ -67,15 +67,10 @@ message UseInfo {
     int32 save = 2;
 }
 
-message BannerInfo {
-    string img = 1;
-    string dst = 2;
-}
-
 message FrontReply {
     common.Head head = 1;
     UseInfo uinfo = 2;
-    repeated BannerInfo binfos = 3;
+    repeated common.BannerInfo binfos = 3;
 }
 
 message OpeningReply {

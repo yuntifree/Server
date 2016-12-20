@@ -231,15 +231,15 @@ func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 	return info, nil
 }
 
-func getBanners(db *sql.DB) ([]*hot.BannerInfo, error) {
-	var infos []*hot.BannerInfo
-	rows, err := db.Query("SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 ORDER BY id DESC LIMIT 20")
+func getBanners(db *sql.DB) ([]*common.BannerInfo, error) {
+	var infos []*common.BannerInfo
+	rows, err := db.Query("SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 AND type = 0 ORDER BY id DESC LIMIT 20")
 	if err != nil {
 		log.Printf("select banner info failed:%v", err)
 		return infos, err
 	}
 	for rows.Next() {
-		var info hot.BannerInfo
+		var info common.BannerInfo
 		err := rows.Scan(&info.Img, &info.Dst)
 		if err != nil {
 			log.Printf("scan failed:%v", err)

@@ -583,8 +583,8 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 
 func (s *server) FetchFlashAd(ctx context.Context, in *common.CommRequest) (*fetch.AdReply, error) {
 	log.Printf("FetchFlashAd request uid:%d", in.Head.Uid)
-	var info fetch.AdInfo
-	err := db.QueryRow("SELECT img, dst, title FROM flash_ad WHERE deleted = 0 ORDER BY id DESC LIMIT 1").
+	var info common.BannerInfo
+	err := db.QueryRow("SELECT img, dst, title FROM banner WHERE deleted = 0 AND type = 1 ORDER BY id DESC LIMIT 1").
 		Scan(&info.Img, &info.Dst, &info.Title)
 	if err != nil {
 		log.Printf("FetchFlashAd query failed uid:%d, %v", in.Head.Uid, err)
@@ -633,8 +633,8 @@ func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.K
 
 func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fetch.ActivityReply, error) {
 	log.Printf("FetchActivity request uid:%d", in.Head.Uid)
-	var info fetch.ActivityInfo
-	err := db.QueryRow("SELECT title, dst FROM activity WHERE deleted = 0 ORDER BY id DESC LIMIT 1").
+	var info common.BannerInfo
+	err := db.QueryRow("SELECT title, dst FROM banner WHERE deleted = 0 AND type = 2 ORDER BY id DESC LIMIT 1").
 		Scan(&info.Title, &info.Dst)
 	if err != nil {
 		log.Printf("FetchActivity query failed uid:%d, %v", in.Head.Uid, err)

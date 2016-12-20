@@ -233,17 +233,18 @@ CREATE TABLE IF NOT EXISTS user_unionid (
 
 CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
+    type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
+    title   varchar(256) NOT NULL,
     priority    int unsigned NOT NULL DEFAULT 0,
     online  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id),
-    KEY(priority)
+    KEY(priority),
+    KEY(type)
 ) ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS flash_ad LIKE banner;
 
 CREATE TABLE IF NOT EXISTS service_click(
     id      int unsigned NOT NULL AUTO_INCREMENT,
@@ -337,12 +338,3 @@ CREATE TABLE IF NOT EXISTS kv_config
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS activity
-(
-    id      int unsigned NOT NULL AUTO_INCREMENT,
-    title   varchar(256) NOT NULL,
-    dst     varchar(256) NOT NULL,
-    deleted tinyint unsigned NOT NULL DEFAULT 0,
-    ctime   datetime NOT NULL DEFAULT '2016-01-01',
-    PRIMARY KEY(id)
-) ENGINE = InnoDB;
