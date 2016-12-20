@@ -50,6 +50,7 @@ message BannerInfo {
     int32 priority = 5;
     int32 deleted = 6;
     string title = 7;
+    int32 type = 8;
 }
 
 message AddressInfo {

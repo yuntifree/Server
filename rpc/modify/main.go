@@ -189,8 +189,8 @@ func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*common
 }
 
 func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
-	res, err := db.Exec("INSERT INTO banner(img, dst, priority, ctime) VALUES(?, ?, ?, NOW())",
-		in.Info.Img, in.Info.Dst, in.Info.Priority)
+	res, err := db.Exec("INSERT INTO banner(img, dst, priority, title, type, ctime) VALUES(?, ?, ?, ?, ?, NOW())",
+		in.Info.Img, in.Info.Dst, in.Info.Priority, in.Info.Title, in.Info.Type)
 	if err != nil {
 		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
@@ -211,6 +211,9 @@ func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*comm
 	}
 	if in.Info.Dst != "" {
 		query += ", dst = '" + in.Info.Dst + "' "
+	}
+	if in.Info.Title != "" {
+		query += ", title = '" + in.Info.Title + "' "
 	}
 	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
 	_, err := db.Exec(query)

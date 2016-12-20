@@ -477,6 +477,8 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	img := req.GetParamString("img")
 	dst := req.GetParamString("dst")
 	priority := req.GetParamInt("priority")
+	btype := req.GetParamInt("type")
+	title := req.GetParamStringDef("title", "")
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -490,7 +492,8 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.AddBanner(context.Background(),
 		&modify.BannerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority)}})
+			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
+				Title: title, Type: int32(btype)}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -745,6 +748,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	id := req.GetParamInt("id")
 	img := req.GetParamStringDef("img", "")
 	dst := req.GetParamStringDef("dst", "")
+	title := req.GetParamStringDef("title", "")
 	online := req.GetParamIntDef("online", 0)
 	deleted := req.GetParamIntDef("delete", 0)
 	priority := req.GetParamIntDef("priority", 0)
@@ -761,7 +765,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.ModBanner(context.Background(),
 		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
-				Online: int32(online), Deleted: int32(deleted)}})
+				Online: int32(online), Deleted: int32(deleted), Title: title}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -783,6 +787,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
+	btype := req.GetParamInt("type")
 	num = genReqNum(num)
 
 	address := getNameServer(uid, util.FetchServerName)
@@ -796,7 +801,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.FetchBanners(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Type: int32(btype), Num: int32(num)})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}

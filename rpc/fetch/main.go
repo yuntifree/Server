@@ -429,9 +429,9 @@ func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetc
 	return &fetch.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
 
-func getBanners(db *sql.DB, seq, num int32) []*common.BannerInfo {
+func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
 	var infos []*common.BannerInfo
-	query := "SELECT id, img, dst, online, priority FROM banner WHERE deleted = 0 ORDER BY priority DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d", btype, seq, num)
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -442,7 +442,7 @@ func getBanners(db *sql.DB, seq, num int32) []*common.BannerInfo {
 
 	for rows.Next() {
 		var info common.BannerInfo
-		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority)
+		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority, &info.Title)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
@@ -455,7 +455,7 @@ func getBanners(db *sql.DB, seq, num int32) []*common.BannerInfo {
 
 func (s *server) FetchBanners(ctx context.Context, in *common.CommRequest) (*fetch.BannerReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
-	infos := getBanners(db, int32(in.Seq), in.Num)
+	infos := getBanners(db, in.Seq, in.Type, in.Num)
 	total := getTotalBanners(db)
 	return &fetch.BannerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
 }
