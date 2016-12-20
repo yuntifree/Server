@@ -585,7 +585,7 @@ func (s *server) FetchFlashAd(ctx context.Context, in *common.CommRequest) (*fet
 	log.Printf("FetchFlashAd request uid:%d", in.Head.Uid)
 	var info fetch.AdInfo
 	err := db.QueryRow("SELECT img, dst, title FROM flash_ad WHERE deleted = 0 ORDER BY id DESC LIMIT 1").
-		Scan(&info.Img, &info.Target, &info.Title)
+		Scan(&info.Img, &info.Dst, &info.Title)
 	if err != nil {
 		log.Printf("FetchFlashAd query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.AdReply{Head: &common.Head{Retcode: 1}}, err

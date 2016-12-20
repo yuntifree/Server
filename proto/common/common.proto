@@ -49,6 +49,7 @@ message BannerInfo {
     int32 online = 4;
     int32 priority = 5;
     int32 deleted = 6;
+    string title = 7;
 }
 
 message AddressInfo {
