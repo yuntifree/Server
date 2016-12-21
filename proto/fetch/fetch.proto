@@ -27,6 +27,7 @@ service Fetch{
     rpc FetchPurchaseRecord(common.CommRequest) returns (PurchaseRecordReply) {}
     rpc FetchBetHistory(common.CommRequest) returns (BetHistoryReply) {}
     rpc FetchShareDetail(common.CommRequest) returns (ShareDetailReply) {}
+    rpc FetchUserInfo(common.CommRequest) returns (UserInfoReply) {}
 }
 
 message NewsInfo {
@@ -92,6 +93,11 @@ message UserInfo {
     int64 traffic = 8;
     string address = 9;
     string utime = 10;
+    string nickname = 11;
+    string head = 12;
+    int64 coin = 13;
+    bool award = 14;
+    bool share = 15;
 }
 
 message TemplateInfo {
@@ -292,4 +298,11 @@ message ShareDetailReply {
     common.Head head = 1;
     ShareInfo share = 2;
     common.BidInfo bet = 3;
+}
+
+
+message UserInfoReply {
+    common.Head head = 1;
+    UserInfo info = 2;
+    string banner = 3;
 }

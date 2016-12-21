@@ -927,6 +927,73 @@ func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (
 		Share: &share, Bet: &bet}, nil
 }
 
+func getUserBanner(db *sql.DB) string {
+	var banner string
+	err := db.QueryRow("SELECT img FROM banner WHERE type = 3 AND deleted = 0 ORDER BY id DESC LIMIT 1").
+		Scan(&banner)
+	if err != nil {
+		log.Printf("getUserBanner query failed:%v", err)
+	}
+	return banner
+}
+
+func hasAward(db *sql.DB, uid int64) bool {
+	var cnt int
+	err := db.QueryRow("SELECT COUNT(sid) FROM sales WHERE status = 3 AND win_uid = ?", uid).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("hasAward query failed uid:%d %v", uid, err)
+	}
+	if cnt > 0 {
+		return true
+	}
+
+	err = db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE status < 6 AND uid = ?", uid).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("hasAward query failed uid:%d %v", uid, err)
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
+func needShare(db *sql.DB, uid int64) bool {
+	var cnt int
+	err := db.QueryRow("SELECT COUNT(lid) FROM logistics WHERE status >= 6 AND share = 0 AND uid = ?", uid).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("needShare query failed uid:%d %v", uid, err)
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
+func getUserInfo(db *sql.DB, uid int64) fetch.UserInfo {
+	var info fetch.UserInfo
+	err := db.QueryRow("SELECT nickname, headurl, phone, balance FROM user WHERE uid = ?", uid).
+		Scan(&info.Nickname, &info.Head, &info.Phone, &info.Coin)
+	if err != nil {
+		log.Printf("getUserInfo query failed uid: %d %v", uid, err)
+		return info
+	}
+	info.Coin /= 100
+	info.Award = hasAward(db, uid)
+	info.Share = needShare(db, uid)
+	return info
+}
+
+func (s *server) FetchUserInfo(ctx context.Context, in *common.CommRequest) (*fetch.UserInfoReply, error) {
+	log.Printf("FetchUserInfo uid:%d", in.Head.Uid)
+	info := getUserInfo(db, in.Head.Uid)
+	banner := getUserBanner(db)
+	return &fetch.UserInfoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Info: &info, Banner: banner}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {
