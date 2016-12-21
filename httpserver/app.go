@@ -26,8 +26,10 @@ import (
 )
 
 const (
-	wxHost     = "http://wx.yunxingzh.com/"
-	maxZipcode = 820000
+	wxHost         = "http://wx.yunxingzh.com/"
+	maxZipcode     = 820000
+	iosTestVersion = 3
+	iosTerm        = 1
 )
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -525,6 +527,12 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
+	version := req.GetParamInt("version")
+	term := req.GetParamInt("term")
+	if version == iosTestVersion && term == iosTerm {
+		w.Write([]byte(`{"errno":0}`))
+		return
+	}
 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
