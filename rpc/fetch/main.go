@@ -652,6 +652,7 @@ func getGoodsIntro(db *sql.DB, gid int64) fetch.GoodsIntro {
 		log.Printf("getGoodsIntro failed, gid:%d %v", gid, err)
 		return info
 	}
+	defer rows.Close()
 
 	flag := false
 	var images []string
@@ -736,6 +737,7 @@ func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
 		log.Printf("getBetHistory query failed:%v", err)
 		return infos
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var info common.BidInfo
@@ -992,6 +994,85 @@ func (s *server) FetchUserInfo(ctx context.Context, in *common.CommRequest) (*fe
 	banner := getUserBanner(db)
 	return &fetch.UserInfoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info, Banner: banner}, nil
+}
+
+func getWinnerInfo(db *sql.DB, sid int64) common.AwardInfo {
+	var award common.AwardInfo
+	err := db.QueryRow("SELECT uid, nickname, win_code FROM sales s, user u WHERE s.win_uid = u.uid AND s.sid = ?", sid).
+		Scan(&award.Uid, &award.Nickname, &award.Awardcode)
+	if err != nil {
+		log.Printf("getWinnerInfo failed sid:%d %v", sid, err)
+		return award
+	}
+	award.Num = util.GetSalesCount(db, sid, award.Uid)
+	return award
+}
+
+func getUserBets(db *sql.DB, uid, seq, num int64) []*common.BidInfo {
+	var bets []*common.BidInfo
+	if seq > 0 {
+		bets = getUserSales(db, uid, seq, num, true)
+	} else {
+		t := getUserSales(db, uid, seq, num, false)
+		q := getUserSales(db, uid, seq, num, true)
+		bets = append(t, q...)
+	}
+	return bets
+}
+
+func getUserSales(db *sql.DB, uid, seq, num int64, flag bool) []*common.BidInfo {
+	var bets []*common.BidInfo
+	query := `SELECT s.sid, num, title, total, remain, status, image, UNIX_TIMESTAMP(s.etime),
+		UNIX_TIMESTAMP(s.atime) FROM sales s, goods g, (SELECT distinct sid FROM purchase_history
+		WHERE uid = `
+	query += strconv.Itoa(int(uid))
+	if seq > 0 {
+		query += fmt.Sprintf(" AND sid < %d ", seq)
+	}
+	if flag {
+		query += fmt.Sprintf(" ORDER BY hid DESC LIMIT %d", num)
+	}
+	query += ") as tl WHERE s.sid = tl.sid AND s.gid = g.gid "
+	if flag {
+		query += " AND s.status NOT IN (1, 2)"
+	} else {
+		query += " AND s.status IN (1, 2) ORDER BY s.status DESC"
+	}
+	log.Printf("getUserSales query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getUserSales query failed:%v", err)
+		return bets
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var info common.BidInfo
+		var rest, end int64
+		err = rows.Scan(&info.Bid, &info.Period, &info.Title, &info.Total, &info.Remain,
+			&info.Status, &info.Image, &rest, &end)
+		if err != nil {
+			log.Printf("getUserSales scan failed:%v", err)
+			continue
+		}
+		if info.Status == 2 {
+			info.Rest = util.GetRemainSeconds(rest)
+		} else if info.Status >= 3 {
+			info.End = end * 1000
+			award := getWinnerInfo(db, info.Bid)
+			info.Award = &award
+		}
+		info.Codes = util.GetSalesCodes(db, info.Bid, uid)
+		bets = append(bets, &info)
+	}
+	return bets
+}
+
+func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fetch.UserBetReply, error) {
+	log.Printf("FetchUserInfo uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
+	bets := getUserBets(db, in.Head.Uid, in.Seq, int64(in.Num))
+	return &fetch.UserBetReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Bets: bets}, nil
 }
 
 func main() {

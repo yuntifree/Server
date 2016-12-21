@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 
 	common "../../proto/common"
 	hot "../../proto/hot"
@@ -307,12 +306,6 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
 	return opened
 }
 
-func getRemainSeconds(tt time.Time) int32 {
-	award := util.GetNextCqssc(tt)
-	award = award.Add(120 * time.Second)
-	return int32(award.Unix() - tt.Unix())
-}
-
 func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
 	var opening []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(etime), 
@@ -340,8 +333,7 @@ func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
 		}
 		info.Start *= 1000
 		info.Seq = info.Bid
-		tt := time.Unix(end, 0)
-		info.Rest = getRemainSeconds(tt)
+		info.Rest = util.GetRemainSeconds(end)
 		opening = append(opening, &info)
 	}
 	if len(opening) < int(num) {
@@ -537,29 +529,6 @@ func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.R
 		Running: running}, nil
 }
 
-func getSalesCodes(db *sql.DB, sid, uid int64) []int64 {
-	var codes []int64
-	rows, err := db.Query("SELECT num FROM sales_history WHERE sid = ? AND uid = ?",
-		sid, uid)
-	if err != nil {
-		log.Printf("getSalesCodes failed:%v", err)
-		return codes
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var code int64
-		err := rows.Scan(&code)
-		if err != nil {
-			log.Printf("getSalesCodes scan failed:%v", err)
-			continue
-		}
-		codes = append(codes, code)
-
-	}
-	return codes
-}
-
 func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
 	var award common.AwardInfo
 	award.Uid = uid
@@ -570,7 +539,7 @@ func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
 		log.Printf("getAwardDetail failed:%v", err)
 	}
 	award.Num = util.GetSalesCount(db, sid, uid)
-	award.Codes = getSalesCodes(db, sid, uid)
+	award.Codes = util.GetSalesCodes(db, sid, uid)
 
 	return award
 }
@@ -592,8 +561,7 @@ func getSalesDetail(db *sql.DB, sid, uid int64) (common.BidInfo, common.AwardInf
 		return bet, award
 	}
 	if bet.Status == 2 {
-		tt := time.Unix(rest, 0)
-		bet.Rest = getRemainSeconds(tt)
+		bet.Rest = util.GetRemainSeconds(rest)
 	} else {
 		bet.End *= 1000
 	}
@@ -638,7 +606,7 @@ func getGoodsImages(db *sql.DB, gid int64) []string {
 func getUserJoin(db *sql.DB, uid, sid int64) hot.JoinInfo {
 	var info hot.JoinInfo
 	info.Uid = uid
-	codes := getSalesCodes(db, sid, uid)
+	codes := util.GetSalesCodes(db, sid, uid)
 	if len(codes) > 0 {
 		info.Join = 1
 		info.Codes = codes

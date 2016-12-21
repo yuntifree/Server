@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strconv"
+	"time"
 )
 
 const (
@@ -153,4 +154,36 @@ func GetSalesCount(db *sql.DB, sid, uid int64) int32 {
 		log.Printf("getSalesCount query failed:%v", err)
 	}
 	return num
+}
+
+//GetSalesCodes return sales codes
+func GetSalesCodes(db *sql.DB, sid, uid int64) []int64 {
+	var codes []int64
+	rows, err := db.Query("SELECT num FROM sales_history WHERE sid = ? AND uid = ?",
+		sid, uid)
+	if err != nil {
+		log.Printf("getSalesCodes failed:%v", err)
+		return codes
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var code int64
+		err := rows.Scan(&code)
+		if err != nil {
+			log.Printf("getSalesCodes scan failed:%v", err)
+			continue
+		}
+		codes = append(codes, code)
+
+	}
+	return codes
+}
+
+//GetRemainSeconds return remain seconds for next award
+func GetRemainSeconds(now int64) int32 {
+	tt := time.Unix(now, 0)
+	award := GetNextCqssc(tt)
+	award = award.Add(120 * time.Second)
+	return int32(award.Unix() - tt.Unix())
 }

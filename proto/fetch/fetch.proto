@@ -28,6 +28,7 @@ service Fetch{
     rpc FetchBetHistory(common.CommRequest) returns (BetHistoryReply) {}
     rpc FetchShareDetail(common.CommRequest) returns (ShareDetailReply) {}
     rpc FetchUserInfo(common.CommRequest) returns (UserInfoReply) {}
+    rpc FetchUserBet(common.CommRequest) returns (UserBetReply) {}
 }
 
 message NewsInfo {
@@ -305,4 +306,9 @@ message UserInfoReply {
     common.Head head = 1;
     UserInfo info = 2;
     string banner = 3;
+}
+
+message UserBetReply {
+    common.Head head = 1;
+    repeated common.BidInfo bets = 2;
 }
