@@ -96,5 +96,6 @@ message BidInfo {
     AwardInfo award = 13;
     int32 remain = 14;
     repeated int64 codes = 15;
+    int32 gtype = 16;
 }
 

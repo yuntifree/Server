@@ -1278,6 +1278,13 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uid := req.GetParamInt("uid")
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
+	path := r.URL.Path
+	var stype int32
+	if path == "/get_user_award" {
+		stype = util.UserAwardType
+	} else {
+		stype = util.UserBetType
+	}
 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -1290,7 +1297,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.FetchUserBet(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: int32(num), Type: stype})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -1302,8 +1309,8 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	js.SetPath([]string{"data", "bets"}, res.Bets)
-	if len(res.Bets) >= util.MaxListSize {
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+	if len(res.Infos) >= util.MaxListSize {
 		js.SetPath([]string{"data", "hasmore"}, 1)
 	}
 
@@ -1853,6 +1860,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_record", appHandler(getPurchaseRecord))
 	mux.Handle("/get_userinfo", appHandler(getUserInfo))
 	mux.Handle("/get_user_bet", appHandler(getUserBet))
+	mux.Handle("/get_user_award", appHandler(getUserBet))
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))

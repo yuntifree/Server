@@ -310,5 +310,5 @@ message UserInfoReply {
 
 message UserBetReply {
     common.Head head = 1;
-    repeated common.BidInfo bets = 2;
+    repeated common.BidInfo infos = 2;
 }

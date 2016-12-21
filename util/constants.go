@@ -20,4 +20,6 @@ const (
 	GidShareType       = 2
 	ListShareType      = 3
 	TopShareType       = 4
+	UserBetType        = 0
+	UserAwardType      = 1
 )

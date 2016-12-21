@@ -1069,10 +1069,50 @@ func getUserSales(db *sql.DB, uid, seq, num int64, flag bool) []*common.BidInfo 
 }
 
 func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fetch.UserBetReply, error) {
-	log.Printf("FetchUserInfo uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
-	bets := getUserBets(db, in.Head.Uid, in.Seq, int64(in.Num))
+	log.Printf("FetchUserBet uid:%d seq:%d num:%d type:%d", in.Head.Uid, in.Seq, in.Num, in.Type)
+	var infos []*common.BidInfo
+	if in.Type == util.UserAwardType {
+		infos = getUserAward(db, in.Head.Uid, in.Seq, int64(in.Num))
+	} else {
+		infos = getUserBets(db, in.Head.Uid, in.Seq, int64(in.Num))
+	}
 	return &fetch.UserBetReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Bets: bets}, nil
+		Infos: infos}, nil
+}
+
+func getUserAward(db *sql.DB, uid, seq, num int64) []*common.BidInfo {
+	var infos []*common.BidInfo
+	query := `SELECT sid, status, num, title, total, remain, image, UNIX_TIMESTAMP(s.atime),
+		win_code, UNIX_TIMESTAMP(s.etime), g.type FROM sales s, goods g 
+		WHERE s.gid = g.gid AND s.status >= 3 AND s.win_uid = `
+	query += strconv.Itoa(int(uid))
+	if seq > 0 {
+		query += fmt.Sprintf(" AND UNIX_TIMESTAMP(s.etime) < %d", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY s.etime DESC LIMIT %d", num)
+	log.Printf("getUserAward query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getUserAward query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info common.BidInfo
+		var award common.AwardInfo
+		err = rows.Scan(&info.Bid, &info.Status, &info.Period, &info.Title,
+			&info.Total, &info.Remain, &info.Image, &info.End,
+			&award.Awardcode, &info.Seq, &info.Gtype)
+		if err != nil {
+			log.Printf("getUserAward scan failed:%v", err)
+			continue
+		}
+		info.Codes = util.GetSalesCodes(db, info.Bid, uid)
+		info.Award = &award
+		infos = append(infos, &info)
+	}
+	return infos
 }
 
 func main() {
