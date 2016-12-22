@@ -25,6 +25,8 @@ service Modify{
     rpc DelConf(DelConfRequest) returns (common.CommReply) {}
     rpc AddAdBan(AddBanRequest) returns (common.CommReply) {}
     rpc DelAdBan(DelBanRequest) returns (common.CommReply) {}
+    rpc AddWhiteList(WhiteRequest) returns (common.CommReply) {}
+    rpc DelWhiteList(WhiteRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -138,4 +140,10 @@ message AddBanRequest {
 message DelBanRequest {
     common.Head head = 1;
     repeated int64 ids = 2;
+}
+
+message WhiteRequest {
+    common.Head head = 1;
+    int64 type = 2;
+    repeated int64 ids = 3;
 }

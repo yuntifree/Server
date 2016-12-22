@@ -371,6 +371,28 @@ func (s *server) DelAdBan(ctx context.Context, in *modify.DelBanRequest) (*commo
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddWhiteList(ctx context.Context, in *modify.WhiteRequest) (*common.CommReply, error) {
+	for _, v := range in.Ids {
+		_, err := db.Exec("INSERT INTO white_list(type, uid, ctime) VALUES (?, ?, NOW()) ON DUPLICATED KEY UPDATE deleted = 0", in.Type, v)
+		if err != nil {
+			log.Printf("AddWhiteList insert failed uid:%d %v", v, err)
+			continue
+		}
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) DelWhiteList(ctx context.Context, in *modify.WhiteRequest) (*common.CommReply, error) {
+	idStr := genIDStr(in.Ids)
+	query := fmt.Sprintf("UPDATE white_list SET deleted = 1 WHERE type = 0 AND uid IN (%s)", idStr)
+	log.Printf("DelWhiteList query:%s", query)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("DelWhiteList query failed:%v", err)
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {
