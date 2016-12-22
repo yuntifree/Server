@@ -29,6 +29,7 @@ service Fetch{
     rpc FetchShareDetail(common.CommRequest) returns (ShareDetailReply) {}
     rpc FetchUserInfo(common.CommRequest) returns (UserInfoReply) {}
     rpc FetchUserBet(common.CommRequest) returns (UserBetReply) {}
+    rpc FetchAdBan(common.CommRequest) returns (AdBanReply) {}
 }
 
 message NewsInfo {
@@ -317,4 +318,9 @@ message UserInfoReply {
 message UserBetReply {
     common.Head head = 1;
     repeated common.BidInfo infos = 2;
+}
+
+message AdBanReply {
+    common.Head head = 1;
+    repeated common.AdBan infos = 2;
 }

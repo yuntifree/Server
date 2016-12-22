@@ -1149,6 +1149,34 @@ func getUserAward(db *sql.DB, uid, seq, num int64) []*common.BidInfo {
 	return infos
 }
 
+func getAdBan(db *sql.DB) []*common.AdBan {
+	var infos []*common.AdBan
+	rows, err := db.Query("SELECT id, term, version FROM ad_ban WHERE deleted = 0 ORDER BY id DESC")
+	if err != nil {
+		log.Printf("getAdBan failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info common.AdBan
+		err = rows.Scan(&info.Id, &info.Term, &info.Version)
+		if err != nil {
+			log.Printf("getAdBan scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchAdBan(ctx context.Context, in *common.CommRequest) (*fetch.AdBanReply, error) {
+	log.Printf("FetchUserBet uid:%d", in.Head.Uid)
+	infos := getAdBan(db)
+	return &fetch.AdBanReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

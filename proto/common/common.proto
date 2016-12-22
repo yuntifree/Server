@@ -100,3 +100,9 @@ message BidInfo {
     int32 gtype = 16;
 }
 
+message AdBan {
+    int64 id = 1;
+    int64 term = 2;
+    int64 version = 3;
+}
+
