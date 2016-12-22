@@ -338,3 +338,25 @@ CREATE TABLE IF NOT EXISTS kv_config
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS ad_ban
+(
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    term    tinyint unsigned NOT NULL,
+    version int unsigned NOT NULL,
+    deleted tinyint unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(term, version)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS white_list 
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- 0: flash_ad
+    type    int unsigned NOT NULL,
+    uid     int unsigned NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(type, uid)
+) ENGINE = InnoDB;

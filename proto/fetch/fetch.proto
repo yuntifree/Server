@@ -18,7 +18,7 @@ service Fetch{
     rpc FetchStsCredentials(common.CommRequest) returns (StsReply) {}
     rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
     rpc FetchAddress(common.CommRequest) returns (AddressReply) {}
-    rpc FetchFlashAd(common.CommRequest) returns (AdReply) {}
+    rpc FetchFlashAd(AdRequest) returns (AdReply) {}
     rpc FetchConf(common.CommRequest) returns (ConfReply) {}
     rpc FetchShare(ShareRequest) returns (ShareReply) {}
     rpc FetchKvConf(KvRequest) returns (KvReply) {}
@@ -207,6 +207,12 @@ message ZipcodeReply {
 message AddressReply {
     common.Head head = 1;
     repeated common.AddressInfo infos = 2;
+}
+
+message AdRequest{
+    common.Head head = 1;
+    int64 term = 2;
+    int64 version = 3;
 }
 
 message AdReply {

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -29,6 +30,10 @@ const (
 	hotServiceKey  = "hot:service"
 	expireInterval = 30
 )
+
+func init() {
+	log.SetOutput(os.Stdout)
+}
 
 type request struct {
 	Post *simplejson.Json

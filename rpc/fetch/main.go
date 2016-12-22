@@ -581,16 +581,50 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
 
-func (s *server) FetchFlashAd(ctx context.Context, in *common.CommRequest) (*fetch.AdReply, error) {
-	log.Printf("FetchFlashAd request uid:%d", in.Head.Uid)
+func getFlashAd(db *sql.DB) common.BannerInfo {
 	var info common.BannerInfo
 	err := db.QueryRow("SELECT img, dst, title FROM banner WHERE deleted = 0 AND type = 1 ORDER BY id DESC LIMIT 1").
 		Scan(&info.Img, &info.Dst, &info.Title)
 	if err != nil {
-		log.Printf("FetchFlashAd query failed uid:%d, %v", in.Head.Uid, err)
-		return &fetch.AdReply{Head: &common.Head{Retcode: 1}}, err
+		log.Printf("FetchFlashAd query failed %v", err)
 	}
+	return info
+}
 
+func isAdBan(db *sql.DB, term, version int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(id) FROM ad_ban WHERE term = ? AND version = ?", term, version).
+		Scan(&num)
+	if err != nil {
+		log.Printf("isAdBan query failed:%v", err)
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+func isAdWhite(db *sql.DB, uid int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(id) FROM white_list WHERE type = 0 AND deleted = 0 AND uid = ?", uid).
+		Scan(&num)
+	if err != nil {
+		log.Printf("isAdWhite query failed uid:%d %v", uid, err)
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
+}
+
+func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.AdReply, error) {
+	log.Printf("FetchFlashAd request uid:%d term:%d versoin:%d", in.Head.Uid, in.Term, in.Version)
+	if !isAdWhite(db, in.Head.Uid) && isAdBan(db, in.Term, in.Version) {
+		log.Printf("FetchFlashAd ban uid:%d term:%d version:%d", in.Head.Uid, in.Term, in.Version)
+		return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
+	}
+	info := getFlashAd(db)
 	return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Info: &info}, nil
 }
 

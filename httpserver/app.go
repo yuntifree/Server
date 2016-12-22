@@ -26,10 +26,8 @@ import (
 )
 
 const (
-	wxHost         = "http://wx.yunxingzh.com/"
-	maxZipcode     = 820000
-	iosTestVersion = 3
-	iosTerm        = 1
+	wxHost     = "http://wx.yunxingzh.com/"
+	maxZipcode = 820000
 )
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -529,10 +527,6 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uid := req.GetParamInt("uid")
 	version := req.GetParamInt("version")
 	term := req.GetParamInt("term")
-	if version == iosTestVersion && term == iosTerm {
-		w.Write([]byte(`{"errno":0}`))
-		return
-	}
 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -543,7 +537,9 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchFlashAd(context.Background(), &common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	res, err := c.FetchFlashAd(context.Background(),
+		&fetch.AdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Term: term, Version: version})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
@@ -555,7 +551,9 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	js.Set("data", res.Info)
+	if res.Info != nil {
+		js.Set("data", res.Info)
+	}
 
 	body, err := js.MarshalJSON()
 	if err != nil {
