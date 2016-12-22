@@ -1,6 +1,7 @@
 package util
 
 import (
+	"log"
 	"math/rand"
 	"net"
 	"strconv"
@@ -9,6 +10,10 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 )
+
+func init() {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Llongfile)
+}
 
 //GenWifiPass gen 4-digit password
 func GenWifiPass() string {
