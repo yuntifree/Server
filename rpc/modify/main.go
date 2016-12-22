@@ -341,6 +341,36 @@ func (s *server) AddConf(ctx context.Context, in *modify.ConfRequest) (*common.C
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddAdBan(ctx context.Context, in *modify.AddBanRequest) (*common.CommReply, error) {
+	log.Printf("AddAdBan uid:%d term:%s version", in.Head.Uid, in.Info.Term, in.Info.Version)
+	res, err := db.Exec("INSERT INTO ad_ban(term, version, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
+		in.Info.Term, in.Info.Version)
+	if err != nil {
+		log.Printf("add adban failed uid:%d term:%d version:%d err:%v\n",
+			in.Head.Uid, in.Info.Term, in.Info.Version, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add adban failed")
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("add adban get insert id failed uid:%d term:%d version:%d err:%v\n",
+			in.Head.Uid, in.Info.Term, in.Info.Version, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add adban failed")
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+}
+
+func (s *server) DelAdBan(ctx context.Context, in *modify.DelBanRequest) (*common.CommReply, error) {
+	log.Printf("DelAdBan uid:%d", in.Head.Uid)
+	idStr := genIDStr(in.Ids)
+	query := fmt.Sprintf("UPDATE ad_ban SET deleted = 1 WHERE id IN (%s)", idStr)
+	log.Printf("query :%s", query)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("DelAdBan query failed:%v", err)
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

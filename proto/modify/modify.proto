@@ -23,6 +23,8 @@ service Modify{
     rpc ModAddress(AddressRequest) returns (common.CommReply) {}
     rpc AddConf(ConfRequest) returns (common.CommReply) {}
     rpc DelConf(DelConfRequest) returns (common.CommReply) {}
+    rpc AddAdBan(AddBanRequest) returns (common.CommReply) {}
+    rpc DelAdBan(DelBanRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -126,4 +128,14 @@ message ConfRequest {
 message DelConfRequest {
     common.Head head = 1;
     repeated string names = 2;
+}
+
+message AddBanRequest {
+    common.Head head = 1;
+    common.AdBan info = 2;
+}
+
+message DelBanRequest {
+    common.Head head = 1;
+    repeated int64 ids = 2;
 }

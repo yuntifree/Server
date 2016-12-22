@@ -583,6 +583,85 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddAdBan(context.Background(),
+		&modify.AddBanRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.AdBan{Term: term, Version: version}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "添加广告屏蔽失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "id"}, res.Id)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
+func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+
+	var ids []int64
+	arr, err := req.Post.Get("data").Get("ids").Array()
+	if err == nil {
+		for i := 0; i < len(arr); i++ {
+			tid, _ := req.Post.Get("data").Get("ids").GetIndex(i).Int64()
+			ids = append(ids, tid)
+		}
+	}
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.DelAdBan(context.Background(),
+		&modify.DelBanRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Ids:  ids})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "删除广告屏蔽失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -912,6 +991,8 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_templates", appHandler(getTemplates))
 	mux.Handle("/get_conf", appHandler(getConf))
 	mux.Handle("/get_adban", appHandler(getAdBan))
+	mux.Handle("/add_adban", appHandler(addAdBan))
+	mux.Handle("/del_adban", appHandler(delAdBan))
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))
 	mux.Handle("/set_conf", appHandler(addConf))
