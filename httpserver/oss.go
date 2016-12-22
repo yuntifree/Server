@@ -662,6 +662,48 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+	wtype := req.GetParamInt("type")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchWhiteList(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num), Type: int32(wtype)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取白名单失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+	js.SetPath([]string{"data", "total"}, res.Total)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -1087,6 +1129,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))
+	mux.Handle("/get_white_list", appHandler(getWhiteList))
 	mux.Handle("/add_white_list", appHandler(addWhiteList))
 	mux.Handle("/del_white_list", appHandler(delWhiteList))
 	mux.Handle("/add_template", appHandler(addTemplate))

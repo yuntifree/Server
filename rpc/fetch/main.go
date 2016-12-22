@@ -1177,6 +1177,49 @@ func (s *server) FetchAdBan(ctx context.Context, in *common.CommRequest) (*fetch
 		Infos: infos}, nil
 }
 
+func getWhiteTotal(db *sql.DB, wtype int64) int64 {
+	var total int64
+	err := db.QueryRow("SELECT COUNT(id) FROM white_list WHERE deleted = 0 AND type = ?", wtype).
+		Scan(&total)
+	if err != nil {
+		log.Printf("getWhiteTotal query failed:%v", err)
+	}
+	return total
+}
+
+func getWhiteList(db *sql.DB, seq, num int64) []*fetch.WhiteUser {
+	var infos []*fetch.WhiteUser
+	rows, err := db.Query("SELECT u.uid, u.username, u.phone FROM white_list w, user u WHERE w.uid = u.uid AND w.deleted = 0 AND u.deleted = 0 AND w.type = 0 ORDER BY id DESC LIMIT ?, ?", seq, num)
+	if err != nil {
+		log.Printf("getWhiteList query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.WhiteUser
+		var phone string
+		err = rows.Scan(&info.Uid, &info.Phone, &phone)
+		if err != nil {
+			log.Printf("getWhiteList scan failed:%v", err)
+			continue
+		}
+		if phone != "" {
+			info.Phone = phone
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*fetch.WhiteReply, error) {
+	log.Printf("FetchWhiteList uid:%d", in.Head.Uid)
+	infos := getWhiteList(db, in.Seq, int64(in.Num))
+	total := getWhiteTotal(db, int64(in.Type))
+	return &fetch.WhiteReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

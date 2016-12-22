@@ -373,7 +373,7 @@ func (s *server) DelAdBan(ctx context.Context, in *modify.DelBanRequest) (*commo
 
 func (s *server) AddWhiteList(ctx context.Context, in *modify.WhiteRequest) (*common.CommReply, error) {
 	for _, v := range in.Ids {
-		_, err := db.Exec("INSERT INTO white_list(type, uid, ctime) VALUES (?, ?, NOW()) ON DUPLICATED KEY UPDATE deleted = 0", in.Type, v)
+		_, err := db.Exec("INSERT INTO white_list(type, uid, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0", in.Type, v)
 		if err != nil {
 			log.Printf("AddWhiteList insert failed uid:%d %v", v, err)
 			continue
