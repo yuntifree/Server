@@ -583,8 +583,8 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 
 func getFlashAd(db *sql.DB) common.BannerInfo {
 	var info common.BannerInfo
-	err := db.QueryRow("SELECT img, dst, title FROM banner WHERE deleted = 0 AND type = 1 ORDER BY id DESC LIMIT 1").
-		Scan(&info.Img, &info.Dst, &info.Title)
+	err := db.QueryRow("SELECT img, dst, title, etime FROM banner WHERE deleted = 0 AND type = 1 ORDER BY id DESC LIMIT 1").
+		Scan(&info.Img, &info.Dst, &info.Title, &info.Expire)
 	if err != nil {
 		log.Printf("FetchFlashAd query failed %v", err)
 	}
@@ -593,7 +593,7 @@ func getFlashAd(db *sql.DB) common.BannerInfo {
 
 func isAdBan(db *sql.DB, term, version int64) bool {
 	var num int
-	err := db.QueryRow("SELECT COUNT(id) FROM ad_ban WHERE term = ? AND version = ?", term, version).
+	err := db.QueryRow("SELECT COUNT(id) FROM ad_ban WHERE deleted = 0 AND term = ? AND version = ?", term, version).
 		Scan(&num)
 	if err != nil {
 		log.Printf("isAdBan query failed:%v", err)
