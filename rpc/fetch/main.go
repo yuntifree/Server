@@ -31,6 +31,20 @@ const (
 	priceTips     = "温馨提示:获奖者拥有奖品10年免费使用权"
 )
 
+var expressList = []string{
+	"",
+	"顺丰速递",
+	"京东快递",
+	"申通快递",
+	"圆通快递",
+	"中通快递",
+	"EMS快递",
+	"韵达快递",
+	"百世汇通",
+	"当当网",
+	"苏宁",
+}
+
 type server struct{}
 
 var db *sql.DB
@@ -1221,9 +1235,80 @@ func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*f
 		Infos: infos, Total: total}, nil
 }
 
+func getLogisticsStatus(db *sql.DB, sid int64) int64 {
+	var status int64
+	err := db.QueryRow("SELECT status FROM logistics WHERE sid = ?", sid).
+		Scan(&status)
+	if err != nil {
+		log.Printf("getLogisticsStatus query failed, sid:%d %v", sid, err)
+	}
+	return status
+}
+
+func getWinInfo(db *sql.DB, sid int64) common.BidInfo {
+	var info common.BidInfo
+	var award common.AwardInfo
+	err := db.QueryRow("SELECT g.title, s.num, s.total, s.win_code, s.win_uid, UNIX_TIMESTAMP(s.atime), s.status, g.image, g.type FROM sales s, goods g WHERE s.gid = g.gid AND s.sid = ?", sid).
+		Scan(&info.Title, &info.Period, &info.Total, &award.Awardcode, &award.Uid, &info.End,
+			&info.Status, &info.Image, &info.Gtype)
+	if err != nil {
+		log.Printf("getWinInfo failed sid:%d %v", sid, err)
+		return info
+	}
+	info.Bid = sid
+	award.Num = util.GetSalesCount(db, sid, award.Uid)
+	info.Award = &award
+	if info.Status >= 4 {
+		info.Status = int32(getLogisticsStatus(db, sid))
+	}
+	return info
+}
+
+func getUserAddress(db *sql.DB, uid int64) fetch.AddressInfo {
+	var info fetch.AddressInfo
+	err := db.QueryRow("SELECT consignee, a.phone, detail,aid FROM address a, user_info u  WHERE u.default_address = a.aid AND u.uid = ?", uid).
+		Scan(&info.Name, &info.Phone, &info.Detail, &info.Id)
+	if err != nil {
+		log.Printf("getUserAddress query failed uid:%d %v", uid, err)
+	}
+	return info
+}
+
+func getAddress(db *sql.DB, aid int64) fetch.AddressInfo {
+	var info fetch.AddressInfo
+	err := db.QueryRow("SELECT consignee, phone, detail,aid FROM address WHERE aid = ?", aid).
+		Scan(&info.Name, &info.Phone, &info.Detail, &info.Id)
+	if err != nil {
+		log.Printf("getAddress query failed uid:%d %v", aid, err)
+	}
+	info.Id = aid
+	return info
+}
+
 func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*fetch.WinStatusReply, error) {
-	log.Printf("FetchWinStatus uid:%d id:%d", in.Head.Uid, in.Id)
-	return &fetch.WinStatusReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
+	log.Printf("FetchWinStatus uid:%d sid:%d", in.Head.Uid, in.Id)
+	bet := getWinInfo(db, in.Id)
+	var address fetch.AddressInfo
+	var info fetch.WinInfo
+	if bet.Status <= 3 && bet.Award.Uid > 0 {
+		address = getUserAddress(db, bet.Award.Uid)
+	}
+	if bet.Status >= 4 {
+		query := `SELECT aid, express, track_num, UNIX_TIMESTAMP(ctime), UNIX_TIMESTAMP(etime),
+			UNIX_TIMESTAMP(rtime), share, account, award_account FROM logistics WHERE sid = `
+		query += strconv.Itoa(int(in.Id))
+		var eid int64
+		err := db.QueryRow(query).Scan(&address.Id, &eid, &info.Num, &info.Addresstime,
+			&info.Shiptime, &info.Confirmtime, &info.Share, &info.Account, &info.Award)
+		if err != nil {
+			log.Printf("FetchWinStatus query failed:%v", err)
+		}
+		info.Vendor = expressList[eid]
+		address = getAddress(db, address.Id)
+	}
+
+	return &fetch.WinStatusReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Bet: &bet, Address: &address, Info: &info}, nil
 }
 
 func main() {

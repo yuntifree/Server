@@ -31,6 +31,7 @@ service Fetch{
     rpc FetchUserBet(common.CommRequest) returns (UserBetReply) {}
     rpc FetchAdBan(common.CommRequest) returns (AdBanReply) {}
     rpc FetchWhiteList(common.CommRequest) returns (WhiteReply) {}
+    rpc FetchWinStatus(common.CommRequest) returns (WinStatusReply) {}
 }
 
 message NewsInfo {
@@ -334,4 +335,30 @@ message WhiteReply {
     common.Head head = 1;
     repeated WhiteUser infos = 2;
     int64 total = 3;
+}
+
+message WinInfo {
+    int64 wintime = 1;
+    int64 addresstime = 2;
+    int64 shiptime = 3;
+    int64 confirmtime = 4;
+    bool share = 5;
+    string vendor = 6;
+    string num = 7;
+    string account = 8;
+    string award = 9;
+}
+
+message AddressInfo {
+    int64 id = 1;
+    string name = 2;
+    string phone = 3;
+    string detail = 4;
+}
+
+message WinStatusReply {
+    common.Head head = 1;
+    WinInfo info = 2;
+    AddressInfo address = 3;
+    common.BidInfo bet = 4;
 }

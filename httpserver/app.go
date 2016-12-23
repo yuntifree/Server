@@ -1434,6 +1434,47 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	bid := req.GetParamInt("bid")
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchWinStatus(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: bid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取奖品状态失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "address"}, res.Address)
+	js.SetPath([]string{"data", "bet"}, res.Bet)
+	js.SetPath([]string{"data", "info"}, res.Info)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func genSsdbKey(ctype int64) string {
 	switch ctype {
 	default:
@@ -1898,6 +1939,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_user_bet", appHandler(getUserBet))
 	mux.Handle("/get_user_award", appHandler(getUserBet))
 	mux.Handle("/get_address", appHandler(getAddress))
+	mux.Handle("/get_win_status", appHandler(getWinStatus))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
 	mux.Handle("/get_share_uid", appHandler(getShare))
