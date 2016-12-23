@@ -1078,6 +1078,48 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	num = genReqNum(num)
+
+	address := getNameServer(uid, util.FetchServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := fetch.NewFetchClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.FetchFeedback(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num)})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "获取用户反馈信息失败"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+	js.SetPath([]string{"data", "total"}, res.Total)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
+	return nil
+}
+
 func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -1147,6 +1189,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/review_video", appHandler(reviewVideo))
 	mux.Handle("/get_videos", appHandler(getVideos))
 	mux.Handle("/get_banners", appHandler(getBanners))
+	mux.Handle("/get_feedback", appHandler(getFeedback))
 	mux.Handle("/get_oss_image_policy", appHandler(getOssImagePolicy))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	return mux

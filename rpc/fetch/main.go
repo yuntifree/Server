@@ -1235,6 +1235,48 @@ func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*f
 		Infos: infos, Total: total}, nil
 }
 
+func getFeedback(db *sql.DB, seq, num int64) []*fetch.FeedbackInfo {
+	var infos []*fetch.FeedbackInfo
+	rows, err := db.Query("SELECT u.uid, u.username, u.phone, f.content, f.ctime FROM feedback f, user u WHERE f.uid = u.uid ORDER BY f.id DESC LIMIT ?, ?", seq, num)
+	if err != nil {
+		log.Printf("getFeedback query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.FeedbackInfo
+		var phone string
+		err := rows.Scan(&info.Uid, &info.Phone, &phone, &info.Content, &info.Ctime)
+		if err != nil {
+			log.Printf("getFeedback scan failed:%v", err)
+			continue
+		}
+		if phone != "" {
+			info.Phone = phone
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getFeedbackTotal(db *sql.DB) int64 {
+	var total int64
+	err := db.QueryRow("SELECT COUNT(id) FROM feedback").Scan(&total)
+	if err != nil {
+		log.Printf("getFeedbackTotal scan failed:%v", err)
+	}
+	return total
+}
+
+func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fetch.FeedbackReply, error) {
+	log.Printf("FetchFeedback uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
+	infos := getFeedback(db, in.Seq, int64(in.Num))
+	total := getFeedbackTotal(db)
+	return &fetch.FeedbackReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
+}
+
 func getLogisticsStatus(db *sql.DB, sid int64) int64 {
 	var status int64
 	err := db.QueryRow("SELECT status FROM logistics WHERE sid = ?", sid).
