@@ -22,4 +22,12 @@ const (
 	TopShareType       = 4
 	UserBetType        = 0
 	UserAwardType      = 1
+	InitStatus         = 0
+	RunningStatus      = 1
+	EndStatus          = 2
+	AwardStatus        = 3
+	AddressStatus      = 4
+	ExpressStatus      = 5
+	ReceiptStatus      = 6
+	FiniStatus         = 7
 )

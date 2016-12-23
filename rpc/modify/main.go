@@ -414,6 +414,58 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func checkAddress(db *sql.DB, uid, aid int64) bool {
+	var id int64
+	err := db.QueryRow("SELECT uid FROM address WHERE aid = ?", aid).Scan(&id)
+	if err != nil {
+		log.Printf("checkAddress failed aid:%d %v", aid, err)
+		return false
+	}
+	return id == uid
+}
+
+func (s *server) SetWinStatus(ctx context.Context, in *modify.WinStatusRequest) (*common.CommReply, error) {
+	var uid, s1, s2, status int64
+	err := db.QueryRow("SELECT s.uid, s.status, l.status FROM sales s LEFT JOIN logistics l ON s.sid = l.sid WHERE s.sid = ?", in.Bid).
+		Scan(&uid, &s1, &s2)
+	if err != nil {
+		log.Printf("SetWinStatus failed:%v", err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+	}
+	if s2 > s1 {
+		status = s2
+	} else {
+		status = s1
+	}
+	if uid != in.Head.Uid || status+1 != in.Status {
+		log.Printf("SetWinStatus check failed uid:%d|%d status:%d|%d", in.Head.Uid, uid, in.Status, status)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("illegal param")
+	}
+	if in.Status == util.AddressStatus && (in.Aid > 0 || in.Account != "") {
+		if in.Aid > 0 && !checkAddress(db, in.Head.Uid, in.Aid) {
+			log.Printf("SetWinStatus checkAddress failed uid:%d aid:%d", in.Head.Uid, in.Aid)
+			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("illegal param")
+		}
+		_, err := db.Exec("UPDATE sales SET status = 4 WHERE sid = ?", in.Bid)
+		if err != nil {
+			log.Printf("SetWinStatus failed:%v", err)
+			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		}
+		_, err = db.Exec("INSERT INTO logistics(sid, status, uid, aid, account, ctime) VALUES (?, 4, ?, ?, ?, NOW())", in.Bid, in.Head.Uid, in.Aid)
+		if err != nil {
+			log.Printf("SetWinStatus failed:%v", err)
+			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		}
+	} else if in.Status == util.ReceiptStatus {
+		_, err := db.Exec("UPDATE logistics SET status = 6, rtime = NOW() WHERE sid = ?", in.Bid)
+		if err != nil {
+			log.Printf("SetWinStatus failed:%v", err)
+			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		}
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

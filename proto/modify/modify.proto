@@ -28,6 +28,7 @@ service Modify{
     rpc AddWhiteList(WhiteRequest) returns (common.CommReply) {}
     rpc DelWhiteList(WhiteRequest) returns (common.CommReply) {}
     rpc AddFeedback(FeedRequest) returns (common.CommReply) {}
+    rpc SetWinStatus(WinStatusRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -152,4 +153,12 @@ message WhiteRequest {
 message FeedRequest {
     common.Head head = 1;
     string content = 2;
+}
+
+message WinStatusRequest {
+    common.Head head = 1;
+    int64 bid = 2;
+    int64 status = 3;
+    string account = 4;
+    int64 aid = 5;
 }
