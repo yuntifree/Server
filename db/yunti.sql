@@ -361,3 +361,13 @@ CREATE TABLE IF NOT EXISTS white_list
     PRIMARY KEY(id),
     UNIQUE KEY(type, uid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS feedback
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    content varchar(2048) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
+) ENGINE = InnoDB;

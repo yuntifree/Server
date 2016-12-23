@@ -27,6 +27,7 @@ service Modify{
     rpc DelAdBan(DelBanRequest) returns (common.CommReply) {}
     rpc AddWhiteList(WhiteRequest) returns (common.CommReply) {}
     rpc DelWhiteList(WhiteRequest) returns (common.CommReply) {}
+    rpc AddFeedback(FeedRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -146,4 +147,9 @@ message WhiteRequest {
     common.Head head = 1;
     int64 type = 2;
     repeated int64 ids = 3;
+}
+
+message FeedRequest {
+    common.Head head = 1;
+    string content = 2;
 }

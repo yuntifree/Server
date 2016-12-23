@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"../../util"
 
@@ -16,6 +17,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+)
+
+const (
+	feedInterval = 60
 )
 
 type server struct{}
@@ -389,6 +394,19 @@ func (s *server) DelWhiteList(ctx context.Context, in *modify.WhiteRequest) (*co
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Printf("DelWhiteList query failed:%v", err)
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*common.CommReply, error) {
+	var last int64
+	db.QueryRow("SELECT UNIX_TIMESTAMP(ctime) FROM feedback WHERE uid = ? ORDER BY id DESC LIMIT 1").
+		Scan(&last)
+	if time.Now().Unix() > last+feedInterval {
+		db.Exec("INSERT INTO feedback(uid, content, ctime) VALUES(?, ?, NOW())", in.Head.Uid,
+			in.Content)
+	} else {
+		log.Printf("frequency exceed limit uid:%d", in.Head.Uid)
 	}
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }

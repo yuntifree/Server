@@ -224,6 +224,36 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	content := req.GetParamString("content")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddFeedback(context.Background(),
+		&modify.FeedRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Content: content})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "AddFeedback failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1875,6 +1905,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_detail", appHandler(getDetail))
 	mux.Handle("/get_detail_gid", appHandler(getDetail))
 	mux.Handle("/add_address", appHandler(addAddress))
+	mux.Handle("/feedback", appHandler(addFeedback))
 	mux.Handle("/delete_address", appHandler(delAddress))
 	mux.Handle("/update_address", appHandler(modAddress))
 	mux.Handle("/get_image_token", appHandler(getImageToken))
