@@ -414,6 +414,60 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func getSalesGid(db *sql.DB, sid int64) int64 {
+	var id int64
+	err := db.QueryRow("SELECT gid FROM sales WHERE sid = ?", sid).
+		Scan(&id)
+	if err != nil {
+		log.Printf("getSalesGid failed:%v", err)
+	}
+	return id
+}
+
+func checkShare(db *sql.DB, uid, sid int64) bool {
+	var status, euid, share int64
+	err := db.QueryRow("SELECT status, uid, share FROM logistics WHERE sid = ?", sid).
+		Scan(&status, &euid, &share)
+	if err != nil {
+		log.Printf("checkShare failed sid:%v", err)
+		return false
+	}
+	if euid != uid || status != util.ReceiptStatus || share != 0 {
+		return false
+	}
+	return true
+}
+
+func (s *server) AddShare(ctx context.Context, in *modify.ShareRequest) (*common.CommReply, error) {
+	if !checkShare(db, in.Head.Uid, in.Bid) {
+		log.Printf("AddShare check failed uid:%d bid:%d", in.Head.Uid, in.Bid)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	gid := getSalesGid(db, in.Bid)
+	res, err := db.Exec("INSERT INTo share_history(sid, uid, gid, title, content, image_num, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())", in.Bid, in.Head.Uid, gid, in.Title, in.Text, len(in.Images))
+	if err != nil {
+		log.Printf("AddShare insert failed uid:%d bid:%d", in.Head.Uid, in.Bid)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	hid, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("AddShare get last insert id failed uid:%d bid:%d", in.Head.Uid, in.Bid)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	for _, v := range in.Images {
+		_, err := db.Exec("INSERT INTO share_image(sid, hid, url, ctime) VALUES (?, ?, ?, NOW())", in.Bid, hid, v)
+		if err != nil {
+			log.Printf("AddShare insert image failed:%v", err)
+		}
+	}
+	_, err = db.Exec("UPDATE logistics SET share = 1 WHERE sid = ?", in.Bid)
+	if err != nil {
+		log.Printf("AddShare update share failed uid:%d bid:%d", in.Head.Uid, in.Bid)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func checkAddress(db *sql.DB, uid, aid int64) bool {
 	var id int64
 	err := db.QueryRow("SELECT uid FROM address WHERE aid = ?", aid).Scan(&id)

@@ -224,6 +224,47 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	bid := req.GetParamInt("bid")
+	title := req.GetParamString("title")
+	text := req.GetParamString("text")
+	images, err := req.Post.Get("data").Get("images").Array()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 2, err.Error()}
+	}
+	var imgs []string
+	for i := 0; i < len(images); i++ {
+		img := images[i].(string)
+		imgs = append(imgs, img)
+	}
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.AddShare(context.Background(),
+		&modify.ShareRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Bid: bid, Title: title, Text: text, Images: imgs})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "AddShare failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1973,6 +2014,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_user_award", appHandler(getUserBet))
 	mux.Handle("/get_address", appHandler(getAddress))
 	mux.Handle("/get_win_status", appHandler(getWinStatus))
+	mux.Handle("/post_share", appHandler(addShare))
 	mux.Handle("/set_win_status", appHandler(setWinStatus))
 	mux.Handle("/get_share_gid", appHandler(getShare))
 	mux.Handle("/get_share_list", appHandler(getShare))
