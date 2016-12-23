@@ -1004,6 +1004,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	online := req.GetParamIntDef("online", 0)
 	deleted := req.GetParamIntDef("delete", 0)
 	priority := req.GetParamIntDef("priority", 0)
+	expire := req.GetParamStringDef("expire", "")
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -1017,7 +1018,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.ModBanner(context.Background(),
 		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
-				Online: int32(online), Deleted: int32(deleted), Title: title}})
+				Online: int32(online), Deleted: int32(deleted), Title: title, Expire: expire}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
