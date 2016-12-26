@@ -39,7 +39,19 @@ func getDgNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 }
 
 func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
-	return getNews(db, seq, num, false)
+	if seq > 0 {
+		return getNews(db, seq, num, false)
+	}
+	return getNews(db, seq, num/2, true)
+}
+
+func getMaxNewsSeq(db *sql.DB) int64 {
+	var id int64
+	err := db.QueryRow("SELECT MAX(id) FROM news").Scan(&id)
+	if err != nil {
+		log.Printf("getMaxNewsSeq query failed:%v", err)
+	}
+	return id
 }
 
 func getNews(db *sql.DB, seq, num int64, isDgNews bool) []*hot.HotsInfo {
@@ -124,6 +136,13 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 	var infos []*hot.HotsInfo
 	if in.Type == typeHotNews {
 		infos = getHotNews(db, in.Seq, util.MaxListSize)
+		if in.Seq == 0 {
+			max := getMaxNewsSeq(db)
+			for i := 0; i < len(infos); i++ {
+				infos[i].Seq += max
+			}
+
+		}
 	} else if in.Type == typeVideos {
 		infos = getVideos(db, in.Seq)
 	} else if in.Type == typeDgNews {
@@ -215,7 +234,7 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 		return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	infos := getHotNews(db, 0, homeNewsNum)
+	infos := getDgNews(db, 0, homeNewsNum)
 	infos = append(infos[:0], infos[1], infos[3], infos[5])
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
 }

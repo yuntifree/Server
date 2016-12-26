@@ -1656,7 +1656,8 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
-	if len(res.Infos) >= util.MaxListSize {
+	if len(res.Infos) >= util.MaxListSize ||
+		(seq == 0 && ctype == 0 && len(res.Infos) >= util.MaxListSize/2) {
 		js.SetPath([]string{"data", "hasmore"}, 1)
 	}
 
