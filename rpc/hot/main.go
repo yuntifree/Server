@@ -154,11 +154,11 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 func getCategoryTitleIcon(category int) (string, string) {
 	switch category {
 	default:
-		return "智慧政务", "http://file.yunxingzh.com/ico_government.png"
+		return "智慧政务", "http://file.yunxingzh.com/ico_government_xxxh.png"
 	case 2:
-		return "交通出行", "http://file.yunxingzh.com/ico_traffic.png"
+		return "交通出行", "http://file.yunxingzh.com/ico_traffic_xxxh.png"
 	case 3:
-		return "医疗服务", "http://file.yunxingzh.com/ico_medical.png"
+		return "医疗服务", "http://file.yunxingzh.com/ico_medical_xxxh.png"
 	case 4:
 		return "网上充值", "http://file.yunxingzh.com/ico_recharge.png"
 	}
