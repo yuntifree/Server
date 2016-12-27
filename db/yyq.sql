@@ -160,3 +160,13 @@ CREATE TABLE IF NOT EXISTS purchase_history (
     KEY(uid, sid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS purchase_attempt_history (
+    hid         bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid         int unsigned NOT NULL,
+    sid         int unsigned NOT NULL,
+    num         int unsigned NOT NULL,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(hid),
+    KEY(uid, sid)
+) ENGINE = InnoDB;
+

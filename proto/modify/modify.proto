@@ -30,6 +30,7 @@ service Modify{
     rpc AddFeedback(FeedRequest) returns (common.CommReply) {}
     rpc SetWinStatus(WinStatusRequest) returns (common.CommReply) {}
     rpc AddShare(ShareRequest) returns (common.CommReply) {}
+    rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
 }
 
 message NewsRequest {
@@ -170,4 +171,17 @@ message ShareRequest {
     string title = 3;
     string text = 4;
     repeated string images = 5;
+}
+
+message PurchaseResult {
+    int64 code = 1;
+    bool phoneflag = 2;
+    bool notimes = 3;
+    bool nocoin = 4;
+    int64 remain = 5;
+}
+
+message PurchaseReply {
+    common.Head head = 1;
+    PurchaseResult info = 2;
 }

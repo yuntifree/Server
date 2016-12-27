@@ -414,6 +414,102 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func recordPurchaseAttempt(db *sql.DB, uid, sid, num int64) {
+	_, err := db.Exec("INSERT INTO purchase_attempt_history(uid, sid, num, ctime) VALUES (?, ?, ?, NOW())",
+		uid, sid, num)
+	if err != nil {
+		log.Printf("recordPurchaseAttempt failed, uid:%d sid:%d num:%d", uid, sid, num)
+	}
+}
+
+func recordPurchase(db *sql.DB, uid, sid, num int64) int64 {
+	res, err := db.Exec("INSERT INTO purchase_history(uid, sid, num, ctime) VALUES(?, ?, ?, NOW())",
+		uid, sid, num)
+	if err != nil {
+		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid, sid, num)
+		return 0
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid, sid, num)
+		return 0
+	}
+	return id
+}
+
+func ackPurchaseFlag(db *sql.DB, hid int64) {
+	_, err := db.Exec("UPDATE purchase_history SET ack_flag = 1 WHERE hid = ?", hid)
+	if err != nil {
+		log.Printf("ackPurchaseFlag failed hid:%d %v", hid, err)
+	}
+}
+
+func getPurchaseCode(db *sql.DB, hid int64) int64 {
+	var code int64
+	err := db.QueryRow("SELECT num FROM sales_history WHERE hid = ?", hid).
+		Scan(&code)
+	if err != nil {
+		log.Printf("getPurchaseCode query failed:%d %v", hid, err)
+	}
+	return code
+}
+
+func getRemainSales(db *sql.DB, sid int64) int64 {
+	var remain int64
+	err := db.QueryRow("SELECT remain FROM sales WHERE sid = ?", sid).
+		Scan(&remain)
+	if err != nil {
+		log.Printf("getRemainSales query failed:%d %v", sid, err)
+	}
+	return remain
+}
+
+func (s *server) PurchaseSales(ctx context.Context, in *common.CommRequest) (*modify.PurchaseReply, error) {
+	var info modify.PurchaseResult
+	recordPurchaseAttempt(db, in.Head.Uid, in.Id, int64(in.Num))
+	var phone string
+	var balance int64
+	err := db.QueryRow("SELECT phone, balance FROM user WHERE uid = ?", in.Head.Uid).
+		Scan(&phone, &balance)
+	if err != nil {
+		log.Printf("PusrchaseSales query user info failed uid:%d %v", in.Head.Uid, err)
+		return &modify.PurchaseReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+	}
+	info.Phoneflag = phone == ""
+	if balance < 100 {
+		info.Nocoin = true
+		return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+			Info: &info}, nil
+	}
+
+	pid := recordPurchase(db, in.Head.Uid, in.Id, int64(in.Num))
+
+	var ret, hid int64
+	err = db.QueryRow("call purchase_sales(?, ?,100)", in.Id, in.Head.Uid).
+		Scan(&ret, &hid)
+	if ret == 2 {
+		info.Nocoin = true
+		return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+			Info: &info}, nil
+	} else if ret == 3 {
+		info.Notimes = true
+		return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+			Info: &info}, nil
+	}
+
+	if hid == 0 {
+		log.Printf("illegal hid, sid:%d uid:%d", in.Id, in.Head.Uid)
+		return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+			Info: &info}, nil
+	}
+	ackPurchaseFlag(db, pid)
+	info.Remain = getRemainSales(db, in.Id)
+	info.Code = getPurchaseCode(db, hid)
+
+	return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Info: &info}, nil
+}
+
 func getSalesGid(db *sql.DB, sid int64) int64 {
 	var id int64
 	err := db.QueryRow("SELECT gid FROM sales WHERE sid = ?", sid).

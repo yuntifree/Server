@@ -328,6 +328,46 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	bid := req.GetParamInt("bid")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.PurchaseSales(context.Background(),
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: bid})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "purchaseSales failed"}
+	}
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, err.Error()}
+	}
+	js.Set("data", res.Info)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+
+	w.Write(body)
+	return nil
+}
+
 func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -2035,6 +2075,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_click", appHandler(reportClick))
 	mux.Handle("/report_apmac", appHandler(reportApmac))
 	mux.Handle("/upload_callback", appHandler(uploadCallback))
+	mux.Handle("/purchase_sales", appHandler(purchaseSales))
 	mux.Handle("/apply_image_upload", appHandler(applyImageUpload))
 	mux.Handle("/pingpp_pay", appHandler(pingppPay))
 	mux.Handle("/services", appHandler(getService))
