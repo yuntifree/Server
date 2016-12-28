@@ -12,51 +12,79 @@ import (
 const (
 	wsmpURL = "http://120.234.130.196:880/wsmp/interface"
 	vnoCode = "ROOT_VNO"
+	dgSsid  = "无线东莞DG-FREE"
 )
 
-func genHead(action string) (*simplejson.Json, error) {
+func genHead(action string) *simplejson.Json {
 	js, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
 		log.Printf("genHead failed:%v", err)
-		return nil, err
+		return nil
 	}
 	js.Set("action", action)
 	js.Set("vnoCode", vnoCode)
-	return js, nil
+	return js
 }
 
-func genBody(m map[string]string) (*simplejson.Json, error) {
+func genBody(m map[string]string) *simplejson.Json {
 	js, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
 		log.Printf("genBody new json failed:%v", err)
-		return nil, err
+		return nil
 	}
 	for k, v := range m {
 		js.Set(k, v)
 	}
-	return js, nil
+	return js
 }
 
-func genRegisterBody(phone string) (string, error) {
-	head, err := genHead("reg")
-	if err != nil {
-		log.Printf("genHead failed:%v", err)
-		return "", err
-	}
-	body, err := genBody(map[string]string{"custCode": phone})
-	if err != nil {
-		log.Printf("genBody failed:%v", err)
-		return "", err
+func genBodyStr(body *simplejson.Json) (string, error) {
+	head := genHead("reg")
+	if head == nil || body == nil {
+		return "", errors.New("illegal head or body")
 	}
 	js, err := simplejson.NewJson([]byte(`{}`))
+	if err != nil {
+		log.Printf("genBodystr failed:%v", err)
+		return "", err
+	}
 	js.Set("head", head)
 	js.Set("body", body)
 	data, err := js.Encode()
 	if err != nil {
-		log.Printf("genBody failed:%v", err)
+		log.Printf("genBodyStr failed:%v", err)
 		return "", err
 	}
 	return string(data), nil
+}
+
+func genRegisterBody(phone string) (string, error) {
+	body := genBody(map[string]string{"custCode": phone})
+	return genBodyStr(body)
+}
+
+func getResponse(body string) (*simplejson.Json, error) {
+	resp, err := util.HTTPRequest(wsmpURL, body)
+	if err != nil {
+		log.Printf("Register HTTPRequest failed:%v", err)
+		return nil, err
+	}
+	js, err := simplejson.NewJson([]byte(resp))
+	if err != nil {
+		log.Printf("Register parse response failed:%v", err)
+		return nil, err
+	}
+
+	ret, err := js.Get("head").Get("retflag").String()
+	if err != nil {
+		log.Printf("Register get retflag failed:%v", err)
+		return nil, err
+	}
+	if ret != "0" {
+		log.Printf("Register zte op failed retcode:%d", ret)
+		return nil, errors.New("zte op failed")
+	}
+	return js, nil
 }
 
 //Register return password for new user
@@ -66,25 +94,11 @@ func Register(phone string) (string, error) {
 		log.Printf("Register genRegisterBody failed:%v", err)
 		return "", err
 	}
-	resp, err := util.HTTPRequest(wsmpURL, body)
-	if err != nil {
-		log.Printf("Register HTTPRequest failed:%v", err)
-		return "", err
-	}
-	js, err := simplejson.NewJson([]byte(resp))
-	if err != nil {
-		log.Printf("Register parse response failed:%v", err)
-		return "", err
-	}
 
-	ret, err := js.Get("head").Get("retflag").String()
+	js, err := getResponse(body)
 	if err != nil {
-		log.Printf("Register get retflag failed:%v", err)
+		log.Printf("Register get response failed:%v", err)
 		return "", err
-	}
-	if ret != "0" {
-		log.Printf("Register zte op failed retcode:%d", ret)
-		return "", errors.New("zte op failed")
 	}
 
 	pass, err := js.Get("body").Get("pwd").String()
@@ -93,4 +107,27 @@ func Register(phone string) (string, error) {
 		return "", err
 	}
 	return pass, nil
+}
+
+func genLoginBody(phone, pass, userip, usermac, acip, acname string) (string, error) {
+	body := genBody(map[string]string{"custCode": phone,
+		"pass": pass, "ssid": dgSsid, "mac": usermac, "ip": userip, "acip": acip, "acname": acname})
+	return genBodyStr(body)
+}
+
+//Login return password for new user
+func Login(phone, pass, userip, usermac, acip, acname string) bool {
+	body, err := genLoginBody(phone, pass, userip, usermac, acip, acname)
+	if err != nil {
+		log.Printf("Register genLoginBody failed:%v", err)
+		return false
+	}
+
+	_, err = getResponse(body)
+	if err != nil {
+		log.Printf("Register getResponse failed:%v", err)
+		return false
+	}
+
+	return true
 }

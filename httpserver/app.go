@@ -1781,6 +1781,45 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	phone := req.GetParamString("phone")
+	code := req.GetParamString("code")
+	acname := req.GetParamString("wlanacname")
+	acip := req.GetParamString("wlanacip")
+	userip := req.GetParamString("wlanuserip")
+	usermac := req.GetParamString("wlanusermac")
+
+	address := getNameServer(0, util.VerifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.PortalLogin(context.Background(),
+		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
+			Info: &verify.PortalInfo{
+				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip,
+				Phone: phone, Code: code},
+		})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
+		return &util.AppError{util.LogicErr, 4, "验证码错误"}
+	} else if res.Head.Retcode != 0 {
+		return &util.AppError{util.DataErr, 4, "登录失败"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -2095,6 +2134,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
 	mux.Handle("/auto_login", appHandler(autoLogin))
+	mux.Handle("/portal_login", appHandler(portalLogin))
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))
 	mux.Handle("/report_wifi", appHandler(reportWifi))
 	mux.Handle("/report_click", appHandler(reportClick))

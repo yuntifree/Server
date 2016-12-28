@@ -409,6 +409,41 @@ func (s *server) GetCheckCode(ctx context.Context, in *verify.CodeRequest) (*com
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
+func checkZteCode(db *sql.DB, phone, code string) bool {
+	var eCode string
+	err := db.QueryRow("SELECT code FROM zte_code WHERE phone = ?", phone).Scan(&eCode)
+	if err != nil {
+		log.Printf("checkZteCode query failed:%s %s %v", phone, code, err)
+		return false
+	}
+	if eCode == code {
+		return true
+	}
+	return false
+}
+
+func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
+	if !checkZteCode(db, in.Info.Phone, in.Info.Code) {
+		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+
+	}
+
+	_, err := db.Exec("INSERT INTO user(username, phone, wifi_pass, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE phone = ?, wifi_pass = ?",
+		in.Info.Phone, in.Info.Phone, in.Info.Code, in.Info.Phone, in.Info.Code)
+	if err != nil {
+		log.Printf("PortalLogin insert user failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	flag := zte.Login(in.Info.Phone, in.Info.Code, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
+		in.Info.Acname)
+	if !flag {
+		log.Printf("PortalLogin zte login failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	return &verify.LoginReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.VerifyServerPort)
 	if err != nil {
