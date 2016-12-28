@@ -371,3 +371,13 @@ CREATE TABLE IF NOT EXISTS feedback
     PRIMARY KEY(id),
     KEY(uid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS zte_code 
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    phone   varchar(16) NOT NULL,
+    code    varchar(16) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(phone)
+) ENGINE = InnoDB;

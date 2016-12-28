@@ -95,11 +95,6 @@ func getCode(phone string, ctype int32) (bool, error) {
 }
 
 func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	defer func() {
-		if r := recover(); r != nil {
-			apperr = extractError(r)
-		}
-	}()
 	var req request
 	req.init(r.Body)
 	phone := req.GetParamString("phone")
@@ -109,6 +104,35 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	if err != nil || !flag {
 		return &util.AppError{util.LogicErr, 103, "获取验证码失败"}
 	}
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	phone := req.GetParamString("phone")
+
+	address := getNameServer(0, util.VerifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := verify.NewVerifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.GetCheckCode(context.Background(),
+		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
+			Phone: phone})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "logout failed"}
+	}
+
 	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
@@ -2034,6 +2058,7 @@ func NewAppServer() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", appHandler(login))
 	mux.Handle("/get_phone_code", appHandler(getPhoneCode))
+	mux.Handle("/get_check_code", appHandler(getCheckCode))
 	mux.Handle("/register", appHandler(register))
 	mux.Handle("/logout", appHandler(logout))
 	mux.Handle("/hot", appHandler(getHot))

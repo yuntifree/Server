@@ -10,6 +10,7 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"../../util"
+	"../../zte"
 
 	common "../../proto/common"
 	verify "../../proto/verify"
@@ -388,6 +389,24 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 
 	updateTokenTicket(db, util.WxAppid, token, ticket)
 	return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
+}
+
+func recordZteCode(db *sql.DB, phone, code string) {
+	_, err := db.Exec("INSERT INTO zte_code(phone, code, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
+		phone, code, code)
+	if err != nil {
+		log.Printf("recordZteCode query failed:%s %s %v", phone, code, err)
+	}
+}
+
+func (s *server) GetCheckCode(ctx context.Context, in *verify.CodeRequest) (*common.CommReply, error) {
+	code, err := zte.Register(in.Phone)
+	if err != nil {
+		log.Printf("GetCheckCode Register failed:%v", err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	recordZteCode(db, in.Phone, code)
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
 func main() {
