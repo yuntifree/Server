@@ -38,8 +38,8 @@ func genBody(m map[string]string) *simplejson.Json {
 	return js
 }
 
-func genBodyStr(body *simplejson.Json) (string, error) {
-	head := genHead("reg")
+func genBodyStr(action string, body *simplejson.Json) (string, error) {
+	head := genHead(action)
 	if head == nil || body == nil {
 		return "", errors.New("illegal head or body")
 	}
@@ -60,7 +60,7 @@ func genBodyStr(body *simplejson.Json) (string, error) {
 
 func genRegisterBody(phone string) (string, error) {
 	body := genBody(map[string]string{"custCode": phone})
-	return genBodyStr(body)
+	return genBodyStr("reg", body)
 }
 
 func getResponse(body string) (*simplejson.Json, error) {
@@ -109,23 +109,91 @@ func Register(phone string) (string, error) {
 	return pass, nil
 }
 
+func genRemoveBody(phone string) (string, error) {
+	body := genBody(map[string]string{"custCode": phone})
+	return genBodyStr("remove", body)
+}
+
+//Remove delete user
+func Remove(phone string) bool {
+	body, err := genRemoveBody(phone)
+	if err != nil {
+		log.Printf("Remove genRemoveBody failed:%v", err)
+		return false
+	}
+
+	_, err = getResponse(body)
+	if err != nil {
+		log.Printf("Remove get response failed:%v", err)
+		return false
+	}
+
+	return true
+}
+
 func genLoginBody(phone, pass, userip, usermac, acip, acname string) (string, error) {
 	body := genBody(map[string]string{"custCode": phone,
 		"pass": pass, "ssid": dgSsid, "mac": usermac, "ip": userip, "acip": acip, "acname": acname})
-	return genBodyStr(body)
+	return genBodyStr("login", body)
 }
 
-//Login return password for new user
+//Login user login
 func Login(phone, pass, userip, usermac, acip, acname string) bool {
 	body, err := genLoginBody(phone, pass, userip, usermac, acip, acname)
 	if err != nil {
-		log.Printf("Register genLoginBody failed:%v", err)
+		log.Printf("Login genLoginBody failed:%v", err)
 		return false
 	}
 
 	_, err = getResponse(body)
 	if err != nil {
 		log.Printf("Register getResponse failed:%v", err)
+		return false
+	}
+
+	return true
+}
+
+func genLoginnopassBody(phone, userip, usermac, acip, acname string) (string, error) {
+	body := genBody(map[string]string{"custCode": phone,
+		"ssid": dgSsid, "mac": usermac, "ip": userip, "acip": acip, "acname": acname})
+	return genBodyStr("loginnopass", body)
+}
+
+//Loginnopass user login without password
+func Loginnopass(phone, userip, usermac, acip, acname string) bool {
+	body, err := genLoginnopassBody(phone, userip, usermac, acip, acname)
+	if err != nil {
+		log.Printf("Login genLoginBody failed:%v", err)
+		return false
+	}
+
+	_, err = getResponse(body)
+	if err != nil {
+		log.Printf("Register getResponse failed:%v", err)
+		return false
+	}
+
+	return true
+}
+
+func genLogoutBody(phone, mac, userip, acip string) (string, error) {
+	body := genBody(map[string]string{"custCode": phone,
+		"mac": mac, "ip": userip, "acip": acip})
+	return genBodyStr("logout", body)
+}
+
+//Logout user quit
+func Logout(phone, mac, userip, acip string) bool {
+	body, err := genLogoutBody(phone, mac, userip, acip)
+	if err != nil {
+		log.Printf("Logout genLoginBody failed:%v", err)
+		return false
+	}
+
+	_, err = getResponse(body)
+	if err != nil {
+		log.Printf("Logout getResponse failed:%v", err)
 		return false
 	}
 
