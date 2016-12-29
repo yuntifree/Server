@@ -309,18 +309,12 @@ func genResponseBody(res interface{}, flag bool) ([]byte, error) {
 	for i := 0; i < val.NumField(); i++ {
 		valueField := val.Field(i)
 		typeField := val.Type().Field(i)
-		fmt.Printf("Field Name:%s Field Value:%v", typeField.Name, valueField.Interface())
 		if typeField.Name == "Head" {
 			if flag {
-				headVal := reflect.ValueOf(valueField).Elem()
-				for j := 0; j < headVal.NumField(); j++ {
-					headValueField := headVal.Field(j)
-					headTypeField := headVal.Type().Field(j)
-					if headTypeField.Name == "Uid" {
-						js.SetPath([]string{"data", "uid"}, headValueField.Interface())
-						break
-					}
-				}
+				headVal := reflect.Indirect(valueField)
+				uid := headVal.FieldByName("Uid")
+				js.SetPath([]string{"data", "uid"}, uid.Interface())
+
 			} else {
 				continue
 			}
