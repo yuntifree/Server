@@ -30,4 +30,10 @@ const (
 	ExpressStatus      = 5
 	ReceiptStatus      = 6
 	FiniStatus         = 7
+	DiscoverServerType = 1
+	VerifyServerType   = 2
+	HotServerType      = 3
+	FetchServerType    = 4
+	ModifyServerType   = 5
+	PushServerType     = 6
 )

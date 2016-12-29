@@ -56,17 +56,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
-	}
-
-	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
-	js.SetPath([]string{"data", "token"}, res.Token)
-	js.SetPath([]string{"data", "privdata"}, res.Privdata)
-	js.SetPath([]string{"data", "expire"}, res.Expire)
-	js.SetPath([]string{"data", "wifipass"}, res.Wifipass)
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
@@ -234,12 +224,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.LogicErr, 4, "AddAddress failed"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
-	}
-	js.SetPath([]string{"data", "aid"}, res.Id)
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -637,13 +622,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取共享wifi失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -674,14 +653,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "获取首页信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "user"}, res.Uinfo)
-	js.SetPath([]string{"data", "banner"}, res.Binfos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -754,14 +726,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取已经揭晓失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "opening"}, res.Opening)
-	js.SetPath([]string{"data", "reddot"}, res.Reddot)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -878,13 +843,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取跑马灯数据失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "marquee"}, res.Marquee)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -915,16 +874,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取火热开抢失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "opening"}, res.Opening)
-	js.SetPath([]string{"data", "slides"}, res.Slides)
-	js.SetPath([]string{"data", "promotion"}, res.Promotion)
-	js.SetPath([]string{"data", "reddot"}, res.Reddot)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -970,13 +920,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "获取Wifi密码失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "wifipass"}, res.Wifis)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1022,14 +966,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取晒单信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "shares"}, res.Infos)
-	js.SetPath([]string{"data", "reddot"}, res.Reddot)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1063,14 +1000,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return &util.AppError{util.DataErr, 4, "获取晒单详情失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "share"}, res.Share)
-	js.SetPath([]string{"data", "bet"}, res.Bet)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1108,17 +1038,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取详情信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "bet"}, res.Bet)
-	js.SetPath([]string{"data", "award"}, res.Award)
-	js.SetPath([]string{"data", "mine"}, res.Mine)
-	js.SetPath([]string{"data", "next"}, res.Next)
-	js.SetPath([]string{"data", "slides"}, res.Slides)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1236,13 +1156,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取邮政编码失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "zipcode"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1353,13 +1267,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		return &util.AppError{util.DataErr, 4, "获取往期记录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "bets"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1394,13 +1302,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 		return &util.AppError{util.DataErr, 4, "获取抢购记录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "records"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1431,14 +1333,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "获取用户信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "info"}, res.Info)
-	js.SetPath([]string{"data", "banner"}, res.Banner)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1521,13 +1416,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取配置失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "val"}, res.Val)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1558,13 +1447,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取用户地址失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "address"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1597,15 +1480,7 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "获取奖品状态失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "address"}, res.Address)
-	js.SetPath([]string{"data", "bet"}, res.Bet)
-	js.SetPath([]string{"data", "info"}, res.Info)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1765,15 +1640,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "init json failed"}
-	}
-
-	js.SetPath([]string{"data", "token"}, res.Token)
-	js.SetPath([]string{"data", "privdata"}, res.Privdata)
-	js.SetPath([]string{"data", "expire"}, res.Expire)
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1912,17 +1779,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "init json failed"}
-	}
-
-	log.Printf("register resp uid:%d token:%s privdata:%s", res.Head.Uid, res.Token, res.Privdata)
-	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
-	js.SetPath([]string{"data", "token"}, res.Token)
-	js.SetPath([]string{"data", "privdata"}, res.Privdata)
-	js.SetPath([]string{"data", "expire"}, res.Expire)
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}

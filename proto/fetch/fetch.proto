@@ -177,7 +177,7 @@ message WifiPass {
 
 message WifiPassReply {
     common.Head head = 1;
-    repeated WifiPass wifis = 2;
+    repeated WifiPass wifipass = 2;
 }
 
 message StsCredential {
@@ -205,12 +205,12 @@ message ZipcodeInfo {
 
 message ZipcodeReply {
     common.Head head = 1;
-    repeated ZipcodeInfo infos = 2;
+    repeated ZipcodeInfo zipcode = 2;
 }
 
 message AddressReply {
     common.Head head = 1;
-    repeated common.AddressInfo infos = 2;
+    repeated common.AddressInfo address = 2;
 }
 
 message AdRequest{
@@ -256,7 +256,7 @@ message ShareInfo {
 
 message ShareReply {
     common.Head head = 1;
-    repeated ShareInfo infos = 2;
+    repeated ShareInfo shares = 2;
     int32 reddot = 3;
 }
 
@@ -297,12 +297,12 @@ message PurchaseRecord {
 
 message PurchaseRecordReply {
     common.Head head = 1;
-    repeated PurchaseRecord infos = 2;
+    repeated PurchaseRecord records = 2;
 }
 
 message BetHistoryReply {
     common.Head head = 1;
-    repeated common.BidInfo infos = 2;
+    repeated common.BidInfo bets = 2;
 }
 
 message ShareDetailReply {

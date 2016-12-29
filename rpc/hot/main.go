@@ -284,7 +284,7 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, Uinfo: &uinfo, Binfos: binfos}, nil
+	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, User: &uinfo, Banner: binfos}, nil
 }
 
 func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {

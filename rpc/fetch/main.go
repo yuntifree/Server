@@ -511,7 +511,7 @@ func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (
 		wifis = append(wifis, &info)
 	}
 
-	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifis: wifis}, nil
+	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifipass: wifis}, nil
 }
 
 func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest) (*fetch.StsReply, error) {
@@ -568,7 +568,8 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 		infos = append(infos, &info)
 	}
 
-	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Zipcode: infos}, nil
 }
 
 func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fetch.AddressReply, error) {
@@ -593,7 +594,8 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 		infos = append(infos, &info)
 	}
 
-	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Address: infos}, nil
 }
 
 func getFlashAd(db *sql.DB) common.BannerInfo {
@@ -766,7 +768,7 @@ func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest
 	log.Printf("FetchPurchaseRecord request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getPurchaseRecords(db, in.Id, in.Seq, int64(in.Num))
 	return &fetch.PurchaseRecordReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Infos: infos}, nil
+		Records: infos}, nil
 }
 
 func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
@@ -810,7 +812,7 @@ func (s *server) FetchBetHistory(ctx context.Context, in *common.CommRequest) (*
 	log.Printf("FetchBetHistory request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getBetHistory(db, in.Id, in.Seq, int64(in.Num))
 	return &fetch.BetHistoryReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Infos: infos}, nil
+		Bets: infos}, nil
 }
 
 func getShareImage(db *sql.DB, sid int64) string {
@@ -927,7 +929,7 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 	}
 
 	return &fetch.ShareReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Infos: infos, Reddot: reddot}, nil
+		Shares: infos, Reddot: reddot}, nil
 }
 
 func getShareImages(db *sql.DB, sid int64) []string {

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -297,4 +298,36 @@ func addImages(uid int64, names []string) error {
 		return errors.New("添加图片失败")
 	}
 	return nil
+}
+
+func genResponseBody(res interface{}, flag bool) ([]byte, error) {
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return []byte(""), err
+	}
+	val := reflect.ValueOf(res).Elem()
+	for i := 0; i < val.NumField(); i++ {
+		valueField := val.Field(i)
+		typeField := val.Type().Field(i)
+		fmt.Printf("Field Name:%s Field Value:%v", typeField.Name, valueField.Interface())
+		if typeField.Name == "Head" {
+			if flag {
+				headVal := reflect.ValueOf(valueField).Elem()
+				for j := 0; j < headVal.NumField(); j++ {
+					headValueField := headVal.Field(j)
+					headTypeField := headVal.Type().Field(j)
+					if headTypeField.Name == "Uid" {
+						js.SetPath([]string{"data", "uid"}, headValueField.Interface())
+						break
+					}
+				}
+			} else {
+				continue
+			}
+		} else {
+			js.SetPath([]string{"data", strings.ToLower(typeField.Name)}, valueField.Interface())
+		}
+	}
+
+	return js.MarshalJSON()
 }

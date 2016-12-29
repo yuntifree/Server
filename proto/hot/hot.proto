@@ -69,8 +69,8 @@ message UseInfo {
 
 message FrontReply {
     common.Head head = 1;
-    UseInfo uinfo = 2;
-    repeated common.BannerInfo binfos = 3;
+    UseInfo user = 2;
+    repeated common.BannerInfo banner = 3;
 }
 
 message OpeningReply {
