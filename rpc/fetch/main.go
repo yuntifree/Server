@@ -1279,6 +1279,33 @@ func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fe
 		Infos: infos, Total: total}, nil
 }
 
+func getMenus(db *sql.DB) []*fetch.MenuInfo {
+	var infos []*fetch.MenuInfo
+	rows, err := db.Query("SELECT type, ctype, title, dst FROM menu WHERE deleted = 0")
+	if err != nil {
+		log.Printf("getMenus failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.MenuInfo
+		err := rows.Scan(&info.Type, &info.Ctype, &info.Title, &info.Dst)
+		if err != nil {
+			log.Printf("getMenus scan failed:%v", err)
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchMenu(ctx context.Context, in *common.CommRequest) (*fetch.MenuReply, error) {
+	log.Printf("FetchMenu uid:%d", in.Head.Uid)
+	infos := getMenus(db)
+	return &fetch.MenuReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
 func getLogisticsStatus(db *sql.DB, sid int64) int64 {
 	var status int64
 	err := db.QueryRow("SELECT status FROM logistics WHERE sid = ?", sid).

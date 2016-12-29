@@ -381,3 +381,15 @@ CREATE TABLE IF NOT EXISTS zte_code
     PRIMARY KEY(id),
     UNIQUE KEY(phone)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS menu 
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    int unsigned NOT NULL,
+    ctype   int unsigned NOT NULL,
+    title   varchar(64) NOT NULL,
+    dst     varchar(512) NOT NULL,
+    deleted tinyint unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;

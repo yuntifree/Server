@@ -33,6 +33,7 @@ service Fetch{
     rpc FetchWhiteList(common.CommRequest) returns (WhiteReply) {}
     rpc FetchWinStatus(common.CommRequest) returns (WinStatusReply) {}
     rpc FetchFeedback(common.CommRequest) returns (FeedbackReply) {}
+    rpc FetchMenu(common.CommRequest) returns (MenuReply) {}
 }
 
 message NewsInfo {
@@ -374,4 +375,16 @@ message FeedbackReply {
     common.Head head = 1;
     repeated FeedbackInfo infos = 2;
     int64 total = 3;
+}
+
+message MenuInfo {
+    int64 type = 1;
+    int64 ctype = 2;
+    string title = 3;
+    string dst = 4;
+}
+
+message MenuReply {
+    common.Head head = 1;
+    repeated MenuInfo infos = 2;
 }
