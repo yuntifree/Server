@@ -28,22 +28,12 @@ const (
 	typeApp
 	typeGame
 	typeDgNews
+	typeAmuse
 )
 
 type server struct{}
 
 var db *sql.DB
-
-func getDgNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
-	return getNews(db, seq, num, true)
-}
-
-func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
-	if seq > 0 {
-		return getNews(db, seq, num, false)
-	}
-	return getNews(db, seq, num/2, true)
-}
 
 func getMaxNewsSeq(db *sql.DB) int64 {
 	var id int64
@@ -54,14 +44,9 @@ func getMaxNewsSeq(db *sql.DB) int64 {
 	return id
 }
 
-func getNews(db *sql.DB, seq, num int64, isDgNews bool) []*hot.HotsInfo {
+func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 "
-	if isDgNews {
-		query += " AND stype = 10 "
-	} else {
-		query += " AND stype != 10 "
-	}
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype = " + strconv.Itoa(int(newsType))
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}
@@ -135,18 +120,13 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
 	if in.Type == typeHotNews {
-		infos = getHotNews(db, in.Seq, util.MaxListSize)
-		if in.Seq == 0 {
-			max := getMaxNewsSeq(db)
-			for i := 0; i < len(infos); i++ {
-				infos[i].Seq += max
-			}
-
-		}
+		infos = getNews(db, in.Seq, util.MaxListSize, 0)
 	} else if in.Type == typeVideos {
 		infos = getVideos(db, in.Seq)
 	} else if in.Type == typeDgNews {
-		infos = getDgNews(db, in.Seq, util.MaxListSize)
+		infos = getNews(db, in.Seq, util.MaxListSize, 10)
+	} else if in.Type == typeAmuse {
+		infos = getNews(db, in.Seq, util.MaxListSize, 4)
 	}
 	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }
@@ -234,7 +214,7 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 		return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	infos := getDgNews(db, 0, homeNewsNum)
+	infos := getNews(db, 0, homeNewsNum, 10)
 	infos = append(infos[:0], infos[1], infos[3], infos[5])
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
 }
