@@ -598,10 +598,16 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 		Address: infos}, nil
 }
 
-func getFlashAd(db *sql.DB) common.BannerInfo {
+func getFlashAd(db *sql.DB, flag bool) common.BannerInfo {
 	var info common.BannerInfo
-	err := db.QueryRow("SELECT img, dst, title, etime FROM banner WHERE deleted = 0 AND type = 1 ORDER BY id DESC LIMIT 1").
-		Scan(&info.Img, &info.Dst, &info.Title, &info.Expire)
+	query := "SELECT img, dst, title, etime FROM banner WHERE deleted = 0 AND type = 1 "
+	if flag {
+		query += " AND (online = 1 OR dbg = 1) "
+	} else {
+		query += " AND online = 1 "
+	}
+	query += " ORDER BY priority DESC LIMIT 1"
+	err := db.QueryRow(query).Scan(&info.Img, &info.Dst, &info.Title, &info.Expire)
 	if err != nil {
 		log.Printf("FetchFlashAd query failed %v", err)
 	}
@@ -627,7 +633,8 @@ func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.
 		log.Printf("FetchFlashAd ban uid:%d term:%d version:%d", in.Head.Uid, in.Term, in.Version)
 		return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
 	}
-	info := getFlashAd(db)
+	flag := util.IsWhiteUser(db, in.Head.Uid, util.FlashAdDbgType)
+	info := getFlashAd(db, flag)
 	return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Info: &info}, nil
 }
 
@@ -671,8 +678,14 @@ func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.K
 func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fetch.ActivityReply, error) {
 	log.Printf("FetchActivity request uid:%d", in.Head.Uid)
 	var info common.BannerInfo
-	err := db.QueryRow("SELECT title, dst FROM banner WHERE deleted = 0 AND type = 2 ORDER BY id DESC LIMIT 1").
-		Scan(&info.Title, &info.Dst)
+	query := "SELECT title, dst FROM banner WHERE deleted = 0 AND type = 2 "
+	if util.IsWhiteUser(db, in.Head.Uid, util.ActivityWhiteType) {
+		query += " AND (online = 1 OR dbg = 1) "
+	} else {
+		query += " AND online = 1 "
+	}
+	query += " ORDER BY priority DESC LIMIT 1"
+	err := db.QueryRow(query).Scan(&info.Title, &info.Dst)
 	if err != nil {
 		log.Printf("FetchActivity query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err

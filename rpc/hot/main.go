@@ -270,9 +270,11 @@ func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 
 func getBanners(db *sql.DB, flag bool) ([]*common.BannerInfo, error) {
 	var infos []*common.BannerInfo
-	query := "SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 AND type = 0"
+	query := "SELECT img, dst FROM banner WHERE deleted = 0 AND type = 0"
 	if flag {
-		query += " OR dbg = 1 "
+		query += " AND (online = 1 OR dbg = 1) "
+	} else {
+		query += " AND online = 1 "
 	}
 	query += " ORDER BY priority DESC LIMIT 20"
 	rows, err := db.Query(query)

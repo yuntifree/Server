@@ -17,6 +17,8 @@ const (
 const (
 	FlashAdWhiteType = iota
 	BannerWhiteType
+	ActivityWhiteType
+	FlashAdDbgType
 )
 
 //UserInfo user base information

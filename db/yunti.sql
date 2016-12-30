@@ -233,6 +233,7 @@ CREATE TABLE IF NOT EXISTS user_unionid (
 
 CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
+    -- 0:banner 1:flash_ad 2:activity
     type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
@@ -353,7 +354,7 @@ CREATE TABLE IF NOT EXISTS ad_ban
 CREATE TABLE IF NOT EXISTS white_list 
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    -- 0: flash_ad 1:banner
+    -- 0: flash_ad 1:banner 2:activity 3:flash_ad dbg
     type    int unsigned NOT NULL,
     uid     int unsigned NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
