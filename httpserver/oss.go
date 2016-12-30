@@ -455,6 +455,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	priority := req.GetParamInt("priority")
 	btype := req.GetParamInt("type")
 	title := req.GetParamStringDef("title", "")
+	expire := req.GetParamStringDef("expire", "")
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -469,7 +470,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.BannerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
-				Title: title, Type: int32(btype)}})
+				Title: title, Type: int32(btype), Expire: expire}})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
