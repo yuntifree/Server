@@ -2,6 +2,7 @@ package juhe
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -24,6 +25,9 @@ const (
 	appkey     = "730e17291fa5e25bd40483f795af4a23"
 	dgurl      = "http://news.sun0769.com/dg/"
 	weatherurl = "https://api.thinkpage.cn/v3/weather/now.json?key=uixmdugjglekq1ng&location=dongguan&language=zh-Hans&unit=c"
+	jokeurl    = "http://japi.juhe.cn/joke/content/list.from"
+	jokeimgurl = "http://japi.juhe.cn/joke/img/list.from"
+	jokekey    = "deecda0845a613ae153c3ea7efa30a06"
 )
 
 //News information for news
@@ -31,6 +35,12 @@ type News struct {
 	Title, Date, Author, URL, Md5, Origin string
 	Pics                                  [3]string
 	Stype                                 int
+}
+
+//Joke information for jokes
+type Joke struct {
+	Content, Date, Md5, URL string
+	Type                    int64
 }
 
 //Page page info
@@ -373,4 +383,52 @@ func GetRealWeather() (Weather, error) {
 	}
 
 	return w, nil
+}
+
+//GetJoke return jokes
+func GetJoke(ts, page, pagesize, ctype int64) []*Joke {
+	var infos []*Joke
+	host := jokeurl
+	if ctype != 0 {
+		host = jokeimgurl
+	}
+	url := fmt.Sprintf("%s?key=%s&page=%d&pagesize=%d&sort=desc&time=%d", host,
+		jokekey, page, pagesize, ts)
+	res, err := util.HTTPRequest(url, "")
+	if err != nil {
+		log.Printf("request failed %s:%v", url, err)
+		return infos
+	}
+
+	js, err := simplejson.NewJson([]byte(res))
+	if err != nil {
+		log.Printf("parse resp failed:%v", err)
+		return infos
+	}
+
+	errcode, err := js.Get("error_code").Int()
+	if err != nil || errcode != 0 {
+		log.Printf("check error_code failed")
+		return infos
+	}
+	arr, err := js.Get("result").Get("data").Array()
+	if err != nil {
+		log.Printf("get data failed:%v", err)
+		return nil
+	}
+
+	i := 0
+	for ; i < len(arr); i++ {
+		var joke Joke
+		info := js.Get("result").Get("data").GetIndex(i)
+		joke.Content, _ = info.Get("content").String()
+		joke.Date, _ = info.Get("updatetime").String()
+		joke.Md5, _ = info.Get("hashId").String()
+		joke.Type = ctype
+		if ctype != 0 {
+			joke.URL, _ = info.Get("url").String()
+		}
+		infos = append(infos, &joke)
+	}
+	return infos
 }

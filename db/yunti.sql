@@ -393,3 +393,15 @@ CREATE TABLE IF NOT EXISTS menu
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS joke
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    content varchar(2048) NOT NULL,
+    md5     varchar(32) NOT NULL,
+    dst     varchar(1024) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    dtime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(md5)
+) ENGINE = InnoDB;
