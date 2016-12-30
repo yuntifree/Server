@@ -50,14 +50,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
-	}
-
-	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
-	js.SetPath([]string{"data", "token"}, res.Token)
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, err.Error()}
 	}
@@ -93,14 +86,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "news"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -135,14 +121,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "tags"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -177,14 +156,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取标签失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -295,14 +267,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -338,14 +303,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取视频审核信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -380,14 +338,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -418,13 +369,7 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取配置信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -455,13 +400,7 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "获取广告屏蔽信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -538,13 +477,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "id"}, res.Id)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -610,13 +543,7 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "添加广告屏蔽失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "id"}, res.Id)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -689,14 +616,7 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "获取白名单失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -738,16 +658,7 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "添加广告白名单失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
-	}
-	w.Write(body)
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
@@ -785,16 +696,7 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.DataErr, 4, "删除广告白名单失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
-	}
-	w.Write(body)
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
@@ -834,13 +736,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "ids"}, res.Ids)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1062,14 +958,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{util.DataErr, 4, "获取Banner信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
@@ -1105,14 +994,7 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "获取用户反馈信息失败"}
 	}
 
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	js.SetPath([]string{"data", "total"}, res.Total)
-
-	body, err := js.MarshalJSON()
+	body, err := genResponseBody(res, false)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}
