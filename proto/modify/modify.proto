@@ -155,6 +155,7 @@ message WhiteRequest {
 message FeedRequest {
     common.Head head = 1;
     string content = 2;
+    string contact = 3;
 }
 
 message WinStatusRequest {

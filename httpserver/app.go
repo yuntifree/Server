@@ -312,6 +312,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 	content := req.GetParamString("content")
+	contact := req.GetParamStringDef("contact", "")
 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -324,7 +325,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.AddFeedback(context.Background(),
 		&modify.FeedRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Content: content})
+			Content: content, Contact: contact})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}

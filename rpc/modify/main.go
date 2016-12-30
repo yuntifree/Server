@@ -406,8 +406,8 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	db.QueryRow("SELECT UNIX_TIMESTAMP(ctime) FROM feedback WHERE uid = ? ORDER BY id DESC LIMIT 1").
 		Scan(&last)
 	if time.Now().Unix() > last+feedInterval {
-		db.Exec("INSERT INTO feedback(uid, content, ctime) VALUES(?, ?, NOW())", in.Head.Uid,
-			in.Content)
+		db.Exec("INSERT INTO feedback(uid, content, contact, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid,
+			in.Content, in.Contact)
 	} else {
 		log.Printf("frequency exceed limit uid:%d", in.Head.Uid)
 	}
