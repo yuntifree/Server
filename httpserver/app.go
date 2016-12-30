@@ -1523,8 +1523,14 @@ func genSsdbKey(ctype int64) string {
 	switch ctype {
 	default:
 		return hotNewsKey
-	case 1:
+	case hotVideoType:
 		return hotVideoKey
+	case hotDgType:
+		return hotDgNewsKey
+	case hotAmuseType:
+		return hotAmuseKey
+	case hotJokeType:
+		return hotJokeKey
 	}
 }
 

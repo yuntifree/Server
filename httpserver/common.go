@@ -28,7 +28,19 @@ const (
 	hotVideoKey    = "hot:video"
 	hotWeatherKey  = "hot:weather"
 	hotServiceKey  = "hot:service"
+	hotDgNewsKey   = "hot:news:dg"
+	hotAmuseKey    = "hot:news:amuse"
+	hotJokeKey     = "hot:joke"
 	expireInterval = 30
+)
+const (
+	hotNewsType = iota
+	hotVideoType
+	hotAppType
+	hotGameType
+	hotDgType
+	hotAmuseType
+	hotJokeType
 )
 
 type request struct {
