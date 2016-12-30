@@ -414,7 +414,7 @@ func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*f
 func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 	var infos []*fetch.VideoInfo
 	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query += " ORDER BY vid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
