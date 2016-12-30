@@ -52,6 +52,7 @@ message BannerInfo {
     string title = 7;
     int32 type = 8;
     string expire = 9;
+    int32 dbg = 10;
 }
 
 message AddressInfo {

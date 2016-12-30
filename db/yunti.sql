@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS ad_ban
 CREATE TABLE IF NOT EXISTS white_list 
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    -- 0: flash_ad
+    -- 0: flash_ad 1:banner
     type    int unsigned NOT NULL,
     uid     int unsigned NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,

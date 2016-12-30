@@ -445,7 +445,7 @@ func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetc
 
 func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
 	var infos []*common.BannerInfo
-	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title, etime FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d", btype, seq, num)
+	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title, etime, dbg FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d", btype, seq, num)
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -457,7 +457,7 @@ func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
 	for rows.Next() {
 		var info common.BannerInfo
 		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority, &info.Title,
-			&info.Expire)
+			&info.Expire, &info.Dbg)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
@@ -621,23 +621,9 @@ func isAdBan(db *sql.DB, term, version int64) bool {
 	return false
 }
 
-func isAdWhite(db *sql.DB, uid int64) bool {
-	var num int
-	err := db.QueryRow("SELECT COUNT(id) FROM white_list WHERE type = 0 AND deleted = 0 AND uid = ?", uid).
-		Scan(&num)
-	if err != nil {
-		log.Printf("isAdWhite query failed uid:%d %v", uid, err)
-		return false
-	}
-	if num > 0 {
-		return true
-	}
-	return false
-}
-
 func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.AdReply, error) {
 	log.Printf("FetchFlashAd request uid:%d term:%d versoin:%d", in.Head.Uid, in.Term, in.Version)
-	if !isAdWhite(db, in.Head.Uid) && isAdBan(db, in.Term, in.Version) {
+	if !util.IsWhiteUser(db, in.Head.Uid, util.FlashAdWhiteType) && isAdBan(db, in.Term, in.Version) {
 		log.Printf("FetchFlashAd ban uid:%d term:%d version:%d", in.Head.Uid, in.Term, in.Version)
 		return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
 	}

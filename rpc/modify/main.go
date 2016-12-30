@@ -209,8 +209,8 @@ func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*comm
 }
 
 func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
-	query := fmt.Sprintf("UPDATE banner SET priority = %d, online = %d, deleted = %d ",
-		in.Info.Priority, in.Info.Online, in.Info.Deleted)
+	query := fmt.Sprintf("UPDATE banner SET priority = %d, online = %d, deleted = %d, dbg = %d ",
+		in.Info.Priority, in.Info.Online, in.Info.Deleted, in.Info.Dbg)
 	if in.Info.Img != "" {
 		query += ", img = '" + in.Info.Img + "' "
 	}

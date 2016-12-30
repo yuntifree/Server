@@ -268,9 +268,14 @@ func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 	return info, nil
 }
 
-func getBanners(db *sql.DB) ([]*common.BannerInfo, error) {
+func getBanners(db *sql.DB, flag bool) ([]*common.BannerInfo, error) {
 	var infos []*common.BannerInfo
-	rows, err := db.Query("SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 AND type = 0 ORDER BY id DESC LIMIT 20")
+	query := "SELECT img, dst FROM banner WHERE deleted = 0 AND online = 1 AND type = 0"
+	if flag {
+		query += " OR dbg = 1 "
+	}
+	query += " ORDER BY priority DESC LIMIT 20"
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("select banner info failed:%v", err)
 		return infos, err
@@ -297,7 +302,8 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 	}
 
 	uinfo.Save = int32(float64(uinfo.Save) * saveRate)
-	binfos, err := getBanners(db)
+	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
+	binfos, err := getBanners(db, flag)
 	if err != nil {
 		log.Printf("getBannerInfo failed:%v", err)
 		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err

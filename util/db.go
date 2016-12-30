@@ -14,6 +14,11 @@ const (
 	readRds     = "rm-wz9sb2613092ki9xn.mysql.rds.aliyuncs.com"
 )
 
+const (
+	FlashAdWhiteType = iota
+	BannerWhiteType
+)
+
 //UserInfo user base information
 type UserInfo struct {
 	UID, Sex                    int
@@ -186,4 +191,19 @@ func GetRemainSeconds(now int64) int32 {
 	award := GetNextCqssc(tt)
 	award = award.Add(120 * time.Second)
 	return int32(award.Unix() - tt.Unix())
+}
+
+//IsWhiteUser check white list for uid
+func IsWhiteUser(db *sql.DB, uid, wtype int64) bool {
+	var num int
+	err := db.QueryRow("SELECT COUNT(id) FROM white_list WHERE type = ? AND deleted = 0 AND uid = ?",
+		wtype, uid).Scan(&num)
+	if err != nil {
+		log.Printf("isWhiteUser query failed uid:%d %v", uid, err)
+		return false
+	}
+	if num > 0 {
+		return true
+	}
+	return false
 }
