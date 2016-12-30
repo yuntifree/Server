@@ -25,6 +25,9 @@ message HotsInfo {
     int64 seq = 7;
     int64 play = 8;
     int64 id = 9; 
+    string image = 10;
+    int64 heart = 11;
+    string content = 12;
 }
 
 message HotsReply {

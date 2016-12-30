@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	common "../../proto/common"
 	hot "../../proto/hot"
@@ -20,6 +21,8 @@ const (
 	saveRate        = 0.1 / (1024.0 * 1024.0)
 	marqueeInterval = 30
 	weatherDst      = "http://www.dg121.com/mobile"
+	jokeTime        = 1483027200 // 2016-12-30
+	hourSeconds     = 3600
 )
 
 const (
@@ -29,6 +32,7 @@ const (
 	typeGame
 	typeDgNews
 	typeAmuse
+	typeJoke
 )
 
 type server struct{}
@@ -74,13 +78,11 @@ func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
 		for ; j < 3; j++ {
 			if img[j] != "" {
 				pics[k] = img[j]
-				log.Printf("k:%d pic:%s", k, pics[k])
 				k++
 			}
 		}
 		info.Images = pics[:k]
 		infos = append(infos, &info)
-		log.Printf("title:%s source:%s", info.Title, info.Source)
 	}
 	return infos
 }
@@ -116,6 +118,38 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	return infos
 }
 
+func getJokes(db *sql.DB, seq, num int64) []*hot.HotsInfo {
+	var infos []*hot.HotsInfo
+	query := "SELECT id, content, dst, heart FROM joke "
+	if seq != 0 {
+		query += fmt.Sprintf(" WHERE id < %d", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getJokes query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info hot.HotsInfo
+		err := rows.Scan(&info.Id, &info.Content, &info.Image, &info.Heart)
+		if err != nil {
+			log.Printf("getJokes scan failed:%v", err)
+			continue
+		}
+		info.Seq = info.Id
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func calcJokeSeq() int64 {
+	return (time.Now().Unix() - jokeTime) / hourSeconds * 100
+}
+
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
 	var infos []*hot.HotsInfo
@@ -127,6 +161,12 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		infos = getNews(db, in.Seq, util.MaxListSize, 10)
 	} else if in.Type == typeAmuse {
 		infos = getNews(db, in.Seq, util.MaxListSize, 4)
+	} else if in.Type == typeJoke {
+		seq := in.Seq
+		if in.Seq == 0 {
+			seq = calcJokeSeq()
+		}
+		infos = getJokes(db, seq, util.MaxListSize)
 	}
 	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
 }

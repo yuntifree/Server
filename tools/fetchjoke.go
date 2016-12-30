@@ -20,11 +20,13 @@ func main() {
 
 	ts := time.Now().Unix()
 	var i int64
+	flag := false
 	for {
 		i++
 		for j := 0; j < 2; j++ {
 			jokes := juhe.GetJoke(ts, i, 20, int64(j))
 			if len(jokes) == 0 {
+				flag = true
 				break
 			}
 			for j := 0; j < len(jokes); j++ {
@@ -35,6 +37,9 @@ func main() {
 					log.Printf("insert failed:%v", err)
 				}
 			}
+		}
+		if flag {
+			break
 		}
 		if i%1000 == 0 {
 			time.Sleep(1)
