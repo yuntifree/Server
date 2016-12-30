@@ -692,7 +692,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "invalid param"}
 	}
-	if res.Info != nil {
+	if res.Info != nil && res.Info.Img != "" {
 		js.Set("data", res.Info)
 	}
 
