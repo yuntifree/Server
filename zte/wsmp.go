@@ -58,8 +58,14 @@ func genBodyStr(action string, body *simplejson.Json) (string, error) {
 	return string(data), nil
 }
 
-func genRegisterBody(phone string) (string, error) {
-	body := genBody(map[string]string{"custCode": phone})
+func genRegisterBody(phone string, smsFlag bool) (string, error) {
+	var m map[string]string
+	if smsFlag {
+		m = map[string]string{"custCode": phone, "mobilePhone": phone}
+	} else {
+		m = map[string]string{"custCode": phone}
+	}
+	body := genBody(m)
 	return genBodyStr("reg", body)
 }
 
@@ -81,15 +87,16 @@ func getResponse(body string) (*simplejson.Json, error) {
 		return nil, err
 	}
 	if ret != "0" {
-		log.Printf("Register zte op failed retcode:%d", ret)
+		log.Printf("Register zte op failed retcode:%s resp:%s", ret, resp)
 		return nil, errors.New("zte op failed")
 	}
 	return js, nil
 }
 
 //Register return password for new user
-func Register(phone string) (string, error) {
-	body, err := genRegisterBody(phone)
+//smsFlag send sms or not
+func Register(phone string, smsFlag bool) (string, error) {
+	body, err := genRegisterBody(phone, smsFlag)
 	if err != nil {
 		log.Printf("Register genRegisterBody failed:%v", err)
 		return "", err
