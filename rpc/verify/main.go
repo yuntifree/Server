@@ -213,16 +213,20 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
+	if in.Code != "" && !checkZteCode(db, in.Username, in.Code) {
+		log.Printf("Register check code failed, name:%s code:%s", in.Username, in.Code)
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, nil
+	}
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
 	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, token, private, model, udid,
-	channel, reg_ip, version, term, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
+	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
 	DATE_ADD(NOW(), INTERVAL 30 DAY))`,
 		in.Username, epass, salt, token, privdata, in.Client.Model, in.Client.Udid, in.Client.Channel,
-		in.Client.Regip, in.Client.Version, in.Client.Term)
+		in.Client.Regip, in.Client.Version, in.Client.Term, in.Code)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -400,7 +404,7 @@ func recordZteCode(db *sql.DB, phone, code string) {
 }
 
 func (s *server) GetCheckCode(ctx context.Context, in *verify.CodeRequest) (*common.CommReply, error) {
-	code, err := zte.Register(in.Phone)
+	code, err := zte.Register(in.Phone, true)
 	if err != nil {
 		log.Printf("GetCheckCode Register failed:%v", err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
@@ -430,11 +434,11 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	token := util.GenSalt()
 	privdata := util.GenSalt()
-	res, err := db.Exec("INSERT INTO user(username, phone, wifi_pass, token, private, ctime, atime, etime) VALUES (?, ?, ?,?,? NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE phone = ?, wifi_pass = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
+	res, err := db.Exec("INSERT INTO user(username, phone, wifi_passwd, token, private, ctime, atime, etime) VALUES (?, ?, ?,?,?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE phone = ?, wifi_passwd = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
 		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata, in.Info.Phone, in.Info.Code,
 		token, privdata)
 	if err != nil {
-		log.Printf("PortalLogin insert user failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
+		log.Printf("PortalLogin insert user failed, phone:%s code:%s %v", in.Info.Phone, in.Info.Code, err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	uid, err := res.LastInsertId()

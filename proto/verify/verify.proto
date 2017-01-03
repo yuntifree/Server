@@ -68,6 +68,7 @@ message RegisterRequest {
     string username = 2;
     string password = 3;
     ClientInfo client = 4;
+    string code = 5;
 }
 
 message RegisterReply {
