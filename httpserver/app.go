@@ -1721,7 +1721,11 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "登录失败"}
 	}
 
-	w.Write([]byte(`{"errno":0}`))
+	body, err := genResponseBody(res, false)
+	if err != nil {
+		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+	}
+	w.Write(body)
 	return nil
 }
 

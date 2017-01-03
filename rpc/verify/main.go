@@ -428,20 +428,28 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
 
 	}
-
-	_, err := db.Exec("INSERT INTO user(username, phone, wifi_pass, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE phone = ?, wifi_pass = ?",
-		in.Info.Phone, in.Info.Phone, in.Info.Code, in.Info.Phone, in.Info.Code)
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	res, err := db.Exec("INSERT INTO user(username, phone, wifi_pass, token, private, ctime, atime, etime) VALUES (?, ?, ?,?,? NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE phone = ?, wifi_pass = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
+		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata, in.Info.Phone, in.Info.Code,
+		token, privdata)
 	if err != nil {
 		log.Printf("PortalLogin insert user failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
 	}
+	uid, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("PortalLogin add user failed:%v", err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	log.Printf("uid:%d\n", uid)
 	flag := zte.Login(in.Info.Phone, in.Info.Code, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
 		in.Info.Acname)
 	if !flag {
 		log.Printf("PortalLogin zte login failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
 	}
-	return &verify.LoginReply{Head: &common.Head{Retcode: 0}}, nil
+	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }
 
 func main() {
