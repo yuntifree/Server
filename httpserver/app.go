@@ -90,6 +90,11 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	phone := req.GetParamString("phone")
 	ctype := req.GetParamInt("type")
 
+	if !util.IsIllegalPhone(phone) {
+		log.Printf("getCheckCode illegal phone:%s", phone)
+		return &util.AppError{util.LogicErr, 109, "请输入正确的手机号"}
+	}
+
 	flag, err := getCode(phone, int32(ctype))
 	if err != nil || !flag {
 		return &util.AppError{util.LogicErr, 103, "获取验证码失败"}
@@ -102,6 +107,11 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	var req request
 	req.init(r.Body)
 	phone := req.GetParamString("phone")
+
+	if !util.IsIllegalPhone(phone) {
+		log.Printf("getCheckCode illegal phone:%s", phone)
+		return &util.AppError{util.LogicErr, 109, "请输入正确的手机号"}
+	}
 
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -1721,7 +1731,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.DataErr, 4, "登录失败"}
 	}
 
-	body, err := genResponseBody(res, false)
+	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
 	}

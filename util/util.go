@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -196,4 +197,13 @@ func GetNextCqssc(tt time.Time) time.Time {
 	}
 
 	return time.Date(year, month, day, hour, min, 0, 0, local)
+}
+
+//IsIllegalPhone check phone format 11-number begin with 1
+func IsIllegalPhone(phone string) bool {
+	flag, err := regexp.MatchString(`^1\d{10}$`, phone)
+	if err != nil {
+		log.Printf("IsIllegalPhone MatchString failed:%v", err)
+	}
+	return flag
 }
