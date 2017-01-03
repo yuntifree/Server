@@ -31,6 +31,7 @@ service Modify{
     rpc SetWinStatus(WinStatusRequest) returns (common.CommReply) {}
     rpc AddShare(ShareRequest) returns (common.CommReply) {}
     rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
+    rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -185,4 +186,17 @@ message PurchaseResult {
 message PurchaseReply {
     common.Head head = 1;
     PurchaseResult info = 2;
+}
+
+message AccessInfo {
+    string acname = 1;
+    string userip = 2;
+    string acip = 3;
+    string usermac = 4;
+    string apmac = 5;
+}
+
+message AccessRequest {
+    common.Head head = 1;
+    AccessInfo info = 2;
 }

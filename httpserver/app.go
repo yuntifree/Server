@@ -196,6 +196,41 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	acname := req.GetParamString("wlanacname")
+	acip := req.GetParamString("wlanacip")
+	userip := req.GetParamString("wlanuserip")
+	usermac := req.GetParamString("wlanusermac")
+	apmac := req.GetParamString("apmac")
+
+	address := getNameServer(uid, util.ModifyServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+	defer conn.Close()
+	c := modify.NewModifyClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.WifiAccess(context.Background(),
+		&modify.AccessRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &modify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname, Acip: acip,
+				Apmac: apmac}})
+	if err != nil {
+		return &util.AppError{util.RPCErr, 4, err.Error()}
+	}
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{util.LogicErr, 4, "WifiAccess failed"}
+	}
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -2049,6 +2084,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_wifi", appHandler(reportWifi))
 	mux.Handle("/report_click", appHandler(reportClick))
 	mux.Handle("/report_apmac", appHandler(reportApmac))
+	mux.Handle("/connect_wifi", appHandler(connectWifi))
 	mux.Handle("/upload_callback", appHandler(uploadCallback))
 	mux.Handle("/purchase_sales", appHandler(purchaseSales))
 	mux.Handle("/apply_image_upload", appHandler(applyImageUpload))

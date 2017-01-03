@@ -14,6 +14,7 @@ import (
 
 	common "../../proto/common"
 	modify "../../proto/modify"
+	zte "../../zte"
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -157,19 +158,25 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*common.CommReply, error) {
+func refreshUserAp(db *sql.DB, uid int64, apmac string) {
 	var aid int
-	mac := strings.Replace(strings.ToLower(in.Apmac), ":", "", -1)
-	log.Printf("ap mac origin:%s convert:%s\n", in.Apmac, mac)
-	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", in.Apmac, mac).Scan(&aid)
+	mac := strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	log.Printf("ap mac origin:%s convert:%s\n", apmac, mac)
+	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", apmac, mac).Scan(&aid)
 	if err != nil {
-		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", in.Head.Uid, in.Apmac, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", uid, apmac, err)
+		return
 	}
-	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, in.Head.Uid)
+	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, uid)
 	if err != nil {
-		log.Printf("update user ap info failed uid:%d aid:%d\n", in.Head.Uid, aid)
+		log.Printf("update user ap info failed uid:%d aid:%d\n", uid, aid)
+		return
 	}
+	return
+}
+
+func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*common.CommReply, error) {
+	refreshUserAp(db, in.Head.Uid, in.Apmac)
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
@@ -412,6 +419,22 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	} else {
 		log.Printf("frequency exceed limit uid:%d", in.Head.Uid)
 	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) WifiAccess(ctx context.Context, in *modify.AccessRequest) (*common.CommReply, error) {
+	var phone, pass string
+	err := db.QueryRow("SELECT phone, wifi_passwd FROM user WHERE uid = ?", in.Head.Uid).
+		Scan(&phone, &pass)
+	if err != nil {
+		log.Printf("WifiAccess search user failed:%v", err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if !zte.Login(phone, pass, in.Info.Userip, in.Info.Usermac, in.Info.Acip, in.Info.Acname) {
+		log.Printf("WifiAccess zte Login failed, req:%v", in)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	refreshUserAp(db, in.Head.Uid, in.Info.Apmac)
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
