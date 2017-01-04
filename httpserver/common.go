@@ -152,7 +152,10 @@ func handleError(w http.ResponseWriter, e *util.AppError) {
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
 	js.Set("errno", e.Code)
-	if e.Code < 100 {
+	if e.Code == errInvalidParam || e.Code == errMissParam {
+		js.Set("errno", errToken)
+		js.Set("desc", "服务器又傲娇了~")
+	} else if e.Code < errToken {
 		js.Set("desc", "服务器又傲娇了~")
 	} else {
 		js.Set("desc", e.Msg)
