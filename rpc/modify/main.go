@@ -24,6 +24,15 @@ const (
 	feedInterval = 60
 )
 
+const (
+	videoClickType = iota
+	newsClickType
+	adShowType
+	adClickType
+	serviceClickType
+	jokeHeartType
+)
+
 type server struct{}
 
 var db *sql.DB
@@ -135,16 +144,18 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 
 	if id != 0 {
 		switch in.Type {
-		case 0:
+		case videoClickType:
 			_, err = db.Exec("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
-		case 1:
+		case newsClickType:
 			_, err = db.Exec("UPDATE news SET click = click + 1 WHERE id = ?", in.Id)
-		case 2:
+		case adShowType:
 			_, err = db.Exec("UPDATE ads SET display = display + 1 WHERE id = ?", in.Id)
-		case 3:
+		case adClickType:
 			_, err = db.Exec("UPDATE ads SET click = click + 1 WHERE id = ?", in.Id)
-		case 4:
+		case serviceClickType:
 			_, err = db.Exec("INSERT INTO service_click(sid, click, ctime) VALUES (?, 1, CURDATE()) ON DUPLICATE KEY UPDATE click = click + 1", in.Id)
+		case jokeHeartType:
+			_, err = db.Exec("UPDATE joke SET heart = heart + 1 WHERE id = ?", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 
