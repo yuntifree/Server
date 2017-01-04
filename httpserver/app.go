@@ -91,7 +91,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	ctype := req.GetParamInt("type")
 
 	if !util.IsIllegalPhone(phone) {
-		log.Printf("getCheckCode illegal phone:%s", phone)
+		log.Printf("getPhoneCode illegal phone:%s", phone)
 		return &util.AppError{util.LogicErr, 109, "请输入正确的手机号"}
 	}
 
@@ -1709,6 +1709,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uid := req.GetParamInt("uid")
 	token := req.GetParamString("token")
 	privdata := req.GetParamString("privdata")
+	log.Printf("autoLogin uid:%d token:%s privdata:%s", uid, token, privdata)
 
 	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -1767,10 +1768,12 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{util.RPCErr, 4, err.Error()}
 	}
 
-	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
-		return &util.AppError{util.LogicErr, 4, "验证码错误"}
+	if res.Head.Retcode == common.ErrCode_CHECK_CODE {
+		return &util.AppError{util.LogicErr, errCode, "验证码错误"}
+	} else if res.Head.Retcode == common.ErrCode_ZTE_LOGIN {
+		return &util.AppError{util.DataErr, errZteLogin, "登录失败"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "登录失败"}
+		return &util.AppError{util.DataErr, errInner, "登录失败"}
 	}
 
 	body, err := genResponseBody(res, true)

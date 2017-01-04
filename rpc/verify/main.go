@@ -306,15 +306,9 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 func checkPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
 	var etoken string
 	var eprivdata string
-	var flag bool
-	err := db.QueryRow("SELECT token, private, IF(etime > NOW(), 1, 0) FROM user WHERE uid = ?", uid).Scan(&etoken, &eprivdata, &flag)
+	err := db.QueryRow("SELECT token, private FROM user WHERE uid = ?", uid).Scan(&etoken, &eprivdata)
 	if err != nil {
 		log.Printf("query failed:%v", err)
-		return false
-	}
-
-	if !flag {
-		log.Printf("token expire, uid:%d, token:%s, privdata:%s", uid, token, privdata)
 		return false
 	}
 
@@ -429,7 +423,7 @@ func checkZteCode(db *sql.DB, phone, code string) bool {
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code) {
 		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+		return &verify.LoginReply{Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
 
 	}
 	token := util.GenSalt()
@@ -451,7 +445,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		in.Info.Acname)
 	if !flag {
 		log.Printf("PortalLogin zte login failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+		return &verify.LoginReply{Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }

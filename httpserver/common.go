@@ -44,6 +44,26 @@ const (
 	hotJokeType
 )
 
+const (
+	errOk = iota
+	errMissParam
+	errInvalidParam
+	errDatabase
+	errInner
+)
+const (
+	errToken = iota + 101
+	errCode
+	errGetCode
+	errUsedPhone
+	errWxMpLogin
+	errUnionID
+	errWxTicket
+	errNotFound
+	errIllegalPhone
+	errZteLogin
+)
+
 type request struct {
 	Post *simplejson.Json
 }
