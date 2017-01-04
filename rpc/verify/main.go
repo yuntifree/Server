@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"time"
 
 	"database/sql"
 
@@ -221,6 +222,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	privdata := util.GenSalt()
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
+	var expire int64
 	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
 	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, token, private, model, udid,
 	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
@@ -246,16 +248,20 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 		log.Printf("scan uid:%d \n", uid)
-		_, err := db.Exec("UPDATE user SET token = ?, private = ?, password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
-			token, privdata, epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version, in.Client.Term,
-			uid)
+		_, err := db.Exec("UPDATE user SET password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW() WHERE uid = ?",
+			epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version, in.Client.Term, uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
+		token, privdata, expire, err = refreshTokenPrivdata(db, uid)
+		if err != nil {
+			log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
+			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
+		}
 	}
-	util.SetCachedToken(kv, uid, token)
-	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
+		Token: token, Privdata: privdata, Expire: int32(expire)}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
@@ -303,17 +309,36 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
-func checkPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
+func checkPrivdata(db *sql.DB, uid int64, token, privdata string) (bool, int64) {
 	var etoken string
 	var eprivdata string
-	err := db.QueryRow("SELECT token, private FROM user WHERE uid = ?", uid).Scan(&etoken, &eprivdata)
+	var expire int64
+	err := db.QueryRow("SELECT token, private, UNIX_TIMESTAMP(etime) FROM user WHERE uid = ?", uid).
+		Scan(&etoken, &eprivdata, &expire)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return false, expire
+	}
+
+	if etoken != token || eprivdata != privdata {
+		log.Printf("check privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
+		return false, expire
+	}
+	return true, expire
+}
+
+func checkBackupPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
+	var etoken string
+	var eprivdata string
+	err := db.QueryRow("SELECT token, private FROM token_backup WHERE uid = ?", uid).
+		Scan(&etoken, &eprivdata)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return false
 	}
 
 	if etoken != token || eprivdata != privdata {
-		log.Printf("check privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
+		log.Printf("check backup privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
 		return false
 	}
 	return true
@@ -325,17 +350,58 @@ func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
 	return err
 }
 
-func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
-	flag := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
-	if !flag {
-		log.Printf("check privdata failed, uid:%d token:%s privdata:%s", in.Head.Uid, in.Token, in.Privdata)
-		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("check privdata failed")
+func backupToken(db *sql.DB, uid int64, token, privdata string) {
+	_, err := db.Exec("INSERT INTO token_backup(uid, token, private, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, private = ?",
+		uid, token, privdata, token, privdata)
+	if err != nil {
+		log.Printf("backupToken failed uid:%d token:%s privdata:%s", uid, token, privdata)
 	}
-	token := util.GenSalt()
-	privdata := util.GenSalt()
-	updatePrivdata(db, in.Head.Uid, token, privdata)
-	util.SetCachedToken(kv, in.Head.Uid, token)
-	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
+}
+
+func refreshTokenPrivdata(db *sql.DB, uid int64) (string, string, int64, error) {
+	var token, privdata string
+	var expire int64
+	err := db.QueryRow("SELECT token, private, UNIX_TIMESTAMP(etime) FROM user WHERE uid = ?", uid).
+		Scan(&token, &privdata, &expire)
+	if err != nil {
+		log.Printf("refreshTokenPrivdata query failed uid:%d %v", uid, err)
+		return token, privdata, expire, err
+	}
+	log.Printf("expire:%d, now:%d", expire, time.Now().Unix())
+	if expire > time.Now().Unix() { //not expire
+		return token, privdata, expire - time.Now().Unix(), nil
+	}
+	backupToken(db, uid, token, privdata)
+	//token expire, update token
+	token = util.GenSalt()
+	privdata = util.GenSalt()
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+		token, privdata, uid)
+	if err != nil {
+		log.Printf("refreshTokenPrivdata update failed uid:%d %v", uid, err)
+		return token, privdata, expire, err
+	}
+	util.SetCachedToken(kv, uid, token)
+	expire = expiretime
+	return token, privdata, expire, nil
+}
+
+func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
+	backFlag := checkBackupPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
+	if !backFlag {
+		flag, _ := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
+		if !flag {
+			log.Printf("check privdata failed, uid:%d token:%s privdata:%s",
+				in.Head.Uid, in.Token, in.Privdata)
+			return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("check privdata failed")
+		}
+	}
+	token, privdata, expire, err := refreshTokenPrivdata(db, in.Head.Uid)
+	if err != nil {
+		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("refresh token failed")
+	}
+	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Token: token, Privdata: privdata, Expire: int32(expire)}, nil
 }
 
 func unionToID(db *sql.DB, unionid string) (int64, error) {

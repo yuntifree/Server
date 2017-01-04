@@ -406,3 +406,15 @@ CREATE TABLE IF NOT EXISTS joke
     PRIMARY KEY(id),
     UNIQUE KEY(md5)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS token_backup
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    token   varchar(32) NOT NULL,
+    private varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    etime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(uid)
+) ENGINE = InnoDB;
