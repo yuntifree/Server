@@ -1565,10 +1565,13 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
-func genSsdbKey(ctype int64) string {
+func genSsdbKey(ctype int64, newFlag bool) string {
 	switch ctype {
 	default:
-		return hotNewsKey
+		if newFlag {
+			return hotNewsKey
+		}
+		return hotNewsCompKey
 	case hotVideoType:
 		return hotVideoKey
 	case hotDgType:
@@ -1640,10 +1643,13 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
 	ctype := req.GetParamInt("type")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
 	seq := req.GetParamInt("seq")
 	log.Printf("uid:%d ctype:%d seq:%d\n", uid, ctype, seq)
 	if seq == 0 {
-		key := genSsdbKey(ctype)
+		flag := util.CheckTermVersion(term, version)
+		key := genSsdbKey(ctype, flag)
 		log.Printf("key:%s", key)
 		resp, err := getRspFromSSDB(key)
 		if err == nil {
@@ -1664,7 +1670,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	uuid := util.GenUUID()
 	res, err := c.GetHots(context.Background(),
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
 			Type: int32(ctype), Seq: seq})
 	if err != nil {
 		return &util.AppError{util.RPCErr, 4, err.Error()}
@@ -1689,7 +1695,8 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	}
 	rspGzip(w, body)
 	if seq == 0 {
-		key := genSsdbKey(ctype)
+		flag := util.CheckTermVersion(term, version)
+		key := genSsdbKey(ctype, flag)
 		data := js.Get("data")
 		setSSDBCache(key, data)
 	}

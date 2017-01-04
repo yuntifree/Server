@@ -48,13 +48,8 @@ func getMaxNewsSeq(db *sql.DB) int64 {
 	return id
 }
 
-func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
+func queryNews(db *sql.DB, query string) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype = " + strconv.Itoa(int(newsType))
-	if seq != 0 {
-		query += " AND id < " + strconv.Itoa(int(seq))
-	}
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -85,6 +80,24 @@ func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
 		infos = append(infos, &info)
 	}
 	return infos
+}
+
+func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype IN (0,1,2,3) "
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	return queryNews(db, query)
+}
+
+func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype = " + strconv.Itoa(int(newsType))
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	return queryNews(db, query)
 }
 
 func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
@@ -150,10 +163,23 @@ func calcJokeSeq() int64 {
 }
 
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
-	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d", in.Head.Uid, in.Head.Sid, in.Type, in.Seq)
+	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d term:%d version:%d",
+		in.Head.Uid, in.Head.Sid, in.Type, in.Seq, in.Head.Term, in.Head.Version)
 	var infos []*hot.HotsInfo
 	if in.Type == typeHotNews {
-		infos = getNews(db, in.Seq, util.MaxListSize, 0)
+		if util.CheckTermVersion(in.Head.Term, in.Head.Version) {
+			infos = getHotNews(db, in.Seq, util.MaxListSize)
+		} else {
+			if in.Seq == 0 {
+				infos = getNews(db, in.Seq, util.MaxListSize/2, 10)
+				max := getMaxNewsSeq(db)
+				for i := 0; i < len(infos); i++ {
+					infos[i].Seq += max
+				}
+			} else {
+				infos = getHotNews(db, in.Seq, util.MaxListSize)
+			}
+		}
 	} else if in.Type == typeVideos {
 		infos = getVideos(db, in.Seq)
 	} else if in.Type == typeDgNews {

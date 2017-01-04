@@ -207,3 +207,11 @@ func IsIllegalPhone(phone string) bool {
 	}
 	return flag
 }
+
+//CheckTermVersion check for hot news compatibility
+func CheckTermVersion(term, version int64) bool {
+	if (term == 0 && version < 5) || (term == 1 && version < 4) {
+		return false
+	}
+	return true
+}
