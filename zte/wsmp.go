@@ -75,6 +75,7 @@ func getResponse(body string) (*simplejson.Json, error) {
 		log.Printf("Register HTTPRequest failed:%v", err)
 		return nil, err
 	}
+	log.Printf("getResponse resp:%s", resp)
 	js, err := simplejson.NewJson([]byte(resp))
 	if err != nil {
 		log.Printf("Register parse response failed:%v", err)
@@ -102,6 +103,7 @@ func Register(phone string, smsFlag bool) (string, error) {
 		return "", err
 	}
 
+	log.Printf("Register request body:%s", body)
 	js, err := getResponse(body)
 	if err != nil {
 		log.Printf("Register get response failed:%v", err)
