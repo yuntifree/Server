@@ -152,6 +152,7 @@ func Login(phone, pass, userip, usermac, acip, acname string) bool {
 		return false
 	}
 
+	log.Printf("Login request body:%s", body)
 	_, err = getResponse(body)
 	if err != nil {
 		log.Printf("Register getResponse failed:%v", err)
