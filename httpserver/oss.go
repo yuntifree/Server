@@ -43,14 +43,8 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	res, err := c.BackLogin(context.Background(),
 		&verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
 
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
-	}
-
+	checkRPCRsp(err, res.Head.Retcode, "BackLogin")
 	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, errInner, err.Error()}
@@ -80,12 +74,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res, err := c.FetchReviewNews(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchReviewNews")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -115,12 +104,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchTags(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchTags")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -150,12 +134,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchUsers(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetUsers")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -186,14 +165,10 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	c := modify.NewModifyClient(conn)
 	uuid := util.GenUUID()
 	res, err := c.ReviewVideo(context.Background(),
-		&modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
+		&modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: id, Reject: reject == 1,
 			Modify: mod == 1, Title: title})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "视频审核失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ReviewVideo")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -232,12 +207,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.ReviewNews(context.Background(),
 		&modify.NewsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
 			Modify: mod == 1, Title: title, Tags: tags})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ReviewNews")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -263,12 +233,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchApStat(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取AP监控信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchApStat")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -299,12 +264,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchVideos(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取视频审核信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchVideo")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -334,12 +294,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.FetchTemplates(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取AP监控信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchTemplates")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -365,12 +320,7 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	res, err := c.FetchConf(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取配置信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchConf")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -396,12 +346,7 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	res, err := c.FetchAdBan(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取广告屏蔽信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchAdBan")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -428,12 +373,7 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	uuid := util.GenUUID()
 	res, err := c.AddTemplate(context.Background(), &modify.AddTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Title: title, Content: content}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加模板失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddTemplate")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -474,12 +414,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
 				Title: title, Type: int32(btype), Expire: expire}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加Banner失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddBanner")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -509,12 +444,7 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.ConfRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.KvInfo{Key: key, Val: val}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加配置失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddConf")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -540,12 +470,7 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.AddBanRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AdBan{Term: term, Version: version}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加广告屏蔽失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddAdBan")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -582,12 +507,7 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.DelBanRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  ids})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "删除广告屏蔽失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "DelAdBan")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -613,12 +533,7 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.FetchWhiteList(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(wtype)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取白名单失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchWhiteList")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -655,12 +570,7 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&modify.WhiteRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加广告白名单失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddWhiteList")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -693,12 +603,7 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&modify.WhiteRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "删除广告白名单失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "DelWhiteList")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -733,12 +638,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.AddTagRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Tags: cts})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "添加Banner失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddTags")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -772,12 +672,7 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &push.PushInfo{PushType: int32(pushtype), Target: target, TermType: int32(term),
 				Desc: desc, Content: content}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "发送push消息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "Push")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -812,12 +707,7 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.DelTagRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  cts})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "删除标签失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "DelTags")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -852,12 +742,7 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.DelConfRequest{
 			Head:  &common.Head{Sid: uuid, Uid: uid},
 			Names: names})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "删除配置失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "DelConf")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -884,12 +769,7 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.ModTemplate(context.Background(),
 		&modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "修改模板失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ModTemplate")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -921,12 +801,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
 				Online: int32(online), Deleted: int32(deleted), Title: title, Expire: expire}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "修改Banner失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ModBanner")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -957,12 +832,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.FetchBanners(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Type: int32(btype), Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取Banner信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchBanner")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -993,12 +863,7 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.FetchFeedback(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取用户反馈信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchFeedback")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {

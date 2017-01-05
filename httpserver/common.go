@@ -369,3 +369,15 @@ func genResponseBody(res interface{}, flag bool) ([]byte, error) {
 
 	return js.MarshalJSON()
 }
+
+func checkRPCRsp(err error, retcode common.ErrCode, method string) {
+	if err != nil {
+		log.Printf("RPC %s failed:%v", method, err)
+		panic(util.AppError{util.RPCErr, errInner, err.Error()})
+	}
+
+	if retcode != 0 {
+		log.Printf("%s failed retcode:%d", method, retcode)
+		panic(util.AppError{util.LogicErr, int(retcode), "登录失败"})
+	}
+}

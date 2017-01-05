@@ -50,13 +50,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.Login(context.Background(),
 		&verify.LoginRequest{Head: &common.Head{Sid: uuid},
 			Username: username, Password: password, Model: model, Udid: udid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, int(res.Head.Retcode), "登录失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "Login")
 
 	body, err := genResponseBody(res, true)
 	if err != nil {
@@ -127,13 +121,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.GetCheckCode(context.Background(),
 		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
 			Phone: phone})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "logout failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetCheckCode")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -155,14 +143,9 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	uuid := util.GenUUID()
 	res, err := c.Logout(context.Background(),
-		&verify.LogoutRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "logout failed"}
-	}
+		&verify.LogoutRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Token: token})
+	checkRPCRsp(err, res.Head.Retcode, "Logout")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -188,14 +171,9 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.AddWifi(context.Background(),
 		&modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.WifiInfo{Ssid: ssid, Password: password, Longitude: longitude, Latitude: latitude}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "AddWifi failed"}
-	}
+			Info: &common.WifiInfo{Ssid: ssid, Password: password, Longitude: longitude,
+				Latitude: latitude}})
+	checkRPCRsp(err, res.Head.Retcode, "AddWifi")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -222,15 +200,9 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.WifiAccess(context.Background(),
 		&modify.AccessRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &modify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname, Acip: acip,
-				Apmac: apmac}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "WifiAccess failed"}
-	}
+			Info: &modify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname,
+				Acip: acip, Apmac: apmac}})
+	checkRPCRsp(err, res.Head.Retcode, "WifiAccess")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -266,13 +238,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AddressInfo{Province: province, City: city, Zone: zone, Zip: zip,
 				Addr: addr, Detail: detail, Def: def, User: user, Mobile: mobile}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "AddAddress failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddAddress")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -312,13 +278,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.AddShare(context.Background(),
 		&modify.ShareRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid: bid, Title: title, Text: text, Images: imgs})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "AddShare failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddShare")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -345,13 +305,7 @@ func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.SetWinStatus(context.Background(),
 		&modify.WinStatusRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid: bid, Status: status, Aid: aid, Account: account})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "AddAddress failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "SetWinStatus")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -376,13 +330,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.AddFeedback(context.Background(),
 		&modify.FeedRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Content: content, Contact: contact})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "AddFeedback failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "AddFeedback")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -406,13 +354,7 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res, err := c.PurchaseSales(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: bid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "purchaseSales failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "PurchaseSales")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -459,13 +401,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AddressInfo{Aid: aid, Province: province, City: city, Zone: zone,
 				Zip: zip, Addr: addr, Detail: detail, Def: def, User: user, Mobile: mobile}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "ModAddress failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ModAddress")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -489,13 +425,7 @@ func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.DelAddress(context.Background(),
 		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AddressInfo{Aid: aid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "DelAddress failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "DelAddress")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -567,13 +497,7 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.ReportApmac(context.Background(),
 		&modify.ApmacRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Apmac: apmac})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "ReportApmac failed"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "ReportApmac")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -609,13 +533,7 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		&modify.ImageRequest{Head: &common.Head{Sid: uuid},
 			Info: &modify.ImageInfo{Name: fname[0], Size: int64(fsize),
 				Height: int32(fheight), Width: int32(fwidth)}})
-	if err != nil {
-		log.Printf("FinImage failed:%v", err)
-	}
-
-	if res.Head.Retcode != 0 {
-		log.Printf("FinImage failed retcode:%d", res.Head.Retcode)
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FinImage")
 
 	w.Write([]byte(`{"Status":"OK"}`))
 	return nil
@@ -638,14 +556,10 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.ReportClick(context.Background(), &modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Type: int32(ctype)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, errInner, "ReportClick failed"}
-	}
+	res, err := c.ReportClick(context.Background(),
+		&modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: id, Type: int32(ctype)})
+	checkRPCRsp(err, res.Head.Retcode, "ReportClick")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -668,13 +582,9 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	uuid := util.GenUUID()
 	res, err := c.FetchWifi(context.Background(),
-		&fetch.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Longitude: longitude, Latitude: latitude})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取共享wifi失败"}
-	}
+		&fetch.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Longitude: longitude, Latitude: latitude})
+	checkRPCRsp(err, res.Head.Retcode, "FetchWifi")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -700,12 +610,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	uuid := util.GenUUID()
 	res, err := c.GetFrontInfo(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取首页信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetFrontInfo")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -734,12 +639,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.FetchFlashAd(context.Background(),
 		&fetch.AdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Term: term, Version: version})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取闪屏广告失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchFlashAd")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -773,12 +673,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.GetOpening(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取已经揭晓失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetOpening")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -807,12 +702,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.GetOpened(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取即将揭晓失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetOpened")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -850,12 +740,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.GetRunning(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取正在抢购数据失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetRunning")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -890,12 +775,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.GetMarquee(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取跑马灯数据失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetMarquee")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -921,12 +801,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.GetHotList(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取火热开抢失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetHotList")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -967,12 +842,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 			Longitude: longitude,
 			Latitude:  latitude,
 			Ssids:     ids})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取Wifi密码失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchWifiPass")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1013,12 +883,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&fetch.ShareRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: stype, Seq: seq, Num: int32(num), Id: gid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取晒单信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchShare")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1047,12 +912,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		&common.CommRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Id:   sid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取晒单详情失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchShareDetail")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1085,12 +945,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&hot.DetailRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid:  bid, Gid: gid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取详情信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetDetail")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1117,12 +972,7 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res, err := c.FetchStsCredentials(context.Background(),
 		&common.CommRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取sts credentials失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchStsCredentials")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1160,12 +1010,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	uuid := util.GenUUID()
 	res, err := c.GetWeatherNews(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetWeatherNews")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1203,12 +1048,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.FetchZipcode(context.Background(),
 		&fetch.ZipcodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: int32(ziptype), Code: int32(code)})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取邮政编码失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchZipcode")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1234,12 +1074,7 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.FetchActivity(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取活动页面失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchActivity")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1273,12 +1108,7 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res, err := c.FetchGoodsIntro(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: gid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取商品详情失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchGoodsIntro")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1314,12 +1144,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res, err := c.FetchBetHistory(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Id: gid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取往期记录失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchBetHistory")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1349,12 +1174,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	res, err := c.FetchPurchaseRecord(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Id: bid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取抢购记录失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchPurchaseRecord")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1380,12 +1200,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.FetchUserInfo(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取用户信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchUserInfo")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1421,12 +1236,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.FetchUserBet(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: stype})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取用户信息失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchUserBet")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1463,12 +1273,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchKvConf(context.Background(),
 		&fetch.KvRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Key: key})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取配置失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchKvConf")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1494,12 +1299,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	res, err := c.FetchMenu(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取菜单失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchMenu")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1525,12 +1325,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	res, err := c.FetchAddress(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取用户地址失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchAddress")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1558,12 +1353,7 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.FetchWinStatus(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: bid})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取奖品状态失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "FetchWinStatus")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -1680,12 +1470,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.GetHots(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
 			Type: int32(ctype), Seq: seq})
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
-	}
+	checkRPCRsp(err, res.Head.Retcode, "GetHots")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -1728,7 +1513,9 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.AutoLogin(context.Background(), &verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Token: token, Privdata: privdata})
+	res, err := c.AutoLogin(context.Background(),
+		&verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid},
+			Token: token, Privdata: privdata})
 	if err != nil {
 		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
