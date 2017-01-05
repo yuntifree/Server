@@ -35,15 +35,16 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.BackLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
+	res, err := c.BackLogin(context.Background(),
+		&verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
@@ -52,7 +53,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := genResponseBody(res, true)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	w.Write(body)
 	return nil
@@ -70,7 +71,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -80,15 +81,15 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
+		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -105,7 +106,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -115,15 +116,15 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取标签失败"}
+		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -140,7 +141,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -150,15 +151,15 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取标签失败"}
+		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -179,18 +180,19 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 	uuid := util.GenUUID()
-	res, err := c.ReviewVideo(context.Background(), &modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
-		Modify: mod == 1, Title: title})
+	res, err := c.ReviewVideo(context.Background(),
+		&modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
+			Modify: mod == 1, Title: title})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "视频审核失败"}
+		return &util.AppError{util.DataErr, errInner, "视频审核失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -222,18 +224,19 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 	uuid := util.GenUUID()
-	res, err := c.ReviewNews(context.Background(), &modify.NewsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
-		Modify: mod == 1, Title: title, Tags: tags})
+	res, err := c.ReviewNews(context.Background(),
+		&modify.NewsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
+			Modify: mod == 1, Title: title, Tags: tags})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取标签失败"}
+		return &util.AppError{util.DataErr, errInner, "获取标签失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -251,7 +254,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -261,15 +264,15 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取AP监控信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -287,7 +290,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -297,15 +300,15 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取视频审核信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取视频审核信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -322,7 +325,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -332,15 +335,15 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取AP监控信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取AP监控信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -354,7 +357,7 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -363,15 +366,15 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchConf(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取配置信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取配置信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -385,7 +388,7 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -394,15 +397,15 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchAdBan(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取广告屏蔽信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取广告屏蔽信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -418,7 +421,7 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -426,21 +429,21 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.AddTemplate(context.Background(), &modify.AddTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Title: title, Content: content}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加模板失败"}
+		return &util.AppError{util.DataErr, errInner, "添加模板失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "tid"}, res.Id)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -460,7 +463,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -472,15 +475,15 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
 				Title: title, Type: int32(btype), Expire: expire}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
+		return &util.AppError{util.DataErr, errInner, "添加Banner失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -496,7 +499,7 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -507,10 +510,10 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.KvInfo{Key: key, Val: val}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加配置失败"}
+		return &util.AppError{util.DataErr, errInner, "添加配置失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -527,7 +530,7 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -538,15 +541,15 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AdBan{Term: term, Version: version}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加广告屏蔽失败"}
+		return &util.AppError{util.DataErr, errInner, "添加广告屏蔽失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -569,7 +572,7 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -580,10 +583,10 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  ids})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "删除广告屏蔽失败"}
+		return &util.AppError{util.DataErr, errInner, "删除广告屏蔽失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -601,7 +604,7 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -611,15 +614,15 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(wtype)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取白名单失败"}
+		return &util.AppError{util.DataErr, errInner, "获取白名单失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -642,7 +645,7 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -653,10 +656,10 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加广告白名单失败"}
+		return &util.AppError{util.DataErr, errInner, "添加广告白名单失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -680,7 +683,7 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -691,10 +694,10 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "删除广告白名单失败"}
+		return &util.AppError{util.DataErr, errInner, "删除广告白名单失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -720,7 +723,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -731,15 +734,15 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Tags: cts})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "添加Banner失败"}
+		return &util.AppError{util.DataErr, errInner, "添加Banner失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -758,7 +761,7 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.PushServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := push.NewPushClient(conn)
@@ -770,10 +773,10 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 			Info: &push.PushInfo{PushType: int32(pushtype), Target: target, TermType: int32(term),
 				Desc: desc, Content: content}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "发送push消息失败"}
+		return &util.AppError{util.DataErr, errInner, "发送push消息失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -799,7 +802,7 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -810,10 +813,10 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  cts})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "删除标签失败"}
+		return &util.AppError{util.DataErr, errInner, "删除标签失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -839,7 +842,7 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -850,10 +853,10 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head:  &common.Head{Sid: uuid, Uid: uid},
 			Names: names})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "删除配置失败"}
+		return &util.AppError{util.DataErr, errInner, "删除配置失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -872,18 +875,20 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.ModTemplate(context.Background(), &modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
+	res, err := c.ModTemplate(context.Background(),
+		&modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "修改模板失败"}
+		return &util.AppError{util.DataErr, errInner, "修改模板失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -906,7 +911,7 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -917,10 +922,10 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
 				Online: int32(online), Deleted: int32(deleted), Title: title, Expire: expire}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "修改Banner失败"}
+		return &util.AppError{util.DataErr, errInner, "修改Banner失败"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -943,7 +948,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -953,15 +958,15 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Type: int32(btype), Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取Banner信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取Banner信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	log.Printf("getBanners body:%s\n", body)
 	w.Write(body)
@@ -979,7 +984,7 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -989,15 +994,15 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取用户反馈信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取用户反馈信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1021,12 +1026,12 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	}
 	err = addImages(uid, names)
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	data, _ := simplejson.NewJson([]byte(`{}`))
 	aliyun.FillPolicyResp(data)
@@ -1036,7 +1041,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil

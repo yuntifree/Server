@@ -41,15 +41,17 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Login(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password, Model: model, Udid: udid})
+	res, err := c.Login(context.Background(),
+		&verify.LoginRequest{Head: &common.Head{Sid: uuid},
+			Username: username, Password: password, Model: model, Udid: udid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
@@ -58,7 +60,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := genResponseBody(res, true)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	w.Write(body)
 	return nil
@@ -92,12 +94,12 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getPhoneCode illegal phone:%s", phone)
-		return &util.AppError{util.LogicErr, 109, "请输入正确的手机号"}
+		return &util.AppError{util.LogicErr, errIllegalPhone, "请输入正确的手机号"}
 	}
 
 	flag, err := getCode(phone, int32(ctype))
 	if err != nil || !flag {
-		return &util.AppError{util.LogicErr, 103, "获取验证码失败"}
+		return &util.AppError{util.LogicErr, errCode, "获取验证码失败"}
 	}
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -110,13 +112,13 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getCheckCode illegal phone:%s", phone)
-		return &util.AppError{util.LogicErr, 109, "请输入正确的手机号"}
+		return &util.AppError{util.LogicErr, errIllegalPhone, "请输入正确的手机号"}
 	}
 
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -126,11 +128,11 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
 			Phone: phone})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "logout failed"}
+		return &util.AppError{util.LogicErr, errInner, "logout failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -146,19 +148,20 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.Logout(context.Background(), &verify.LogoutRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
+	res, err := c.Logout(context.Background(),
+		&verify.LogoutRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Token: token})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "logout failed"}
+		return &util.AppError{util.LogicErr, errInner, "logout failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -177,19 +180,21 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.AddWifi(context.Background(), &modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &common.WifiInfo{Ssid: ssid, Password: password, Longitude: longitude, Latitude: latitude}})
+	res, err := c.AddWifi(context.Background(),
+		&modify.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.WifiInfo{Ssid: ssid, Password: password, Longitude: longitude, Latitude: latitude}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "AddWifi failed"}
+		return &util.AppError{util.LogicErr, errInner, "AddWifi failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -209,7 +214,7 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -220,11 +225,11 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 			Info: &modify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname, Acip: acip,
 				Apmac: apmac}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "WifiAccess failed"}
+		return &util.AppError{util.LogicErr, errInner, "WifiAccess failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -239,7 +244,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{util.JSONErr, 2, "illegal zipcode"}
+		return &util.AppError{util.JSONErr, errInvalidParam, "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -251,7 +256,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -262,16 +267,16 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 			Info: &common.AddressInfo{Province: province, City: city, Zone: zone, Zip: zip,
 				Addr: addr, Detail: detail, Def: def, User: user, Mobile: mobile}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "AddAddress failed"}
+		return &util.AppError{util.LogicErr, errInner, "AddAddress failed"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 
 	w.Write(body)
@@ -287,7 +292,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	text := req.GetParamString("text")
 	images, err := req.Post.Get("data").Get("images").Array()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 2, err.Error()}
+		return &util.AppError{util.JSONErr, errInvalidParam, err.Error()}
 	}
 	var imgs []string
 	for i := 0; i < len(images); i++ {
@@ -298,7 +303,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -308,11 +313,11 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&modify.ShareRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid: bid, Title: title, Text: text, Images: imgs})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "AddShare failed"}
+		return &util.AppError{util.LogicErr, errInner, "AddShare failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -331,7 +336,7 @@ func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -341,11 +346,11 @@ func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&modify.WinStatusRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid: bid, Status: status, Aid: aid, Account: account})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "AddAddress failed"}
+		return &util.AppError{util.LogicErr, errInner, "AddAddress failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -362,7 +367,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -372,11 +377,11 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		&modify.FeedRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Content: content, Contact: contact})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "AddFeedback failed"}
+		return &util.AppError{util.LogicErr, errInner, "AddFeedback failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -392,7 +397,7 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -402,21 +407,21 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: bid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "purchaseSales failed"}
+		return &util.AppError{util.LogicErr, errInner, "purchaseSales failed"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	js.Set("data", res.Info)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 
 	w.Write(body)
@@ -432,7 +437,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{util.JSONErr, 2, "illegal zipcode"}
+		return &util.AppError{util.JSONErr, errInvalidParam, "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -444,7 +449,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -455,11 +460,11 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 			Info: &common.AddressInfo{Aid: aid, Province: province, City: city, Zone: zone,
 				Zip: zip, Addr: addr, Detail: detail, Def: def, User: user, Mobile: mobile}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "ModAddress failed"}
+		return &util.AppError{util.LogicErr, errInner, "ModAddress failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -475,7 +480,7 @@ func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -485,11 +490,11 @@ func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AddressInfo{Aid: aid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "DelAddress failed"}
+		return &util.AppError{util.LogicErr, errInner, "DelAddress failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -506,16 +511,16 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	var names = []string{fname}
 	err := addImages(uid, names)
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	data, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	aliyun.FillCallbackInfo(data)
 	data.Set("name", fname)
@@ -523,7 +528,7 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -553,19 +558,21 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.ReportApmac(context.Background(), &modify.ApmacRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Apmac: apmac})
+	res, err := c.ReportApmac(context.Background(),
+		&modify.ApmacRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Apmac: apmac})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "ReportApmac failed"}
+		return &util.AppError{util.LogicErr, errInner, "ReportApmac failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -592,7 +599,7 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	address := getNameServer(0, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -625,7 +632,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := modify.NewModifyClient(conn)
@@ -633,11 +640,11 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	res, err := c.ReportClick(context.Background(), &modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Type: int32(ctype)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.LogicErr, 4, "ReportClick failed"}
+		return &util.AppError{util.LogicErr, errInner, "ReportClick failed"}
 	}
 
 	w.Write([]byte(`{"errno":0}`))
@@ -654,23 +661,24 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.FetchWifi(context.Background(), &fetch.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Longitude: longitude, Latitude: latitude})
+	res, err := c.FetchWifi(context.Background(),
+		&fetch.WifiRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Longitude: longitude, Latitude: latitude})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取共享wifi失败"}
+		return &util.AppError{util.DataErr, errInner, "获取共享wifi失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -684,7 +692,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -693,15 +701,15 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res, err := c.GetFrontInfo(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取首页信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取首页信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -717,7 +725,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -727,15 +735,15 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&fetch.AdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Term: term, Version: version})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取闪屏广告失败"}
+		return &util.AppError{util.DataErr, errInner, "获取闪屏广告失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	if res.Info != nil && res.Info.Img != "" {
 		js.Set("data", res.Info)
@@ -743,7 +751,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -757,7 +765,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -766,15 +774,15 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.GetOpening(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取已经揭晓失败"}
+		return &util.AppError{util.DataErr, errInner, "获取已经揭晓失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -790,7 +798,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -800,15 +808,15 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取即将揭晓失败"}
+		return &util.AppError{util.DataErr, errInner, "获取即将揭晓失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "opened"}, res.Opened)
 	if len(res.Opened) >= int(num) {
@@ -817,7 +825,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -833,7 +841,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -843,15 +851,15 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取正在抢购数据失败"}
+		return &util.AppError{util.DataErr, errInner, "获取正在抢购数据失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "running"}, res.Running)
 	if len(res.Running) >= int(num) {
@@ -860,7 +868,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -874,7 +882,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -883,15 +891,15 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.GetMarquee(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取跑马灯数据失败"}
+		return &util.AppError{util.DataErr, errInner, "获取跑马灯数据失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -905,7 +913,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -914,15 +922,15 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.GetHotList(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取火热开抢失败"}
+		return &util.AppError{util.DataErr, errInner, "获取火热开抢失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -936,7 +944,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	latitude := req.GetParamFloat("latitude")
 	ssids, err := req.Post.Get("data").Get("ssids").Array()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 2, err.Error()}
+		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
 	var ids []string
 	for i := 0; i < len(ssids); i++ {
@@ -947,7 +955,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -960,15 +968,15 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 			Latitude:  latitude,
 			Ssids:     ids})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取Wifi密码失败"}
+		return &util.AppError{util.DataErr, errInner, "获取Wifi密码失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -995,7 +1003,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1006,15 +1014,15 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: stype, Seq: seq, Num: int32(num), Id: gid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取晒单信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取晒单信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1029,7 +1037,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1040,15 +1048,15 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Id:   sid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取晒单详情失败"}
+		return &util.AppError{util.DataErr, errInner, "获取晒单详情失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1061,13 +1069,13 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	gid := req.GetParamIntDef("gid", 0)
 	bid := req.GetParamIntDef("bid", 0)
 	if gid == 0 && bid == 0 {
-		return &util.AppError{util.JSONErr, 2, "invalid param"}
+		return &util.AppError{util.JSONErr, errInvalidParam, "invalid param"}
 	}
 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -1078,15 +1086,15 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Bid:  bid, Gid: gid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取详情信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取详情信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1100,7 +1108,7 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1110,21 +1118,21 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		&common.CommRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取sts credentials失败"}
+		return &util.AppError{util.DataErr, errInner, "获取sts credentials失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.Set("data", res.Credential)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1144,7 +1152,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -1153,22 +1161,22 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	res, err := c.GetWeatherNews(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
+		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "news"}, res.News)
 	js.SetPath([]string{"data", "weather"}, res.Weather)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	data := js.Get("data")
@@ -1186,7 +1194,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1196,15 +1204,15 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&fetch.ZipcodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: int32(ziptype), Code: int32(code)})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取邮政编码失败"}
+		return &util.AppError{util.DataErr, errInner, "获取邮政编码失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1218,7 +1226,7 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1227,21 +1235,21 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.FetchActivity(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取活动页面失败"}
+		return &util.AppError{util.DataErr, errInner, "获取活动页面失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.Set("data", res.Activity)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1256,7 +1264,7 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1266,21 +1274,21 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: gid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取商品详情失败"}
+		return &util.AppError{util.DataErr, errInner, "获取商品详情失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.Set("data", res.Info)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1297,7 +1305,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1307,15 +1315,15 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Id: gid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取往期记录失败"}
+		return &util.AppError{util.DataErr, errInner, "获取往期记录失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1332,7 +1340,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1342,15 +1350,15 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Id: bid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取抢购记录失败"}
+		return &util.AppError{util.DataErr, errInner, "获取抢购记录失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1364,7 +1372,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1373,15 +1381,15 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res, err := c.FetchUserInfo(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取用户信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取用户信息失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1404,7 +1412,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1414,15 +1422,15 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: stype})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取用户信息失败"}
+		return &util.AppError{util.DataErr, errInner, "获取用户信息失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize {
@@ -1431,7 +1439,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1446,7 +1454,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1456,15 +1464,15 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&fetch.KvRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Key: key})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取配置失败"}
+		return &util.AppError{util.DataErr, errInner, "获取配置失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1478,7 +1486,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1487,15 +1495,15 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res, err := c.FetchMenu(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取菜单失败"}
+		return &util.AppError{util.DataErr, errInner, "获取菜单失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1509,7 +1517,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1518,15 +1526,15 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.FetchAddress(context.Background(),
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取用户地址失败"}
+		return &util.AppError{util.DataErr, errInner, "获取用户地址失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1541,7 +1549,7 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -1551,15 +1559,15 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: bid})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取奖品状态失败"}
+		return &util.AppError{util.DataErr, errInner, "获取奖品状态失败"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1663,7 +1671,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -1673,15 +1681,15 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
 			Type: int32(ctype), Seq: seq})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "获取新闻失败"}
+		return &util.AppError{util.DataErr, errInner, "获取新闻失败"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "invalid param"}
+		return &util.AppError{util.JSONErr, errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize ||
@@ -1691,7 +1699,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	if seq == 0 {
@@ -1714,7 +1722,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -1722,18 +1730,18 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	res, err := c.AutoLogin(context.Background(), &verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Token: token, Privdata: privdata})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
-		return &util.AppError{util.LogicErr, 4, "token验证失败"}
+		return &util.AppError{util.LogicErr, errInner, "token验证失败"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+		return &util.AppError{util.DataErr, errInner, "服务器又傲娇了"}
 	}
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1752,7 +1760,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -1765,7 +1773,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 				Phone: phone, Code: code},
 		})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_CHECK_CODE {
@@ -1778,7 +1786,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body, err := genResponseBody(res, true)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1798,7 +1806,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	address := getNameServer(uid, util.HotServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := hot.NewHotClient(conn)
@@ -1806,23 +1814,23 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res, err := c.GetServices(context.Background(),
 		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_INVALID_TOKEN {
-		return &util.AppError{util.LogicErr, 4, "token验证失败"}
+		return &util.AppError{util.LogicErr, errInner, "token验证失败"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+		return &util.AppError{util.DataErr, errInner, "服务器又傲娇了"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "init json failed"}
+		return &util.AppError{util.JSONErr, errInner, "init json failed"}
 	}
 	js.SetPath([]string{"data", "services"}, res.Services)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	data := js.Get("data")
@@ -1856,7 +1864,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := verify.NewVerifyClient(conn)
@@ -1867,18 +1875,18 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Client: &verify.ClientInfo{Udid: udid, Model: model, Channel: channel, Regip: regip,
 				Version: int32(version), Term: int32(term)}})
 	if err != nil {
-		return &util.AppError{util.RPCErr, 4, err.Error()}
+		return &util.AppError{util.RPCErr, errInner, err.Error()}
 	}
 
 	if res.Head.Retcode == common.ErrCode_USED_PHONE {
-		return &util.AppError{util.LogicErr, 104, "该账号已注册，请直接登录"}
+		return &util.AppError{util.LogicErr, errUsedPhone, "该账号已注册，请直接登录"}
 	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, 4, "服务器又傲娇了"}
+		return &util.AppError{util.DataErr, errInner, "服务器又傲娇了"}
 	}
 
 	body, err := genResponseBody(res, true)
 	if err != nil {
-		return &util.AppError{util.JSONErr, 4, "marshal json failed"}
+		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1906,7 +1914,8 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("code:%s\n", code[0])
 	uuid := util.GenUUID()
-	res, err := c.WxMpLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Code: code[0]})
+	res, err := c.WxMpLogin(context.Background(),
+		&verify.LoginRequest{Head: &common.Head{Sid: uuid}, Code: code[0]})
 	if err != nil {
 		log.Printf("Login failed: %v", err)
 		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
@@ -1950,7 +1959,8 @@ func jump(w http.ResponseWriter, r *http.Request) {
 		c := verify.NewVerifyClient(conn)
 
 		uuid := util.GenUUID()
-		res, err := c.UnionLogin(context.Background(), &verify.LoginRequest{Head: &common.Head{Sid: uuid}, Unionid: ck.Value})
+		res, err := c.UnionLogin(context.Background(),
+			&verify.LoginRequest{Head: &common.Head{Sid: uuid}, Unionid: ck.Value})
 		if err != nil {
 			log.Printf("UnionLogin failed: %v", err)
 			w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
@@ -1994,7 +2004,8 @@ func getJsapiSign(w http.ResponseWriter, r *http.Request) {
 	c := verify.NewVerifyClient(conn)
 
 	uuid := util.GenUUID()
-	res, err := c.GetWxTicket(context.Background(), &verify.TicketRequest{Head: &common.Head{Sid: uuid}})
+	res, err := c.GetWxTicket(context.Background(),
+		&verify.TicketRequest{Head: &common.Head{Sid: uuid}})
 	if err != nil {
 		log.Printf("GetWxTicket failed: %v", err)
 		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
