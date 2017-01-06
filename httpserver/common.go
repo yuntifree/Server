@@ -17,7 +17,9 @@ import (
 	common "../proto/common"
 	discover "../proto/discover"
 	fetch "../proto/fetch"
+	hot "../proto/hot"
 	modify "../proto/modify"
+	push "../proto/push"
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
@@ -350,6 +352,7 @@ func genResponseBody(res interface{}, flag bool) ([]byte, error) {
 		return []byte(""), err
 	}
 	val := reflect.ValueOf(res).Elem()
+	log.Printf("val:%v", val)
 	for i := 0; i < val.NumField(); i++ {
 		valueField := val.Field(i)
 		typeField := val.Type().Field(i)
@@ -380,4 +383,82 @@ func checkRPCRsp(err error, retcode common.ErrCode, method string) {
 		log.Printf("%s failed retcode:%d", method, retcode)
 		panic(util.AppError{util.LogicErr, int(retcode), "登录失败"})
 	}
+}
+
+func checkRPCErr(err reflect.Value, method string) {
+	if err.Interface() != nil {
+		log.Printf("RPC %s failed:%v", method, err)
+		panic(util.AppError{util.RPCErr, errInner, "grpc failed " + method})
+	}
+}
+
+func checkRPCCode(retcode common.ErrCode, method string) {
+	if retcode != 0 {
+		log.Printf("%s failed retcode:%d", method, retcode)
+		panic(util.AppError{util.LogicErr, int(retcode), "登录失败"})
+	}
+}
+
+func genServerName(rtype int64) string {
+	switch rtype {
+	case util.DiscoverServerType:
+		return util.DiscoverServerName
+	case util.VerifyServerType:
+		return util.VerifyServerName
+	case util.HotServerType:
+		return util.HotServerName
+	case util.FetchServerType:
+		return util.FetchServerName
+	case util.ModifyServerType:
+		return util.ModifyServerName
+	case util.PushServerType:
+		return util.PushServerName
+	default:
+		panic(util.AppError{util.ParamErr, errInvalidParam, "illegal server type"})
+	}
+}
+
+func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
+	var cli interface{}
+	switch rtype {
+	case util.DiscoverServerType:
+		cli = discover.NewDiscoverClient(conn)
+	case util.VerifyServerType:
+		cli = verify.NewVerifyClient(conn)
+	case util.HotServerType:
+		cli = hot.NewHotClient(conn)
+	case util.FetchServerType:
+		cli = fetch.NewFetchClient(conn)
+	case util.ModifyServerType:
+		cli = modify.NewModifyClient(conn)
+	case util.PushServerType:
+		cli = push.NewPushClient(conn)
+	default:
+		panic(util.AppError{util.ParamErr, errInvalidParam, "illegal server type"})
+	}
+	return cli
+}
+
+func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Value, reflect.Value) {
+	var resp reflect.Value
+	serverName := genServerName(rtype)
+	address := getNameServer(uid, serverName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return resp, reflect.ValueOf(err)
+	}
+	defer conn.Close()
+	cli := genClient(rtype, conn)
+	ctx := context.Background()
+
+	inputs := make([]reflect.Value, 2)
+	inputs[0] = reflect.ValueOf(ctx)
+	inputs[1] = reflect.ValueOf(request)
+	arr := reflect.ValueOf(cli).MethodByName(method).Call(inputs)
+	if len(arr) != 2 {
+		log.Printf("callRPC arr len%d", len(arr))
+		return resp, reflect.ValueOf(errors.New("illegal grpc call response"))
+	}
+	log.Printf("arr:%v %v", arr[0], arr[1])
+	return arr[0], arr[1]
 }

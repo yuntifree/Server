@@ -38,21 +38,16 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	model := req.GetParamString("model")
 	udid := req.GetParamString("udid")
 
-	address := getNameServer(0, util.VerifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.Login(context.Background(),
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "Login",
 		&verify.LoginRequest{Head: &common.Head{Sid: uuid},
 			Username: username, Password: password, Model: model, Udid: udid})
-	checkRPCRsp(err, res.Head.Retcode, "Login")
+	checkRPCErr(rpcerr, "Login")
+	res := resp.Interface().(*verify.LoginReply)
+	checkRPCCode(res.Head.Retcode, "Login")
 
 	body, err := genResponseBody(res, true)
+	log.Printf("body:%v", body)
 	if err != nil {
 		return &util.AppError{util.JSONErr, errInner, err.Error()}
 	}
@@ -61,23 +56,14 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getCode(phone string, ctype int32) (bool, error) {
-	address := getNameServer(0, util.VerifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Printf("did not connect: %v", err)
-		return false, err
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
 	uuid := util.GenUUID()
-	r, err := c.GetPhoneCode(context.Background(), &verify.CodeRequest{Head: &common.Head{Sid: uuid}, Phone: phone, Ctype: ctype})
-	if err != nil {
-		log.Printf("could not get phone code: %v", err)
-		return false, err
-	}
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "GetPhoneCode",
+		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
+			Phone: phone, Ctype: ctype})
+	checkRPCErr(rpcerr, "GetPhoneCode")
+	res := resp.Interface().(*verify.VerifyReply)
 
-	return r.Result, nil
+	return res.Result, nil
 }
 
 func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -109,19 +95,13 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{util.LogicErr, errIllegalPhone, "请输入正确的手机号"}
 	}
 
-	address := getNameServer(0, util.VerifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.GetCheckCode(context.Background(),
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "GetCheckCode",
 		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
 			Phone: phone})
-	checkRPCRsp(err, res.Head.Retcode, "GetCheckCode")
+	checkRPCErr(rpcerr, "GetPhoneCode")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "GetPhoneCode")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -1543,6 +1523,8 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	acip := req.GetParamString("wlanacip")
 	userip := req.GetParamString("wlanuserip")
 	usermac := req.GetParamString("wlanusermac")
+	log.Printf("portalLogin phone:%s code:%s acname:%s acip:%s userip:%s usermac:%s",
+		phone, code, acname, acip, userip, usermac)
 
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
