@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	verify "../proto/verify"
 	util "../util"
 	simplejson "github.com/bitly/go-simplejson"
-	"google.golang.org/grpc"
 )
 
 func genReqNum(num int64) int64 {
@@ -32,19 +30,14 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 
-	address := getNameServer(0, util.VerifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := verify.NewVerifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.BackLogin(context.Background(),
-		&verify.LoginRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password})
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "BackLogin",
+		&verify.LoginRequest{Head: &common.Head{Sid: uuid},
+			Username: username, Password: password})
+	checkRPCErr(rpcerr, "BackLogin")
+	res := resp.Interface().(*verify.LoginReply)
+	checkRPCCode(res.Head.Retcode, "BackLogin")
 
-	checkRPCRsp(err, res.Head.Retcode, "BackLogin")
 	body, err := genResponseBody(res, true)
 	if err != nil {
 		return &util.AppError{util.JSONErr, errInner, err.Error()}
@@ -62,19 +55,13 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	ctype := req.GetParamInt("type")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchReviewNews(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchReviewNews",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchReviewNews")
+	checkRPCErr(rpcerr, "FetchReviewNews")
+	res := resp.Interface().(*fetch.NewsReply)
+	checkRPCCode(res.Head.Retcode, "FetchReviewNews")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -92,19 +79,13 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchTags(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchTags",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchTags")
+	checkRPCErr(rpcerr, "FetchTags")
+	res := resp.Interface().(*fetch.TagsReply)
+	checkRPCCode(res.Head.Retcode, "FetchTags")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -122,19 +103,13 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchUsers(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchUsers",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetUsers")
+	checkRPCErr(rpcerr, "FetchUsers")
+	res := resp.Interface().(*fetch.UserReply)
+	checkRPCCode(res.Head.Retcode, "FetchUsers")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -156,19 +131,14 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		title = req.GetParamStringDef("title", "")
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
 	uuid := util.GenUUID()
-	res, err := c.ReviewVideo(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ReviewVideo",
 		&modify.VideoRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Id: id, Reject: reject == 1,
 			Modify: mod == 1, Title: title})
-	checkRPCRsp(err, res.Head.Retcode, "ReviewVideo")
+	checkRPCErr(rpcerr, "ReviewVideo")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ReviewVideo")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -196,18 +166,13 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		}
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
 	uuid := util.GenUUID()
-	res, err := c.ReviewNews(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ReviewNews",
 		&modify.NewsRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Reject: reject == 1,
 			Modify: mod == 1, Title: title, Tags: tags})
-	checkRPCRsp(err, res.Head.Retcode, "ReviewNews")
+	checkRPCErr(rpcerr, "ReviewNews")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ReviewNews")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -221,19 +186,13 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchApStat(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchApStat",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchApStat")
+	checkRPCErr(rpcerr, "FetchApStat")
+	res := resp.Interface().(*fetch.ApStatReply)
+	checkRPCCode(res.Head.Retcode, "FetchApStat")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -252,19 +211,13 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	ctype := req.GetParamInt("type")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchVideos(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchVideos",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(ctype)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchVideo")
+	checkRPCErr(rpcerr, "FetchVideos")
+	res := resp.Interface().(*fetch.VideoReply)
+	checkRPCCode(res.Head.Retcode, "FetchVideos")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -282,19 +235,13 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchTemplates(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchTemplates",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchTemplates")
+	checkRPCErr(rpcerr, "FetchTemplates")
+	res := resp.Interface().(*fetch.TemplateReply)
+	checkRPCCode(res.Head.Retcode, "FetchTemplates")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -309,18 +256,12 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchConf(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchConf",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCRsp(err, res.Head.Retcode, "FetchConf")
+	checkRPCErr(rpcerr, "FetchConf")
+	res := resp.Interface().(*fetch.ConfReply)
+	checkRPCCode(res.Head.Retcode, "FetchConf")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -335,18 +276,12 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.initCheckOss(r.Body)
 	uid := req.GetParamInt("uid")
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchAdBan(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchAdBan",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCRsp(err, res.Head.Retcode, "FetchAdBan")
+	checkRPCErr(rpcerr, "FetchAdBan")
+	res := resp.Interface().(*fetch.AdBanReply)
+	checkRPCCode(res.Head.Retcode, "FetchAdBan")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -363,17 +298,13 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	title := req.GetParamString("title")
 	content := req.GetParamString("content")
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddTemplate(context.Background(), &modify.AddTempRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Info: &modify.TemplateInfo{Title: title, Content: content}})
-	checkRPCRsp(err, res.Head.Retcode, "AddTemplate")
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddTemplate",
+		&modify.AddTempRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &modify.TemplateInfo{Title: title, Content: content}})
+	checkRPCErr(rpcerr, "AddTemplate")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddTemplate")
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
@@ -400,21 +331,15 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	title := req.GetParamStringDef("title", "")
 	expire := req.GetParamStringDef("expire", "")
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddBanner(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddBanner",
 		&modify.BannerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
 				Title: title, Type: int32(btype), Expire: expire}})
-	checkRPCRsp(err, res.Head.Retcode, "AddBanner")
+	checkRPCErr(rpcerr, "AddBanner")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddBanner")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -431,20 +356,14 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	key := req.GetParamString("key")
 	val := req.GetParamString("val")
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddConf(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddConf",
 		&modify.ConfRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.KvInfo{Key: key, Val: val}})
-	checkRPCRsp(err, res.Head.Retcode, "AddConf")
+	checkRPCErr(rpcerr, "AddConf")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddConf")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -457,20 +376,14 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	term := req.GetParamInt("term")
 	version := req.GetParamInt("version")
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddAdBan(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddAdBan",
 		&modify.AddBanRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.AdBan{Term: term, Version: version}})
-	checkRPCRsp(err, res.Head.Retcode, "AddAdBan")
+	checkRPCErr(rpcerr, "AddAdBan")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddAdBan")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -494,20 +407,14 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		}
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.DelAdBan(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "DelAdBan",
 		&modify.DelBanRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  ids})
-	checkRPCRsp(err, res.Head.Retcode, "DelAdBan")
+	checkRPCErr(rpcerr, "DelAdBan")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "DelAdBan")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -521,19 +428,13 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	num := req.GetParamInt("num")
 	wtype := req.GetParamInt("type")
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchWhiteList(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchWhiteList",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num), Type: int32(wtype)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchWhiteList")
+	checkRPCErr(rpcerr, "FetchWhiteList")
+	res := resp.Interface().(*fetch.WhiteReply)
+	checkRPCCode(res.Head.Retcode, "FetchWhiteList")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -557,20 +458,14 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		}
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddWhiteList(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddWhiteList",
 		&modify.WhiteRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
-	checkRPCRsp(err, res.Head.Retcode, "AddWhiteList")
+	checkRPCErr(rpcerr, "AddWhiteList")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddWhiteList")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -590,20 +485,14 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		}
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.DelWhiteList(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "DelWhiteList",
 		&modify.WhiteRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Type: wtype, Ids: ids})
-	checkRPCRsp(err, res.Head.Retcode, "DelWhiteList")
+	checkRPCErr(rpcerr, "DelWhiteList")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "DelWhiteList")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -625,20 +514,14 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		cts = append(cts, tag)
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.AddTags(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddTags",
 		&modify.AddTagRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Tags: cts})
-	checkRPCRsp(err, res.Head.Retcode, "AddTags")
+	checkRPCErr(rpcerr, "AddTags")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddTags")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -658,21 +541,15 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	term := req.GetParamInt("term")
 	pushtype := req.GetParamInt("pushtype")
 
-	address := getNameServer(uid, util.PushServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := push.NewPushClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.Push(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "Push",
 		&push.PushRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &push.PushInfo{PushType: int32(pushtype), Target: target, TermType: int32(term),
 				Desc: desc, Content: content}})
-	checkRPCRsp(err, res.Head.Retcode, "Push")
+	checkRPCErr(rpcerr, "Push")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "Push")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -694,20 +571,14 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		cts = append(cts, tag)
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.DelTags(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "DelTags",
 		&modify.DelTagRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Ids:  cts})
-	checkRPCRsp(err, res.Head.Retcode, "DelTags")
+	checkRPCErr(rpcerr, "DelTags")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "DelTags")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -729,20 +600,14 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		names = append(names, key)
 	}
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.DelConf(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "DelConf",
 		&modify.DelConfRequest{
 			Head:  &common.Head{Sid: uuid, Uid: uid},
 			Names: names})
-	checkRPCRsp(err, res.Head.Retcode, "DelConf")
+	checkRPCErr(rpcerr, "DelConf")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "DelConf")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -757,19 +622,13 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	content := req.GetParamStringDef("content", "")
 	online := req.GetParamIntDef("online", 0)
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.ModTemplate(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ModTemplate",
 		&modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
-	checkRPCRsp(err, res.Head.Retcode, "ModTemplate")
+	checkRPCErr(rpcerr, "ModTemplate")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ModTemplate")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -788,20 +647,14 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	priority := req.GetParamIntDef("priority", 0)
 	expire := req.GetParamStringDef("expire", "")
 
-	address := getNameServer(uid, util.ModifyServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := modify.NewModifyClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.ModBanner(context.Background(),
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ModBanner",
 		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
 				Online: int32(online), Deleted: int32(deleted), Title: title, Expire: expire}})
-	checkRPCRsp(err, res.Head.Retcode, "ModBanner")
+	checkRPCErr(rpcerr, "ModBanner")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ModBanner")
 
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -820,19 +673,13 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	btype := req.GetParamInt("type")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchBanners(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchBanners",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Type: int32(btype), Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchBanner")
+	checkRPCErr(rpcerr, "FetchBanners")
+	res := resp.Interface().(*fetch.BannerReply)
+	checkRPCCode(res.Head.Retcode, "FetchBanners")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
@@ -851,19 +698,13 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	seq := req.GetParamInt("seq")
 	num = genReqNum(num)
 
-	address := getNameServer(uid, util.FetchServerName)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
-	}
-	defer conn.Close()
-	c := fetch.NewFetchClient(conn)
-
 	uuid := util.GenUUID()
-	res, err := c.FetchFeedback(context.Background(),
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchFeedback",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Seq: seq, Num: int32(num)})
-	checkRPCRsp(err, res.Head.Retcode, "FetchFeedback")
+	checkRPCErr(rpcerr, "FetchFeedback")
+	res := resp.Interface().(*fetch.FeedbackReply)
+	checkRPCCode(res.Head.Retcode, "FetchFeedback")
 
 	body, err := genResponseBody(res, false)
 	if err != nil {
