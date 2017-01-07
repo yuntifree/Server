@@ -46,11 +46,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*verify.LoginReply)
 	checkRPCCode(res.Head.Retcode, "Login")
 
-	body, err := genResponseBody(res, true)
-	log.Printf("body:%v", body)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
-	}
+	body := genResponseBody(res, true)
 	w.Write(body)
 	return nil
 }
@@ -197,10 +193,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "AddAddress")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 
 	w.Write(body)
 	return nil
@@ -484,10 +477,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "FetchWifi")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -504,10 +494,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res := resp.Interface().(*hot.FrontReply)
 	checkRPCCode(res.Head.Retcode, "GetFrontInfo")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -555,10 +542,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*hot.OpeningReply)
 	checkRPCCode(res.Head.Retcode, "GetOpening")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -639,10 +623,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*hot.MarqueeReply)
 	checkRPCCode(res.Head.Retcode, "GetMarquee")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -659,10 +640,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*hot.HotListReply)
 	checkRPCCode(res.Head.Retcode, "GetHotList")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -694,10 +672,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res := resp.Interface().(*fetch.WifiPassReply)
 	checkRPCCode(res.Head.Retcode, "FetchWifiPass")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -729,10 +704,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.ShareReply)
 	checkRPCCode(res.Head.Retcode, "FetchShare")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -752,10 +724,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	res := resp.Interface().(*fetch.ShareDetailReply)
 	checkRPCCode(res.Head.Retcode, "FetchShareDetail")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -779,10 +748,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*hot.DetailReply)
 	checkRPCCode(res.Head.Retcode, "GetDetail")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -864,10 +830,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*fetch.ZipcodeReply)
 	checkRPCCode(res.Head.Retcode, "FetchZipcode")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -942,10 +905,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res := resp.Interface().(*fetch.BetHistoryReply)
 	checkRPCCode(res.Head.Retcode, "FetchBetHistory")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -966,10 +926,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	res := resp.Interface().(*fetch.PurchaseRecordReply)
 	checkRPCCode(res.Head.Retcode, "FetchPurchaseRecord")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -986,10 +943,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res := resp.Interface().(*fetch.UserInfoReply)
 	checkRPCCode(res.Head.Retcode, "FetchUserInfo")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1047,10 +1001,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.KvReply)
 	checkRPCCode(res.Head.Retcode, "FetchKvConf")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1067,10 +1018,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.MenuReply)
 	checkRPCCode(res.Head.Retcode, "FetchMenu")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1087,10 +1035,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*fetch.AddressReply)
 	checkRPCCode(res.Head.Retcode, "FetchAddress")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1109,10 +1054,7 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res := resp.Interface().(*fetch.WinStatusReply)
 	checkRPCCode(res.Head.Retcode, "FetchWinStatus")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1260,10 +1202,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*verify.AutoReply)
 	checkRPCCode(res.Head.Retcode, "GetHots")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -1290,18 +1229,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res := resp.Interface().(*verify.LoginReply)
 	checkRPCCode(res.Head.Retcode, "PortalLogin")
 
-	if res.Head.Retcode == common.ErrCode_CHECK_CODE {
-		return &util.AppError{util.LogicErr, errCode, "验证码错误"}
-	} else if res.Head.Retcode == common.ErrCode_ZTE_LOGIN {
-		return &util.AppError{util.DataErr, errZteLogin, "登录失败"}
-	} else if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "登录失败"}
-	}
-
-	body, err := genResponseBody(res, true)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, true)
 	w.Write(body)
 	return nil
 }
@@ -1371,10 +1299,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*verify.RegisterReply)
 	checkRPCCode(res.Head.Retcode, "Register")
 
-	body, err := genResponseBody(res, true)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, true)
 	w.Write(body)
 	return nil
 }

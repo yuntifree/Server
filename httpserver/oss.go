@@ -38,10 +38,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*verify.LoginReply)
 	checkRPCCode(res.Head.Retcode, "BackLogin")
 
-	body, err := genResponseBody(res, true)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
-	}
+	body := genResponseBody(res, true)
 	w.Write(body)
 	return nil
 }
@@ -63,10 +60,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res := resp.Interface().(*fetch.NewsReply)
 	checkRPCCode(res.Head.Retcode, "FetchReviewNews")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -87,10 +81,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.TagsReply)
 	checkRPCCode(res.Head.Retcode, "FetchTags")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -111,10 +102,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.UserReply)
 	checkRPCCode(res.Head.Retcode, "FetchUsers")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -194,10 +182,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.ApStatReply)
 	checkRPCCode(res.Head.Retcode, "FetchApStat")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -219,10 +204,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.VideoReply)
 	checkRPCCode(res.Head.Retcode, "FetchVideos")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -243,10 +225,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res := resp.Interface().(*fetch.TemplateReply)
 	checkRPCCode(res.Head.Retcode, "FetchTemplates")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -263,10 +242,7 @@ func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.ConfReply)
 	checkRPCCode(res.Head.Retcode, "FetchConf")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -283,10 +259,7 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*fetch.AdBanReply)
 	checkRPCCode(res.Head.Retcode, "FetchAdBan")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -341,10 +314,7 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "AddBanner")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -385,10 +355,7 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "AddAdBan")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -436,10 +403,7 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res := resp.Interface().(*fetch.WhiteReply)
 	checkRPCCode(res.Head.Retcode, "FetchWhiteList")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -523,10 +487,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "AddTags")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
@@ -681,10 +642,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	res := resp.Interface().(*fetch.BannerReply)
 	checkRPCCode(res.Head.Retcode, "FetchBanners")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	log.Printf("getBanners body:%s\n", body)
 	w.Write(body)
 	return nil
@@ -706,10 +664,7 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	res := resp.Interface().(*fetch.FeedbackReply)
 	checkRPCCode(res.Head.Retcode, "FetchFeedback")
 
-	body, err := genResponseBody(res, false)
-	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
-	}
+	body := genResponseBody(res, false)
 	w.Write(body)
 	return nil
 }

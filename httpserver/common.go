@@ -346,10 +346,10 @@ func addImages(uid int64, names []string) error {
 	return nil
 }
 
-func genResponseBody(res interface{}, flag bool) ([]byte, error) {
+func genResponseBody(res interface{}, flag bool) []byte {
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return []byte(""), err
+		panic(util.AppError{util.JSONErr, errInner, err.Error()})
 	}
 	val := reflect.ValueOf(res).Elem()
 	log.Printf("val:%v", val)
@@ -369,8 +369,12 @@ func genResponseBody(res interface{}, flag bool) ([]byte, error) {
 			js.SetPath([]string{"data", strings.ToLower(typeField.Name)}, valueField.Interface())
 		}
 	}
+	data, err := js.MarshalJSON()
+	if err != nil {
+		panic(util.AppError{util.JSONErr, errInner, err.Error()})
+	}
 
-	return js.MarshalJSON()
+	return data
 }
 
 func checkRPCRsp(err error, retcode common.ErrCode, method string) {
@@ -400,6 +404,10 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{util.LogicErr, errToken, "token验证失败"})
 	} else if retcode == common.ErrCode_USED_PHONE {
 		panic(util.AppError{util.LogicErr, errUsedPhone, "该账号已注册，请直接登录"})
+	} else if retcode == common.ErrCode_CHECK_CODE {
+		panic(util.AppError{util.LogicErr, errCode, "验证码错误"})
+	} else if retcode == common.ErrCode_ZTE_LOGIN {
+		panic(util.AppError{util.LogicErr, errZteLogin, "登录失败"})
 	} else if retcode != 0 {
 		panic(util.AppError{util.RPCErr, int(retcode), "服务器又傲娇了~"})
 	}
