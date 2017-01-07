@@ -82,7 +82,7 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 	r.Post, err = simplejson.NewFromReader(body)
 	if err != nil {
 		log.Printf("parse reqbody failed:%v", err)
-		panic(util.AppError{util.JSONErr, errInvalidParam, "invalid param"})
+		panic(util.AppError{errInvalidParam, "invalid param"})
 	}
 
 	uid := util.GetJSONInt(r.Post, "uid")
@@ -96,7 +96,7 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 	flag := checkToken(uid, token, ctype)
 	if !flag {
 		log.Printf("checkToken failed, uid:%d token:%s\n", uid, token)
-		panic(util.AppError{util.LogicErr, errToken, "token验证失败"})
+		panic(util.AppError{errToken, "token验证失败"})
 	}
 }
 
@@ -139,20 +139,18 @@ func (r *request) GetParamFloatDef(key string, def float64) float64 {
 }
 
 func extractError(r interface{}) *util.AppError {
-	if v, ok := r.(util.ParamError); ok {
-		return &util.AppError{util.ParamErr, errInvalidParam, v.Error()}
-	} else if k, ok := r.(util.AppError); ok {
+	if k, ok := r.(util.AppError); ok {
 		return &k
 	} else {
 		log.Printf("unexpected panic:%v", r)
-		return &util.AppError{util.ParamErr, errPanic, v.Error()}
+		return &util.AppError{errPanic, k.Error()}
 	}
 
 	return nil
 }
 
 func handleError(w http.ResponseWriter, e *util.AppError) {
-	log.Printf("error type:%d code:%d msg:%s", e.Type, e.Code, e.Msg)
+	log.Printf("error code:%d msg:%s", e.Code, e.Msg)
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
 	js.Set("errno", e.Code)
@@ -234,7 +232,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -243,16 +241,16 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		&fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid},
 			Longitude: longitude, Latitude: latitude})
 	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{util.DataErr, errInner, "服务器又傲娇了"}
+		return &util.AppError{errInner, "服务器又傲娇了"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "init json failed"}
+		return &util.AppError{errInner, "init json failed"}
 	}
 	infos := make([]interface{}, len(res.Infos))
 	for i := 0; i < len(res.Infos); i++ {
@@ -266,7 +264,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	return nil
@@ -289,7 +287,7 @@ func getNameServer(uid int64, name string) string {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect %s: %v", address, err)
-		panic(util.AppError{util.RPCErr, errInner, err.Error()})
+		panic(util.AppError{errInner, err.Error()})
 	}
 	defer conn.Close()
 	c := discover.NewDiscoverClient(conn)
@@ -303,12 +301,12 @@ func getNameServer(uid int64, name string) string {
 		&discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
 	if err != nil {
 		log.Printf("Resolve failed %s: %v", name, err)
-		panic(util.AppError{util.RPCErr, errInner, err.Error()})
+		panic(util.AppError{errInner, err.Error()})
 	}
 
 	if res.Head.Retcode != 0 {
 		log.Printf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)
-		panic(util.AppError{util.RPCErr, errInner,
+		panic(util.AppError{errInner,
 			fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)})
 	}
 
@@ -350,7 +348,7 @@ func addImages(uid int64, names []string) error {
 func genResponseBody(res interface{}, flag bool) []byte {
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		panic(util.AppError{util.JSONErr, errInner, err.Error()})
+		panic(util.AppError{errInner, err.Error()})
 	}
 	val := reflect.ValueOf(res).Elem()
 	log.Printf("val:%v", val)
@@ -372,7 +370,7 @@ func genResponseBody(res interface{}, flag bool) []byte {
 	}
 	data, err := js.MarshalJSON()
 	if err != nil {
-		panic(util.AppError{util.JSONErr, errInner, err.Error()})
+		panic(util.AppError{errInner, err.Error()})
 	}
 
 	return data
@@ -381,19 +379,19 @@ func genResponseBody(res interface{}, flag bool) []byte {
 func checkRPCRsp(err error, retcode common.ErrCode, method string) {
 	if err != nil {
 		log.Printf("RPC %s failed:%v", method, err)
-		panic(util.AppError{util.RPCErr, errInner, err.Error()})
+		panic(util.AppError{errInner, err.Error()})
 	}
 
 	if retcode != 0 {
 		log.Printf("%s failed retcode:%d", method, retcode)
-		panic(util.AppError{util.LogicErr, int(retcode), "登录失败"})
+		panic(util.AppError{int(retcode), "登录失败"})
 	}
 }
 
 func checkRPCErr(err reflect.Value, method string) {
 	if err.Interface() != nil {
 		log.Printf("RPC %s failed:%v", method, err)
-		panic(util.AppError{util.RPCErr, errInner, "grpc failed " + method})
+		panic(util.AppError{errInner, "grpc failed " + method})
 	}
 }
 
@@ -402,17 +400,17 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		log.Printf("%s failed retcode:%d", method, retcode)
 	}
 	if retcode == common.ErrCode_INVALID_TOKEN {
-		panic(util.AppError{util.LogicErr, errToken, "token验证失败"})
+		panic(util.AppError{errToken, "token验证失败"})
 	} else if retcode == common.ErrCode_USED_PHONE {
-		panic(util.AppError{util.LogicErr, errUsedPhone, "该账号已注册，请直接登录"})
+		panic(util.AppError{errUsedPhone, "该账号已注册，请直接登录"})
 	} else if retcode == common.ErrCode_CHECK_CODE {
-		panic(util.AppError{util.LogicErr, errCode, "验证码错误"})
+		panic(util.AppError{errCode, "验证码错误"})
 	} else if retcode == common.ErrCode_ZTE_LOGIN {
-		panic(util.AppError{util.LogicErr, errZteLogin, "登录失败"})
+		panic(util.AppError{errZteLogin, "登录失败"})
 	} else if retcode == common.ErrCode_ZTE_REMOVE {
-		panic(util.AppError{util.LogicErr, errZteRemove, "删除中兴账号失败"})
+		panic(util.AppError{errZteRemove, "删除中兴账号失败"})
 	} else if retcode != 0 {
-		panic(util.AppError{util.RPCErr, int(retcode), "服务器又傲娇了~"})
+		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}
 }
 
@@ -431,7 +429,7 @@ func genServerName(rtype int64) string {
 	case util.PushServerType:
 		return util.PushServerName
 	default:
-		panic(util.AppError{util.ParamErr, errInvalidParam, "illegal server type"})
+		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
 }
 
@@ -451,7 +449,7 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 	case util.PushServerType:
 		cli = push.NewPushClient(conn)
 	default:
-		panic(util.AppError{util.ParamErr, errInvalidParam, "illegal server type"})
+		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
 	return cli
 }

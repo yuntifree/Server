@@ -70,12 +70,12 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getPhoneCode illegal phone:%s", phone)
-		return &util.AppError{util.LogicErr, errIllegalPhone, "请输入正确的手机号"}
+		return &util.AppError{errIllegalPhone, "请输入正确的手机号"}
 	}
 
 	flag, err := getCode(phone, int32(ctype))
 	if err != nil || !flag {
-		return &util.AppError{util.LogicErr, errCode, "获取验证码失败"}
+		return &util.AppError{errCode, "获取验证码失败"}
 	}
 	w.Write([]byte(`{"errno":0}`))
 	return nil
@@ -88,7 +88,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getCheckCode illegal phone:%s", phone)
-		return &util.AppError{util.LogicErr, errIllegalPhone, "请输入正确的手机号"}
+		return &util.AppError{errIllegalPhone, "请输入正确的手机号"}
 	}
 
 	uuid := util.GenUUID()
@@ -174,7 +174,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{util.JSONErr, errInvalidParam, "illegal zipcode"}
+		return &util.AppError{errInvalidParam, "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -208,7 +208,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	text := req.GetParamString("text")
 	images, err := req.Post.Get("data").Get("images").Array()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInvalidParam, err.Error()}
+		return &util.AppError{errInvalidParam, err.Error()}
 	}
 	var imgs []string
 	for i := 0; i < len(images); i++ {
@@ -284,12 +284,12 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 	js.Set("data", res.Info)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 
 	w.Write(body)
@@ -305,7 +305,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{util.JSONErr, errInvalidParam, "illegal zipcode"}
+		return &util.AppError{errInvalidParam, "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -356,16 +356,16 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	var names = []string{fname}
 	err := addImages(uid, names)
 	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 	data, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 	aliyun.FillCallbackInfo(data)
 	data.Set("name", fname)
@@ -373,7 +373,7 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -516,7 +516,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	if res.Info != nil && res.Info.Img != "" {
 		js.Set("data", res.Info)
@@ -524,7 +524,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -564,7 +564,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "opened"}, res.Opened)
 	if len(res.Opened) >= int(num) {
@@ -573,7 +573,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -596,7 +596,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "running"}, res.Running)
 	if len(res.Running) >= int(num) {
@@ -605,7 +605,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -653,7 +653,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	latitude := req.GetParamFloat("latitude")
 	ssids, err := req.Post.Get("data").Get("ssids").Array()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 	var ids []string
 	for i := 0; i < len(ssids); i++ {
@@ -736,7 +736,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	gid := req.GetParamIntDef("gid", 0)
 	bid := req.GetParamIntDef("bid", 0)
 	if gid == 0 && bid == 0 {
-		return &util.AppError{util.JSONErr, errInvalidParam, "invalid param"}
+		return &util.AppError{errInvalidParam, "invalid param"}
 	}
 
 	uuid := util.GenUUID()
@@ -768,13 +768,13 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.Set("data", res.Credential)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -800,14 +800,14 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "news"}, res.News)
 	js.SetPath([]string{"data", "weather"}, res.Weather)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	data := js.Get("data")
@@ -849,13 +849,13 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.Set("data", res.Activity)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -877,13 +877,13 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.Set("data", res.Info)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -972,7 +972,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize {
@@ -981,7 +981,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -1164,7 +1164,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize ||
@@ -1174,7 +1174,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	if seq == 0 {
@@ -1254,12 +1254,12 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "init json failed"}
+		return &util.AppError{errInner, "init json failed"}
 	}
 	js.SetPath([]string{"data", "services"}, res.Services)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	data := js.Get("data")

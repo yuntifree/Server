@@ -12,6 +12,10 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 )
 
+const (
+	paramErr = 2
+)
+
 func init() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Llongfile)
 }
@@ -86,6 +90,10 @@ func GetInnerIP() string {
 	return ""
 }
 
+func genParamErr(key string) string {
+	return "get param:" + key + " failed"
+}
+
 //GetJSONString get json value of string
 func GetJSONString(js *simplejson.Json, key string) string {
 	if val, err := js.Get(key).String(); err == nil {
@@ -95,7 +103,7 @@ func GetJSONString(js *simplejson.Json, key string) string {
 	if val, err := js.Get("data").Get(key).String(); err == nil {
 		return val
 	}
-	panic(ParamError{Val: key})
+	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
 }
 
 //GetJSONStringDef get json value of string with default value
@@ -119,7 +127,7 @@ func GetJSONInt(js *simplejson.Json, key string) int64 {
 	if val, err := js.Get("data").Get(key).Int64(); err == nil {
 		return val
 	}
-	panic(ParamError{Val: key})
+	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
 }
 
 //GetJSONIntDef get json value of int with default value
@@ -143,7 +151,7 @@ func GetJSONBool(js *simplejson.Json, key string) bool {
 	if val, err := js.Get("data").Get(key).Bool(); err == nil {
 		return val
 	}
-	panic(ParamError{Val: key})
+	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
 }
 
 //GetJSONBoolDef get json value of bool with default value
@@ -167,7 +175,7 @@ func GetJSONFloat(js *simplejson.Json, key string) float64 {
 	if val, err := js.Get("data").Get(key).Float64(); err == nil {
 		return val
 	}
-	panic(ParamError{Val: key})
+	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
 }
 
 //GetJSONFloatDef get json value of float with default value

@@ -281,13 +281,13 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	js.SetPath([]string{"data", "tid"}, res.Id)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
@@ -469,7 +469,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	tags, err := req.Post.Get("data").Get("tags").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{util.JSONErr, 2, err.Error()}
+		return &util.AppError{2, err.Error()}
 	}
 
 	var cts []string
@@ -523,7 +523,7 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	tags, err := req.Post.Get("data").Get("ids").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{util.JSONErr, 2, err.Error()}
+		return &util.AppError{2, err.Error()}
 	}
 
 	var cts []int64
@@ -552,7 +552,7 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	keys, err := req.Post.Get("data").Get("keys").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{util.JSONErr, 2, err.Error()}
+		return &util.AppError{2, err.Error()}
 	}
 
 	var names []string
@@ -695,7 +695,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	formats, err := req.Post.Get("data").Get("formats").Array()
 	if err != nil {
 		log.Printf("get format failed:%v", err)
-		return &util.AppError{util.RPCErr, 2, err.Error()}
+		return &util.AppError{2, err.Error()}
 	}
 
 	var names []string
@@ -706,12 +706,12 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	}
 	err = addImages(uid, names)
 	if err != nil {
-		return &util.AppError{util.RPCErr, errInner, err.Error()}
+		return &util.AppError{errInner, err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "invalid param"}
+		return &util.AppError{errInner, "invalid param"}
 	}
 	data, _ := simplejson.NewJson([]byte(`{}`))
 	aliyun.FillPolicyResp(data)
@@ -721,7 +721,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{util.JSONErr, errInner, "marshal json failed"}
+		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
 	return nil
