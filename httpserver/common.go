@@ -68,6 +68,98 @@ const (
 	errZteRemove
 )
 
+func genParamErr(key string) string {
+	return "get param:" + key + " failed"
+}
+
+func getJSONString(js *simplejson.Json, key string) string {
+	if val, err := js.Get(key).String(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).String(); err == nil {
+		return val
+	}
+	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+}
+
+func getJSONStringDef(js *simplejson.Json, key, def string) string {
+	if val, err := js.Get(key).String(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).String(); err == nil {
+		return val
+	}
+	return def
+}
+
+func getJSONInt(js *simplejson.Json, key string) int64 {
+	if val, err := js.Get(key).Int64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Int64(); err == nil {
+		return val
+	}
+	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+}
+
+func getJSONIntDef(js *simplejson.Json, key string, def int64) int64 {
+	if val, err := js.Get(key).Int64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Int64(); err == nil {
+		return val
+	}
+	return def
+}
+
+func getJSONBool(js *simplejson.Json, key string) bool {
+	if val, err := js.Get(key).Bool(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Bool(); err == nil {
+		return val
+	}
+	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+}
+
+func getJSONBoolDef(js *simplejson.Json, key string, def bool) bool {
+	if val, err := js.Get(key).Bool(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Bool(); err == nil {
+		return val
+	}
+	return def
+}
+
+func getJSONFloat(js *simplejson.Json, key string) float64 {
+	if val, err := js.Get(key).Float64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Float64(); err == nil {
+		return val
+	}
+	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+}
+
+func getJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
+	if val, err := js.Get(key).Float64(); err == nil {
+		return val
+	}
+
+	if val, err := js.Get("data").Get(key).Float64(); err == nil {
+		return val
+	}
+	return def
+}
+
 type request struct {
 	Post *simplejson.Json
 }
@@ -85,8 +177,8 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 		panic(util.AppError{errInvalidParam, "invalid param"})
 	}
 
-	uid := util.GetJSONInt(r.Post, "uid")
-	token := util.GetJSONString(r.Post, "token")
+	uid := getJSONInt(r.Post, "uid")
+	token := getJSONString(r.Post, "token")
 
 	var ctype int32
 	if back {
@@ -109,44 +201,41 @@ func (r *request) initCheckOss(body io.ReadCloser) {
 }
 
 func (r *request) GetParamInt(key string) int64 {
-	return util.GetJSONInt(r.Post, key)
+	return getJSONInt(r.Post, key)
 }
 
 func (r *request) GetParamIntDef(key string, def int64) int64 {
-	return util.GetJSONIntDef(r.Post, key, def)
+	return getJSONIntDef(r.Post, key, def)
 }
 
 func (r *request) GetParamBool(key string) bool {
-	return util.GetJSONBool(r.Post, key)
+	return getJSONBool(r.Post, key)
 }
 
 func (r *request) GetParamBoolDef(key string, def bool) bool {
-	return util.GetJSONBoolDef(r.Post, key, def)
+	return getJSONBoolDef(r.Post, key, def)
 }
 
 func (r *request) GetParamString(key string) string {
-	return util.GetJSONString(r.Post, key)
+	return getJSONString(r.Post, key)
 }
 func (r *request) GetParamStringDef(key string, def string) string {
-	return util.GetJSONStringDef(r.Post, key, def)
+	return getJSONStringDef(r.Post, key, def)
 }
 
 func (r *request) GetParamFloat(key string) float64 {
-	return util.GetJSONFloat(r.Post, key)
+	return getJSONFloat(r.Post, key)
 }
 func (r *request) GetParamFloatDef(key string, def float64) float64 {
-	return util.GetJSONFloatDef(r.Post, key, def)
+	return getJSONFloatDef(r.Post, key, def)
 }
 
 func extractError(r interface{}) *util.AppError {
 	if k, ok := r.(util.AppError); ok {
 		return &k
-	} else {
-		log.Printf("unexpected panic:%v", r)
-		return &util.AppError{errPanic, k.Error()}
 	}
-
-	return nil
+	log.Printf("unexpected panic:%v", r)
+	return &util.AppError{errPanic, r.(error).Error()}
 }
 
 func handleError(w http.ResponseWriter, e *util.AppError) {

@@ -8,12 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	simplejson "github.com/bitly/go-simplejson"
-)
-
-const (
-	paramErr = 2
 )
 
 func init() {
@@ -88,106 +82,6 @@ func GetInnerIP() string {
 	}
 
 	return ""
-}
-
-func genParamErr(key string) string {
-	return "get param:" + key + " failed"
-}
-
-//GetJSONString get json value of string
-func GetJSONString(js *simplejson.Json, key string) string {
-	if val, err := js.Get(key).String(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).String(); err == nil {
-		return val
-	}
-	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
-}
-
-//GetJSONStringDef get json value of string with default value
-func GetJSONStringDef(js *simplejson.Json, key, def string) string {
-	if val, err := js.Get(key).String(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).String(); err == nil {
-		return val
-	}
-	return def
-}
-
-//GetJSONInt get json value of int
-func GetJSONInt(js *simplejson.Json, key string) int64 {
-	if val, err := js.Get(key).Int64(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Int64(); err == nil {
-		return val
-	}
-	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
-}
-
-//GetJSONIntDef get json value of int with default value
-func GetJSONIntDef(js *simplejson.Json, key string, def int64) int64 {
-	if val, err := js.Get(key).Int64(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Int64(); err == nil {
-		return val
-	}
-	return def
-}
-
-//GetJSONBool get json value of bool
-func GetJSONBool(js *simplejson.Json, key string) bool {
-	if val, err := js.Get(key).Bool(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Bool(); err == nil {
-		return val
-	}
-	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
-}
-
-//GetJSONBoolDef get json value of bool with default value
-func GetJSONBoolDef(js *simplejson.Json, key string, def bool) bool {
-	if val, err := js.Get(key).Bool(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Bool(); err == nil {
-		return val
-	}
-	return def
-}
-
-//GetJSONFloat get json value of float
-func GetJSONFloat(js *simplejson.Json, key string) float64 {
-	if val, err := js.Get(key).Float64(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Float64(); err == nil {
-		return val
-	}
-	panic(AppError{Code: paramErr, Msg: genParamErr(key)})
-}
-
-//GetJSONFloatDef get json value of float with default value
-func GetJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
-	if val, err := js.Get(key).Float64(); err == nil {
-		return val
-	}
-
-	if val, err := js.Get("data").Get(key).Float64(); err == nil {
-		return val
-	}
-	return def
 }
 
 //GetNextCqssc return next cqssc time
