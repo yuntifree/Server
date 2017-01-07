@@ -651,6 +651,15 @@ func (s *server) SetWinStatus(ctx context.Context, in *modify.WinStatusRequest) 
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) DelZteAccount(ctx context.Context, in *modify.ZteRequest) (*common.CommReply, error) {
+	log.Printf("DelZteAccount uid:%d account:%s", in.Head.Uid, in.Phone)
+	if !zte.Remove(in.Phone) {
+		log.Printf("DelZteAccount failed, account:%s", in.Phone)
+		return &common.CommReply{Head: &common.Head{Retcode: common.ErrCode_ZTE_REMOVE, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

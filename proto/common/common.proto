@@ -12,6 +12,7 @@ enum ErrCode{
     FETCH_SERVER = 10006;
     CHECK_CODE = 10007;
     ZTE_LOGIN = 10008;
+    ZTE_REMOVE = 10009;
 }
 
 message Head {

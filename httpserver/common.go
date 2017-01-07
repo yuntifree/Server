@@ -65,6 +65,7 @@ const (
 	errNotFound
 	errIllegalPhone
 	errZteLogin
+	errZteRemove
 )
 
 type request struct {
@@ -408,6 +409,8 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{util.LogicErr, errCode, "验证码错误"})
 	} else if retcode == common.ErrCode_ZTE_LOGIN {
 		panic(util.AppError{util.LogicErr, errZteLogin, "登录失败"})
+	} else if retcode == common.ErrCode_ZTE_REMOVE {
+		panic(util.AppError{util.LogicErr, errZteRemove, "删除中兴账号失败"})
 	} else if retcode != 0 {
 		panic(util.AppError{util.RPCErr, int(retcode), "服务器又傲娇了~"})
 	}

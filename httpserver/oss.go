@@ -574,6 +574,25 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func delZteAccount(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	phone := req.GetParamString("phone")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "DelZteAccount",
+		&modify.ZteRequest{
+			Head:  &common.Head{Sid: uuid, Uid: uid},
+			Phone: phone})
+	checkRPCErr(rpcerr, "DelZteAccount")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "DelZteAccount")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -731,6 +750,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/send_mipush", appHandler(sendMipush))
 	mux.Handle("/del_tags", appHandler(delTags))
 	mux.Handle("/del_conf", appHandler(delConf))
+	mux.Handle("/del_zte_account", appHandler(delZteAccount))
 	mux.Handle("/mod_template", appHandler(modTemplate))
 	mux.Handle("/mod_banner", appHandler(modBanner))
 	mux.Handle("/get_nearby_aps", appHandler(getOssAps))

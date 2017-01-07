@@ -32,6 +32,7 @@ service Modify{
     rpc AddShare(ShareRequest) returns (common.CommReply) {}
     rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
     rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
+    rpc DelZteAccount(ZteRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -199,4 +200,9 @@ message AccessInfo {
 message AccessRequest {
     common.Head head = 1;
     AccessInfo info = 2;
+}
+
+message ZteRequest {
+    common.Head head = 1;
+    string phone = 2;
 }
