@@ -395,7 +395,13 @@ func checkRPCErr(err reflect.Value, method string) {
 func checkRPCCode(retcode common.ErrCode, method string) {
 	if retcode != 0 {
 		log.Printf("%s failed retcode:%d", method, retcode)
-		panic(util.AppError{util.LogicErr, int(retcode), "登录失败"})
+	}
+	if retcode == common.ErrCode_INVALID_TOKEN {
+		panic(util.AppError{util.LogicErr, errToken, "token验证失败"})
+	} else if retcode == common.ErrCode_USED_PHONE {
+		panic(util.AppError{util.LogicErr, errUsedPhone, "该账号已注册，请直接登录"})
+	} else if retcode != 0 {
+		panic(util.AppError{util.RPCErr, int(retcode), "服务器又傲娇了~"})
 	}
 }
 
