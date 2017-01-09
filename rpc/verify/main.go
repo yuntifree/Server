@@ -184,7 +184,10 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	recordWxOpenid(db, uid, 0, wxi.Openid)
 	recordWxUnionid(db, uid, privdata)
 	util.SetCachedToken(kv, uid, token)
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	return &verify.LoginReply{Head: &common.Head{Uid: uid},
+		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime,
+		Wifipass: wifipass}, nil
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
@@ -210,7 +213,10 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	}
 	util.SetCachedToken(kv, uid, token)
 
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime, Wifipass: wifipass}, nil
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	return &verify.LoginReply{Head: &common.Head{Uid: uid},
+		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime,
+		Wifipass: wifipass}, nil
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
@@ -260,8 +266,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 	}
+	strTime := time.Now().Add(time.Duration(expire) * time.Second).Format("2006-01-02 15:04:05")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
-		Token: token, Privdata: privdata, Expire: int32(expire)}, nil
+		Token: token, Privdata: privdata, Expire: int32(expire), Expiretime: strTime}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
@@ -386,22 +393,25 @@ func refreshTokenPrivdata(db *sql.DB, uid int64) (string, string, int64, error) 
 	return token, privdata, expire, nil
 }
 
-func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.AutoReply, error) {
+func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.RegisterReply, error) {
 	backFlag := checkBackupPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 	if !backFlag {
 		flag, _ := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 		if !flag {
 			log.Printf("check privdata failed, uid:%d token:%s privdata:%s",
 				in.Head.Uid, in.Token, in.Privdata)
-			return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("check privdata failed")
+			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}},
+				errors.New("check privdata failed")
 		}
 	}
 	token, privdata, expire, err := refreshTokenPrivdata(db, in.Head.Uid)
 	if err != nil {
-		return &verify.AutoReply{Head: &common.Head{Retcode: 1}}, errors.New("refresh token failed")
+		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}},
+			errors.New("refresh token failed")
 	}
-	return &verify.AutoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Token: token, Privdata: privdata, Expire: int32(expire)}, nil
+	strTime := time.Now().Add(time.Duration(expire) * time.Second).Format("2006-01-02 15:04:05")
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Token: token, Privdata: privdata, Expire: int32(expire), Expiretime: strTime}, nil
 }
 
 func unionToID(db *sql.DB, unionid string) (int64, error) {
@@ -423,7 +433,9 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	privdata := util.GenSalt()
 	updatePrivdata(db, uid, token, privdata)
 	util.SetCachedToken(kv, uid, token)
-	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Privdata: privdata, Expire: expiretime}, nil
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid},
+		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime}, nil
 }
 
 func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {

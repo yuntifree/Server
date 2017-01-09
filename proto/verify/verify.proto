@@ -11,7 +11,7 @@ service Verify{
      rpc Register(RegisterRequest) returns (RegisterReply) {}
      rpc Logout(LogoutRequest) returns (common.CommReply) {}
      rpc CheckToken(TokenRequest) returns (common.CommReply) {}
-     rpc AutoLogin(AutoRequest) returns (AutoReply) {}
+     rpc AutoLogin(AutoRequest) returns (RegisterReply) {}
      rpc WxMpLogin(LoginRequest) returns (LoginReply) {}
      rpc UnionLogin(LoginRequest) returns (LoginReply) {}
      rpc GetWxTicket(TicketRequest) returns (TicketReply) {}
@@ -47,6 +47,7 @@ message LoginReply {
     string privdata = 3;
     int32 expire = 4;
     string wifipass = 5;
+    string expiretime = 6;
 }
 
 message VerifyReply {
@@ -76,6 +77,7 @@ message RegisterReply {
     string token = 2;
     string privdata = 3;
     int32 expire = 4;
+    string expiretime = 5;
 }
 
 message LogoutRequest {
@@ -87,13 +89,6 @@ message AutoRequest {
     common.Head head = 1;
     string token = 2;
     string privdata = 3;
-}
-
-message AutoReply {
-    common.Head head = 1;
-    string token = 2;
-    string privdata = 3;
-    int32 expire = 4;
 }
 
 message TicketRequest {

@@ -1222,7 +1222,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&verify.AutoRequest{Head: &common.Head{Uid: uid, Sid: uuid},
 			Token: token, Privdata: privdata})
 	checkRPCErr(rpcerr, "AutoLogin")
-	res := resp.Interface().(*verify.AutoReply)
+	res := resp.Interface().(*verify.RegisterReply)
 	checkRPCCode(res.Head.Retcode, "GetHots")
 
 	body := genResponseBody(res, false)
