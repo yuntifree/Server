@@ -826,6 +826,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	}
 	js.SetPath([]string{"data", "news"}, res.News)
 	js.SetPath([]string{"data", "weather"}, res.Weather)
+	js.SetPath([]string{"data", "notice"}, res.Notice)
 
 	body, err := js.MarshalJSON()
 	if err != nil {

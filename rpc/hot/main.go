@@ -272,6 +272,16 @@ func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
 	return info, nil
 }
 
+func getNotice(db *sql.DB) *hot.NoticeInfo {
+	var info hot.NoticeInfo
+	err := db.QueryRow("SELECT title, content, url FROM notice WHERE etime > NOW() ORDER BY id DESC LIMIT 1").
+		Scan(&info.Title, &info.Content, &info.Url)
+	if err != nil {
+		return nil
+	}
+	return &info
+}
+
 func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*hot.WeatherNewsReply, error) {
 	weather, err := getWeather(db)
 	if err != nil {
@@ -281,7 +291,9 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 
 	infos := getNews(db, 0, homeNewsNum, 10)
 	infos = append(infos[:0], infos[1], infos[3], infos[5])
-	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0}, Weather: &weather, News: infos}, nil
+	notice := getNotice(db)
+	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0},
+		Weather: &weather, News: infos, Notice: notice}, nil
 }
 
 func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {

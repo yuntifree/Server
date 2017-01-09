@@ -566,6 +566,5 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 		log.Printf("callRPC arr len%d", len(arr))
 		return resp, reflect.ValueOf(errors.New("illegal grpc call response"))
 	}
-	log.Printf("arr:%v %v", arr[0], arr[1])
 	return arr[0], arr[1]
 }

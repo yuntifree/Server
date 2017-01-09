@@ -60,10 +60,17 @@ message WeatherInfo {
     string dst = 4;
 }
 
+message NoticeInfo {
+    string title = 1;
+    string content = 2;
+    string url = 3;
+}
+
 message WeatherNewsReply {
     common.Head head = 1;
     WeatherInfo weather = 2;
     repeated HotsInfo news = 3;
+    NoticeInfo notice = 4;
 }
 
 message UseInfo {

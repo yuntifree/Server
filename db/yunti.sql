@@ -442,3 +442,14 @@ CREATE TABLE IF NOT EXISTS ac_info
     KEY(type),
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS notice
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    content varchar(512) NOT NULL,
+    url     varchar(256) NOT NULL,
+    ctime   datetime NOT NULL,
+    etime   datetime NOT NULL,
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
