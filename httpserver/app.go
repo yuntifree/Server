@@ -482,6 +482,28 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func checkUpdate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
+	channel := req.GetParamString("channel")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchLatestVersion",
+		&fetch.VersionRequest{
+			Head:    &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
+			Channel: channel})
+	checkRPCErr(rpcerr, "FetchLatestVersion")
+	res := resp.Interface().(*fetch.VersionReply)
+	checkRPCCode(res.Head.Retcode, "FetchLatestVersion")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1511,6 +1533,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/update_address", appHandler(modAddress))
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
+	mux.Handle("/check_update", appHandler(checkUpdate))
 	mux.Handle("/auto_login", appHandler(autoLogin))
 	mux.Handle("/portal_login", appHandler(portalLogin))
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))

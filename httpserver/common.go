@@ -66,6 +66,7 @@ const (
 	errIllegalPhone
 	errZteLogin
 	errZteRemove
+	errNoNewVersion
 )
 
 func genParamErr(key string) string {
@@ -498,6 +499,8 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{errZteLogin, "登录失败"})
 	} else if retcode == common.ErrCode_ZTE_REMOVE {
 		panic(util.AppError{errZteRemove, "删除中兴账号失败"})
+	} else if retcode == common.ErrCode_NO_NEW_VERSION {
+		panic(util.AppError{errNoNewVersion, "当前已是最新版本"})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}

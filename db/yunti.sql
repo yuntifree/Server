@@ -418,3 +418,27 @@ CREATE TABLE IF NOT EXISTS token_backup
     PRIMARY KEY(id),
     UNIQUE KEY(uid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS app_version
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    term    tinyint unsigned NOT NULL DEFAULT 0,
+    version int unsigned NOT NULL DEFAULT 0,
+    vname   varchar(64) NOT NULL,
+    ctime   datetime NOT NULL,
+    PRIMARY KEY(id),
+    UNIQUE KEY(term, version)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ac_info
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- 0:松山湖 1:卫计局
+    type    int unsigned NOT NULL,
+    name    varchar(32) NOT NULL,
+    ip      varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(id),
+    KEY(type),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;

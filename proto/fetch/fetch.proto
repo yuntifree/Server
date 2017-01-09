@@ -34,6 +34,7 @@ service Fetch{
     rpc FetchWinStatus(common.CommRequest) returns (WinStatusReply) {}
     rpc FetchFeedback(common.CommRequest) returns (FeedbackReply) {}
     rpc FetchMenu(common.CommRequest) returns (MenuReply) {}
+    rpc FetchLatestVersion(VersionRequest) returns (VersionReply) {}
 }
 
 message NewsInfo {
@@ -387,4 +388,15 @@ message MenuInfo {
 message MenuReply {
     common.Head head = 1;
     repeated MenuInfo infos = 2;
+}
+
+message VersionRequest {
+    common.Head head = 1;
+    string channel = 2;
+}
+
+message VersionReply {
+    common.Head head = 1;
+    string version = 2;
+    string downurl = 3;
 }

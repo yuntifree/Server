@@ -1381,6 +1381,30 @@ func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*f
 		Bet: &bet, Address: &address, Info: &info}, nil
 }
 
+func genApkDownURL(channel, version string) string {
+	file := fmt.Sprintf("wireless.%s.%s.apk", channel, version)
+	return aliyun.GenOssFileURL(file)
+}
+
+func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionRequest) (*fetch.VersionReply, error) {
+	log.Printf("FetchLatestVersion request uid:%d term:%d versoin:%d channel:%s",
+		in.Head.Uid, in.Head.Term, in.Head.Version, in.Channel)
+	var version int64
+	var vname string
+	err := db.QueryRow("SELECT version, vname FROM app_version WHERE term = ? ORDER BY version DESC LIMIT 1",
+		in.Head.Term).Scan(&version, &vname)
+	if err != nil {
+		log.Printf("FetchLatestVersion failed:%v", err)
+		return &fetch.VersionReply{Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
+	}
+	if version <= in.Head.Version {
+		return &fetch.VersionReply{Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
+	}
+	downurl := genApkDownURL(in.Channel, vname)
+	return &fetch.VersionReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Version: vname, Downurl: downurl}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

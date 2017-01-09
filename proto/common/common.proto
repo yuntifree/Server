@@ -13,6 +13,7 @@ enum ErrCode{
     CHECK_CODE = 10007;
     ZTE_LOGIN = 10008;
     ZTE_REMOVE = 10009;
+    NO_NEW_VERSION = 10010;
 }
 
 message Head {
