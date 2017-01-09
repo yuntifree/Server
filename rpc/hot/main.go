@@ -274,8 +274,8 @@ func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
 
 func getNotice(db *sql.DB) *hot.NoticeInfo {
 	var info hot.NoticeInfo
-	err := db.QueryRow("SELECT title, content, url FROM notice WHERE etime > NOW() ORDER BY id DESC LIMIT 1").
-		Scan(&info.Title, &info.Content, &info.Url)
+	err := db.QueryRow("SELECT title, content, dst FROM notice WHERE etime > NOW() ORDER BY id DESC LIMIT 1").
+		Scan(&info.Title, &info.Content, &info.Dst)
 	if err != nil {
 		return nil
 	}

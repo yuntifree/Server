@@ -63,7 +63,7 @@ message WeatherInfo {
 message NoticeInfo {
     string title = 1;
     string content = 2;
-    string url = 3;
+    string dst = 3;
 }
 
 message WeatherNewsReply {
