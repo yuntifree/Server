@@ -38,7 +38,8 @@ func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 
 	var realcode int32
 	var pid int32
-	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1", phone).Scan(&realcode, &pid)
+	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1",
+		phone).Scan(&realcode, &pid)
 	if err != nil {
 		return false, err
 	}
@@ -69,10 +70,12 @@ func getPhoneCode(phone string, ctype int32) (bool, error) {
 	}
 
 	var code int
-	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1", phone).Scan(&code)
+	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1",
+		phone).Scan(&code)
 	if err != nil {
 		code := util.Randn(randrange)
-		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))", phone, code)
+		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))",
+			phone, code)
 		if err != nil {
 			log.Printf("insert into phone_code failed:%v", err)
 			return false, err
@@ -110,17 +113,20 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	var uid int64
 	var epass string
 	var salt string
-	err := db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?", in.Username).Scan(&uid, &epass, &salt)
+	err := db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?",
+		in.Username).Scan(&uid, &epass, &salt)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 	pass := util.GenSaltPasswd(in.Password, salt)
 	if pass != epass {
-		return &verify.LoginReply{Head: &common.Head{Retcode: 3}}, errors.New("verify password failed")
+		return &verify.LoginReply{Head: &common.Head{Retcode: 3}},
+			errors.New("verify password failed")
 	}
 
 	token := util.GenSalt()
-	_, err = db.Exec("UPDATE back_login SET skey = ?, login_time = NOW(), expire_time = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?", token, uid)
+	_, err = db.Exec("UPDATE back_login SET skey = ?, login_time = NOW(), expire_time = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+		token, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -129,14 +135,17 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 }
 
 func recordWxOpenid(db *sql.DB, uid int64, wtype int32, openid string) {
-	_, err := db.Exec("INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) VALUES (?, ?, ?, NOW())", uid, wtype, openid)
+	_, err := db.Exec("INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) VALUES (?, ?, ?, NOW())",
+		uid, wtype, openid)
 	if err != nil {
-		log.Printf("record wx openid failed uid:%d wtype:%d openid:%s\n", uid, wtype, openid)
+		log.Printf("record wx openid failed uid:%d wtype:%d openid:%s\n",
+			uid, wtype, openid)
 	}
 }
 
 func recordWxUnionid(db *sql.DB, uid int64, unionid string) {
-	_, err := db.Exec("INSERT INTO user_unionid(uid, unionid, ctime) VALUES(?, ?, NOW()) ON DUPLICATE KEY UPDATE unionid = ?", uid, unionid, unionid)
+	_, err := db.Exec("INSERT INTO user_unionid(uid, unionid, ctime) VALUES(?, ?, NOW()) ON DUPLICATE KEY UPDATE unionid = ?",
+		uid, unionid, unionid)
 	if err != nil {
 		log.Printf("recordWxUnionid failed uid:%d unionid:%s err:%v\n", uid, unionid, err)
 	}
@@ -156,7 +165,8 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	wifipass := util.GenWifiPass()
-	res, err := db.Exec("INSERT IGNORE INTO user(username, headurl, sex, token, private, wifi_passwd, etime, atime, ctime) VALUES (?, ?, ?, ?, ?,?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW())", wxi.UnionID, wxi.HeadURL, wxi.Sex, token, privdata, wifipass)
+	res, err := db.Exec("INSERT IGNORE INTO user(username, headurl, sex, token, private, wifi_passwd, etime, atime, ctime) VALUES (?, ?, ?, ?, ?,?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW())",
+		wxi.UnionID, wxi.HeadURL, wxi.Sex, token, privdata, wifipass)
 	if err != nil {
 		log.Printf("insert user reord failed %s:%v", wxi.UnionID, err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
@@ -169,12 +179,14 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	}
 
 	if uid == 0 {
-		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?", wxi.UnionID).Scan(&uid, &wifipass)
+		err = db.QueryRow("SELECT uid, wifi_passwd FROM user WHERE username = ?",
+			wxi.UnionID).Scan(&uid, &wifipass)
 		if err != nil {
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
 			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?", token, privdata, uid)
+		_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?",
+			token, privdata, uid)
 		if err != nil {
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
 			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
@@ -184,10 +196,11 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	recordWxOpenid(db, uid, 0, wxi.Openid)
 	recordWxUnionid(db, uid, privdata)
 	util.SetCachedToken(kv, uid, token)
-	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
+		Format("2006-01-02 15:04:05")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
-		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime,
-		Wifipass: wifipass}, nil
+		Token: token, Privdata: privdata, Expire: expiretime,
+		Expiretime: strTime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
@@ -195,33 +208,38 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	var epass string
 	var salt string
 	var wifipass string
-	err := db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?", in.Username).Scan(&uid, &epass, &salt, &wifipass)
+	err := db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?",
+		in.Username).Scan(&uid, &epass, &salt, &wifipass)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 	pass := util.GenSaltPasswd(in.Password, salt)
 	if pass != epass {
-		return &verify.LoginReply{Head: &common.Head{Retcode: 3}}, errors.New("verify password failed")
+		return &verify.LoginReply{Head: &common.Head{Retcode: 3}},
+			errors.New("verify password failed")
 	}
 
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 
-	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), model = ?, udid = ? WHERE uid = ?", token, privdata, in.Model, in.Udid, uid)
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), model = ?, udid = ? WHERE uid = ?",
+		token, privdata, in.Model, in.Udid, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 	util.SetCachedToken(kv, uid, token)
 
-	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
+		Format("2006-01-02 15:04:05")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
-		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime,
-		Wifipass: wifipass}, nil
+		Token: token, Privdata: privdata, Expire: expiretime,
+		Expiretime: strTime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
 	if in.Code != "" && !checkZteCode(db, in.Username, in.Code) {
-		log.Printf("Register check code failed, name:%s code:%s", in.Username, in.Code)
+		log.Printf("Register check code failed, name:%s code:%s",
+			in.Username, in.Code)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	token := util.GenSalt()
@@ -229,12 +247,16 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
 	var expire int64
-	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n", in.Username, token, privdata, salt, epass)
-	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, token, private, model, udid,
-	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
+	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n",
+		in.Username, token, privdata, salt, epass)
+	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, 
+	token, private, model, udid,
+	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime) VALUES
+	(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
 	DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-		in.Username, epass, salt, token, privdata, in.Client.Model, in.Client.Udid, in.Client.Channel,
-		in.Client.Regip, in.Client.Version, in.Client.Term, in.Code)
+		in.Username, epass, salt, token, privdata, in.Client.Model,
+		in.Client.Udid, in.Client.Channel, in.Client.Regip,
+		in.Client.Version, in.Client.Term, in.Code)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -255,7 +277,8 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		}
 		log.Printf("scan uid:%d \n", uid)
 		_, err := db.Exec("UPDATE user SET password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW() WHERE uid = ?",
-			epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version, in.Client.Term, uid)
+			epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version,
+			in.Client.Term, uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -266,16 +289,19 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 	}
-	strTime := time.Now().Add(time.Duration(expire) * time.Second).Format("2006-01-02 15:04:05")
+	strTime := time.Now().Add(time.Duration(expire) * time.Second).
+		Format("2006-01-02 15:04:05")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
-		Token: token, Privdata: privdata, Expire: int32(expire), Expiretime: strTime}, nil
+		Token: token, Privdata: privdata, Expire: int32(expire),
+		Expiretime: strTime}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
-		return &common.CommReply{Head: &common.Head{Retcode: 1}}, errors.New("check token failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1}},
+			errors.New("check token failed")
 	}
 	util.ClearToken(db, in.Head.Uid)
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
@@ -292,7 +318,8 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 		}
 		var tk string
 		var expire bool
-		err = db.QueryRow("SELECT token, IF(etime > NOW(), false, true) FROM user WHERE deleted = 0 AND uid = ?", in.Head.Uid).Scan(&tk, &expire)
+		err = db.QueryRow("SELECT token, IF(etime > NOW(), false, true) FROM user WHERE deleted = 0 AND uid = ?",
+			in.Head.Uid).Scan(&tk, &expire)
 		if err != nil {
 			log.Printf("CheckToken select failed:%v", err)
 			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
@@ -305,13 +332,15 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 		if tk == in.Token {
 			return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 		}
-		log.Printf("CheckToken token not match, uid:%d token:%s real:%s\n", in.Head.Uid, in.Token, tk)
+		log.Printf("CheckToken token not match, uid:%d token:%s real:%s\n",
+			in.Head.Uid, in.Token, tk)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, in.Type)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
-		return &common.CommReply{Head: &common.Head{Retcode: 1}}, errors.New("checkToken failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1}},
+			errors.New("checkToken failed")
 	}
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
@@ -328,7 +357,8 @@ func checkPrivdata(db *sql.DB, uid int64, token, privdata string) (bool, int64) 
 	}
 
 	if etoken != token || eprivdata != privdata {
-		log.Printf("check privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
+		log.Printf("check privdata failed, token:%s-%s, privdata:%s-%s",
+			token, etoken, privdata, eprivdata)
 		return false, expire
 	}
 	return true, expire
@@ -345,7 +375,8 @@ func checkBackupPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
 	}
 
 	if etoken != token || eprivdata != privdata {
-		log.Printf("check backup privdata failed, token:%s-%s, privdata:%s-%s", token, etoken, privdata, eprivdata)
+		log.Printf("check backup privdata failed, token:%s-%s, privdata:%s-%s",
+			token, etoken, privdata, eprivdata)
 		return false
 	}
 	return true
@@ -361,7 +392,8 @@ func backupToken(db *sql.DB, uid int64, token, privdata string) {
 	_, err := db.Exec("INSERT INTO token_backup(uid, token, private, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, private = ?",
 		uid, token, privdata, token, privdata)
 	if err != nil {
-		log.Printf("backupToken failed uid:%d token:%s privdata:%s", uid, token, privdata)
+		log.Printf("backupToken failed uid:%d token:%s privdata:%s",
+			uid, token, privdata)
 	}
 }
 
@@ -409,7 +441,8 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}},
 			errors.New("refresh token failed")
 	}
-	strTime := time.Now().Add(time.Duration(expire) * time.Second).Format("2006-01-02 15:04:05")
+	strTime := time.Now().Add(time.Duration(expire) * time.Second).
+		Format("2006-01-02 15:04:05")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Token: token, Privdata: privdata, Expire: int32(expire), Expiretime: strTime}, nil
 }
@@ -433,13 +466,16 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	privdata := util.GenSalt()
 	updatePrivdata(db, uid, token, privdata)
 	util.SetCachedToken(kv, uid, token)
-	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).Format("2006-01-02 15:04:05")
+	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
+		Format("2006-01-02 15:04:05")
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid},
-		Token: token, Privdata: privdata, Expire: expiretime, Expiretime: strTime}, nil
+		Token: token, Privdata: privdata, Expire: expiretime,
+		Expiretime: strTime}, nil
 }
 
 func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
-	_, err := db.Exec("UPDATE wx_token SET access_token = ?, api_ticket = ?, expire_time = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE appid = ?", accessToken, ticket, appid)
+	_, err := db.Exec("UPDATE wx_token SET access_token = ?, api_ticket = ?, expire_time = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE appid = ?",
+		accessToken, ticket, appid)
 	if err != nil {
 		log.Printf("updateTokenTicket failed:%v", err)
 	}
@@ -447,24 +483,31 @@ func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
 
 func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*verify.TicketReply, error) {
 	var token, ticket string
-	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1", util.WxAppid).Scan(&token, &ticket)
+	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1",
+		util.WxAppid).Scan(&token, &ticket)
 	if err == nil {
 		log.Printf("GetWxTicket select succ, token:%s ticket:%s\n", token, ticket)
-		return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
+		return &verify.TicketReply{
+			Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+			Token: token, Ticket: ticket}, nil
 	}
 	token, err = util.GetWxToken(util.WxAppid, util.WxAppkey)
 	if err != nil {
 		log.Printf("GetWxToken failed:%v", err)
-		return &verify.TicketReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &verify.TicketReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	ticket, err = util.GetWxJsapiTicket(token)
 	if err != nil {
 		log.Printf("GetWxToken failed:%v", err)
-		return &verify.TicketReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &verify.TicketReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 
 	updateTokenTicket(db, util.WxAppid, token, ticket)
-	return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
+	return &verify.TicketReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Token: token, Ticket: ticket}, nil
 }
 
 func recordZteCode(db *sql.DB, phone, code string, stype uint) {
@@ -535,10 +578,11 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	res, err := db.Exec("INSERT INTO user(username, phone, wifi_passwd, token, private, ctime, atime, etime, bitmap) VALUES (?, ?, ?,?,?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 1) ON DUPLICATE KEY UPDATE phone = ?, wifi_passwd = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
-		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata, in.Info.Phone, in.Info.Code,
-		token, privdata)
+		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata, in.Info.Phone,
+		in.Info.Code, token, privdata)
 	if err != nil {
-		log.Printf("PortalLogin insert user failed, phone:%s code:%s %v", in.Info.Phone, in.Info.Code, err)
+		log.Printf("PortalLogin insert user failed, phone:%s code:%s %v",
+			in.Info.Phone, in.Info.Code, err)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	uid, err := res.LastInsertId()
@@ -568,7 +612,8 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.LoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
-	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
+	return &verify.LoginReply{
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }
 
 func main() {
