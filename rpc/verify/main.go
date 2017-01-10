@@ -595,16 +595,10 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	log.Printf("uid:%d\n", uid)
 	stype := getAcSys(db, in.Info.Acname)
 	bitmap := getUserBitmap(db, uid)
-	code := in.Info.Code
-	if bitmap&(1<<stype) == 0 {
-		code, err = zte.Register(in.Info.Phone, true, stype)
-		if err != nil {
-			log.Printf("PortalLogin zte register failed:%v", err)
-			return &verify.LoginReply{
-				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
-		}
-		recordZteCode(db, in.Info.Phone, code, stype)
-		updateUserBitmap(db, uid, (1 << stype))
+	err = checkZteReg(db, bitmap, stype, in.Head.Uid, in.Info.Phone)
+	if err != nil {
+		return &verify.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
@@ -616,6 +610,48 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	return &verify.LoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
+}
+
+func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error {
+	if bitmap&(1<<stype) == 0 {
+		code, err := zte.Register(phone, true, stype)
+		if err != nil {
+			log.Printf("PortalLogin zte register failed:%v", err)
+			return err
+		}
+		recordZteCode(db, phone, code, stype)
+		updateUserBitmap(db, uid, (1 << stype))
+	}
+	return nil
+}
+
+func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*common.CommReply, error) {
+	stype := getAcSys(db, in.Info.Acname)
+	var phone string
+	var bitmap uint
+	err := db.QueryRow("SELECT phone, bitmap FROM user WHERE uid = ?", in.Head.Uid).
+		Scan(&phone, &bitmap)
+	if err != nil {
+		log.Printf("WifiAccess search user failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	err = checkZteReg(db, bitmap, stype, in.Head.Uid, phone)
+	if err != nil {
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN,
+				Uid: in.Head.Uid}}, nil
+	}
+	if !zte.Loginnopass(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
+		in.Info.Acname, stype) {
+		log.Printf("WifiAccess zte Login failed, req:%v", in)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN,
+				Uid: in.Head.Uid}}, nil
+	}
+	util.RefreshUserAp(db, in.Head.Uid, in.Info.Apmac)
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

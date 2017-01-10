@@ -17,6 +17,7 @@ service Verify{
      rpc GetWxTicket(TicketRequest) returns (TicketReply) {}
      rpc GetCheckCode(CodeRequest) returns (common.CommReply) {}
      rpc PortalLogin(PortalLoginRequest) returns (LoginReply) {}
+     rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
 }
 
 message TokenRequest {
@@ -114,4 +115,17 @@ message PortalInfo {
 message PortalLoginRequest {
     common.Head head = 1;
     PortalInfo info = 2;
+}
+
+message AccessInfo {
+    string acname = 1;
+    string userip = 2;
+    string acip = 3;
+    string usermac = 4;
+    string apmac = 5;
+}
+
+message AccessRequest {
+    common.Head head = 1;
+    AccessInfo info = 2;
 }

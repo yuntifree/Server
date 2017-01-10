@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"../../util"
@@ -179,25 +178,8 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func refreshUserAp(db *sql.DB, uid int64, apmac string) {
-	var aid int
-	mac := strings.Replace(strings.ToLower(apmac), ":", "", -1)
-	log.Printf("ap mac origin:%s convert:%s\n", apmac, mac)
-	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", apmac, mac).Scan(&aid)
-	if err != nil {
-		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", uid, apmac, err)
-		return
-	}
-	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, uid)
-	if err != nil {
-		log.Printf("update user ap info failed uid:%d aid:%d\n", uid, aid)
-		return
-	}
-	return
-}
-
 func (s *server) ReportApmac(ctx context.Context, in *modify.ApmacRequest) (*common.CommReply, error) {
-	refreshUserAp(db, in.Head.Uid, in.Apmac)
+	util.RefreshUserAp(db, in.Head.Uid, in.Apmac)
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
@@ -480,25 +462,6 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func (s *server) WifiAccess(ctx context.Context, in *modify.AccessRequest) (*common.CommReply, error) {
-	var phone, pass string
-	err := db.QueryRow("SELECT phone, wifi_passwd FROM user WHERE uid = ?", in.Head.Uid).
-		Scan(&phone, &pass)
-	if err != nil {
-		log.Printf("WifiAccess search user failed:%v", err)
-		return &common.CommReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
-	}
-	if !zte.Login(phone, pass, in.Info.Userip, in.Info.Usermac, in.Info.Acip, in.Info.Acname) {
-		log.Printf("WifiAccess zte Login failed, req:%v", in)
-		return &common.CommReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
-	}
-	refreshUserAp(db, in.Head.Uid, in.Info.Apmac)
-	return &common.CommReply{
-		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
-}
-
 func recordPurchaseAttempt(db *sql.DB, uid, sid, num int64) {
 	_, err := db.Exec("INSERT INTO purchase_attempt_history(uid, sid, num, ctime) VALUES (?, ?, ?, NOW())",
 		uid, sid, num)
@@ -729,7 +692,7 @@ func (s *server) SetWinStatus(ctx context.Context, in *modify.WinStatusRequest) 
 
 func (s *server) DelZteAccount(ctx context.Context, in *modify.ZteRequest) (*common.CommReply, error) {
 	log.Printf("DelZteAccount uid:%d account:%s", in.Head.Uid, in.Phone)
-	if !zte.Remove(in.Phone) {
+	if !zte.Remove(in.Phone, zte.SshType) {
 		log.Printf("DelZteAccount failed, account:%s", in.Phone)
 		return &common.CommReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_REMOVE,
