@@ -84,17 +84,21 @@ func buildMipush(info *push.PushInfo) string {
 }
 
 func (s *server) Push(ctx context.Context, in *push.PushRequest) (*common.CommReply, error) {
-	log.Printf("push request uid:%d target:%s type:%d", in.Head.Uid, in.Info.Target, in.Info.PushType)
+	log.Printf("push request uid:%d target:%s type:%d", in.Head.Uid,
+		in.Info.Target, in.Info.PushType)
 	auth := genAuthStr(in.Info.TermType)
 	post := buildMipush(in.Info)
 	host := genHost(in.Info.PushType)
-	res, err := util.HTTPRequestWithHeaders(host, post, map[string]string{"Authorization": auth})
+	res, err := util.HTTPRequestWithHeaders(host, post,
+		map[string]string{"Authorization": auth})
 	if err != nil {
 		log.Printf("Push HTTPRequestWithHeaders failed:%v", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 	}
 	log.Printf("resp:%s", res)
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

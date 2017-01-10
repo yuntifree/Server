@@ -152,7 +152,8 @@ func getTotalUsers(db *sql.DB) int64 {
 }
 
 func getTotalBanners(db *sql.DB, btype int32) int64 {
-	query := "SELECT COUNT(id) FROM banner WHERE deleted = 0 AND type = " + strconv.Itoa(int(btype))
+	query := "SELECT COUNT(id) FROM banner WHERE deleted = 0 AND type = " +
+		strconv.Itoa(int(btype))
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
@@ -164,8 +165,10 @@ func getTotalBanners(db *sql.DB, btype int32) int64 {
 
 func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
-	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " + genTypeQuery(int32(ctype))
-	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " +
+		genTypeQuery(int32(ctype))
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," +
+		strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -182,7 +185,8 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%s title:%s ctime:%s source:%s ", info.Id, info.Title, info.Ctime, info.Source)
+		log.Printf("id:%s title:%s ctime:%s source:%s ", info.Id, info.Title,
+			info.Ctime, info.Source)
 		if ctype == 1 {
 			info.Tag = getNewsTag(db, info.Id)
 		}
@@ -192,15 +196,19 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 }
 
 func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num, in.Type)
+	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid,
+		in.Head.Sid, in.Seq, in.Num, in.Type)
 	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
 	total := getTotalNews(db, in.Type)
-	return &fetch.NewsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: news, Total: total}, nil
+	return &fetch.NewsReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: news, Total: total}, nil
 }
 
 func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 	var infos []*fetch.TagInfo
-	query := "SELECT id, content FROM tags WHERE deleted = 0 ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, content FROM tags WHERE deleted = 0 ORDER BY id DESC LIMIT " +
+		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -223,15 +231,19 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 }
 
 func (s *server) FetchTags(ctx context.Context, in *common.CommRequest) (*fetch.TagsReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid,
+		in.Head.Sid, in.Seq, in.Num)
 	tags := getTags(db, in.Seq, int64(in.Num))
 	total := getTotalTags(db)
-	return &fetch.TagsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: tags, Total: total}, nil
+	return &fetch.TagsReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: tags, Total: total}, nil
 }
 
 func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 	var infos []*fetch.ApInfo
-	rows, err := db.Query("SELECT id, bd_lon, bd_lat, address FROM ap WHERE bd_lon > ? - 0.1 AND bd_lon < ? + 0.1 AND bd_lat > ? - 0.1 AND bd_lat < ? + 0.1 GROUP BY bd_lon, bd_lat ORDER BY (POW(ABS(bd_lon - ?), 2) + POW(ABS(bd_lat - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	rows, err := db.Query("SELECT id, bd_lon, bd_lat, address FROM ap WHERE bd_lon > ? - 0.1 AND bd_lon < ? + 0.1 AND bd_lat > ? - 0.1 AND bd_lat < ? + 0.1 GROUP BY bd_lon, bd_lat ORDER BY (POW(ABS(bd_lon - ?), 2) + POW(ABS(bd_lat - ?), 2)) LIMIT 20",
+		longitude, longitude, latitude, latitude, longitude, latitude)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos
@@ -256,7 +268,8 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 			info.Address = info.Address[len(addressPrefix):]
 		}
 
-		log.Printf("id:%s longitude:%f latitude:%f ", info.Id, info.Longitude, info.Latitude)
+		log.Printf("id:%s longitude:%f latitude:%f ", info.Id, info.Longitude,
+			info.Latitude)
 		if distance > maxDistance {
 			break
 		}
@@ -266,14 +279,18 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 }
 
 func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
-	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
+	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid,
+		in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getAps(db, in.Longitude, in.Latitude)
-	return &fetch.ApReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	return &fetch.ApReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
 }
 
 func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 	var infos []*common.WifiInfo
-	rows, err := db.Query("SELECT ssid, username, password, longitude, latitude FROM wifi WHERE longitude > ? - 0.1 AND longitude < ? + 0.1 AND latitude > ? - 0.1 AND latitude < ? + 0.1 ORDER BY (POW(ABS(longitude - ?), 2) + POW(ABS(latitude - ?), 2)) LIMIT 20", longitude, longitude, latitude, latitude, longitude, latitude)
+	rows, err := db.Query("SELECT ssid, username, password, longitude, latitude FROM wifi WHERE longitude > ? - 0.1 AND longitude < ? + 0.1 AND latitude > ? - 0.1 AND latitude < ? + 0.1 ORDER BY (POW(ABS(longitude - ?), 2) + POW(ABS(latitude - ?), 2)) LIMIT 20",
+		longitude, longitude, latitude, latitude, longitude, latitude)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return infos
@@ -285,7 +302,8 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 	p1.Latitude = latitude
 	for rows.Next() {
 		var info common.WifiInfo
-		err = rows.Scan(&info.Ssid, &info.Username, &info.Password, &info.Longitude, &info.Latitude)
+		err = rows.Scan(&info.Ssid, &info.Username, &info.Password,
+			&info.Longitude, &info.Latitude)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
@@ -295,7 +313,9 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 		p2.Latitude = info.Latitude
 		distance := util.GetDistance(p1, p2)
 
-		log.Printf("ssid:%s username:%s password:%s longitude:%f latitude:%f ", info.Ssid, info.Username, info.Password, info.Longitude, info.Latitude)
+		log.Printf("ssid:%s username:%s password:%s longitude:%f latitude:%f ",
+			info.Ssid, info.Username, info.Password, info.Longitude,
+			info.Latitude)
 		if distance > maxDistance {
 			break
 		}
@@ -305,14 +325,18 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 }
 
 func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.WifiReply, error) {
-	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid, in.Head.Sid, in.Longitude, in.Latitude)
+	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid,
+		in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getWifis(db, in.Longitude, in.Latitude)
-	return &fetch.WifiReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	return &fetch.WifiReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
 }
 
 func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 	var infos []*fetch.ApStatInfo
-	query := "SELECT id, address, mac, count, bandwidth, online FROM ap ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, address, mac, count, bandwidth, online FROM ap ORDER BY id DESC LIMIT " +
+		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -323,27 +347,34 @@ func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 
 	for rows.Next() {
 		var info fetch.ApStatInfo
-		err = rows.Scan(&info.Id, &info.Address, &info.Mac, &info.Count, &info.Bandwidth, &info.Online)
+		err = rows.Scan(&info.Id, &info.Address, &info.Mac, &info.Count,
+			&info.Bandwidth, &info.Online)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%s address:%s mac:%s count:%d bandwidth:%d online:%d ", info.Id, info.Address, info.Mac, info.Count, info.Bandwidth, info.Online)
+		log.Printf("id:%s address:%s mac:%s count:%d bandwidth:%d online:%d ",
+			info.Id, info.Address, info.Mac, info.Count, info.Bandwidth,
+			info.Online)
 	}
 	return infos
 }
 
 func (s *server) FetchApStat(ctx context.Context, in *common.CommRequest) (*fetch.ApStatReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid,
+		in.Head.Sid, in.Seq, in.Num)
 	infos := getApStat(db, int32(in.Seq), in.Num)
 	total := getTotalAps(db)
-	return &fetch.ApStatReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+	return &fetch.ApStatReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
 }
 
 func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 	var infos []*fetch.UserInfo
-	query := "SELECT uid, phone, udid, atime, remark, times, duration, traffic, aptime, aid FROM user ORDER BY uid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT uid, phone, udid, atime, remark, times, duration, traffic, aptime, aid FROM user ORDER BY uid DESC LIMIT " +
+		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -362,27 +393,33 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 			continue
 		}
 		if aid != 0 {
-			err := db.QueryRow("SELECT address FROM ap WHERE id = ?", aid).Scan(&info.Address)
+			err := db.QueryRow("SELECT address FROM ap WHERE id = ?", aid).
+				Scan(&info.Address)
 			if err != nil {
 				log.Printf("get ap address failed aid:%d err:%v", aid, err)
 			}
 		}
 		infos = append(infos, &info)
-		log.Printf("uid:%d phone:%s udid:%s active:%s remark:%s", info.Id, info.Phone, info.Imei, info.Active, info.Remark)
+		log.Printf("uid:%d phone:%s udid:%s active:%s remark:%s", info.Id,
+			info.Phone, info.Imei, info.Active, info.Remark)
 	}
 	return infos
 }
 
 func (s *server) FetchUsers(ctx context.Context, in *common.CommRequest) (*fetch.UserReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
+		in.Seq, in.Num)
 	infos := getUsers(db, in.Seq, int64(in.Num))
 	total := getTotalUsers(db)
-	return &fetch.UserReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+	return &fetch.UserReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
 }
 
 func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 	var infos []*fetch.TemplateInfo
-	query := "SELECT id, title, content, online FROM template ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT id, title, content, online FROM template ORDER BY id DESC LIMIT " +
+		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -405,16 +442,21 @@ func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 }
 
 func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*fetch.TemplateReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
+		in.Seq, in.Num)
 	infos := getTemplates(db, int32(in.Seq), in.Num)
 	total := getTotalTemplates(db)
-	return &fetch.TemplateReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+	return &fetch.TemplateReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
 }
 
 func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 	var infos []*fetch.VideoInfo
-	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
-	query += " ORDER BY vid DESC LIMIT " + strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
+	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " +
+		genTypeQuery(ctype)
+	query += " ORDER BY vid DESC LIMIT " + strconv.Itoa(int(seq)) + "," +
+		strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -425,7 +467,8 @@ func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 
 	for rows.Next() {
 		var info fetch.VideoInfo
-		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst, &info.Ctime, &info.Source, &info.Duration)
+		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst, &info.Ctime,
+			&info.Source, &info.Duration)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
@@ -437,15 +480,19 @@ func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 }
 
 func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetch.VideoReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
+		in.Seq, in.Num)
 	infos := getVideos(db, int32(in.Seq), in.Num, in.Type)
 	total := getTotalVideos(db, in.Type)
-	return &fetch.VideoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+	return &fetch.VideoReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
 }
 
 func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
 	var infos []*common.BannerInfo
-	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title, etime, dbg FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d", btype, seq, num)
+	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title, etime, dbg FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d",
+		btype, seq, num)
 	log.Printf("query string:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -456,23 +503,27 @@ func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
 
 	for rows.Next() {
 		var info common.BannerInfo
-		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online, &info.Priority, &info.Title,
-			&info.Expire, &info.Dbg)
+		err = rows.Scan(&info.Id, &info.Img, &info.Dst, &info.Online,
+			&info.Priority, &info.Title, &info.Expire, &info.Dbg)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%d img:%s dst:%s Online:%d priority:%d\n", info.Id, info.Img, info.Dst, info.Online, info.Priority)
+		log.Printf("id:%d img:%s dst:%s Online:%d priority:%d\n", info.Id,
+			info.Img, info.Dst, info.Online, info.Priority)
 	}
 	return infos
 }
 
 func (s *server) FetchBanners(ctx context.Context, in *common.CommRequest) (*fetch.BannerReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid, in.Seq, in.Num)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid,
+		in.Head.Sid, in.Seq, in.Num)
 	infos := getBanners(db, in.Seq, in.Type, in.Num)
 	total := getTotalBanners(db, in.Type)
-	return &fetch.BannerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos, Total: total}, nil
+	return &fetch.BannerReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
 }
 
 func genSsidStr(ssids []string) string {
@@ -511,14 +562,17 @@ func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (
 		wifis = append(wifis, &info)
 	}
 
-	return &fetch.WifiPassReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Wifipass: wifis}, nil
+	return &fetch.WifiPassReply{
+		Head:     &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Wifipass: wifis}, nil
 }
 
 func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest) (*fetch.StsReply, error) {
 	res := aliyun.FetchStsCredentials()
 	log.Printf("FetchStsCredentials resp:%s", res)
 	if res == "" {
-		return &fetch.StsReply{Head: &common.Head{Retcode: 1}}, errors.New("fetch sts failed")
+		return &fetch.StsReply{Head: &common.Head{Retcode: 1}},
+			errors.New("fetch sts failed")
 	}
 	js, err := simplejson.NewJson([]byte(res))
 	if err != nil {
@@ -531,7 +585,8 @@ func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest
 	cred.Accesskeyid, _ = credential.Get("AccessKeyId").String()
 	cred.Expiration, _ = credential.Get("Expiration").String()
 	cred.Securitytoken, _ = credential.Get("SecurityToken").String()
-	return &fetch.StsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.StsReply{
+		Head:       &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Credential: &cred}, nil
 }
 
@@ -568,7 +623,8 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 		infos = append(infos, &info)
 	}
 
-	return &fetch.ZipcodeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.ZipcodeReply{
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Zipcode: infos}, nil
 }
 
@@ -585,8 +641,9 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 	var infos []*common.AddressInfo
 	for rows.Next() {
 		var info common.AddressInfo
-		err := rows.Scan(&info.Aid, &info.User, &info.Mobile, &info.Province, &info.City,
-			&info.Zone, &info.Addr, &info.Detail, &info.Def, &info.Zip)
+		err := rows.Scan(&info.Aid, &info.User, &info.Mobile, &info.Province,
+			&info.City, &info.Zone, &info.Addr, &info.Detail, &info.Def,
+			&info.Zip)
 		if err != nil {
 			log.Printf("FetchAddress scan failed:%v", err)
 			continue
@@ -594,7 +651,8 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 		infos = append(infos, &info)
 	}
 
-	return &fetch.AddressReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.AddressReply{
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Address: infos}, nil
 }
 
@@ -616,7 +674,8 @@ func getFlashAd(db *sql.DB, flag bool) common.BannerInfo {
 
 func isAdBan(db *sql.DB, term, version int64) bool {
 	var num int
-	err := db.QueryRow("SELECT COUNT(id) FROM ad_ban WHERE deleted = 0 AND term = ? AND version = ?", term, version).
+	err := db.QueryRow("SELECT COUNT(id) FROM ad_ban WHERE deleted = 0 AND term = ? AND version = ?",
+		term, version).
 		Scan(&num)
 	if err != nil {
 		log.Printf("isAdBan query failed:%v", err)
@@ -628,14 +687,20 @@ func isAdBan(db *sql.DB, term, version int64) bool {
 }
 
 func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.AdReply, error) {
-	log.Printf("FetchFlashAd request uid:%d term:%d versoin:%d", in.Head.Uid, in.Term, in.Version)
-	if !util.IsWhiteUser(db, in.Head.Uid, util.FlashAdWhiteType) && isAdBan(db, in.Term, in.Version) {
-		log.Printf("FetchFlashAd ban uid:%d term:%d version:%d", in.Head.Uid, in.Term, in.Version)
-		return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
+	log.Printf("FetchFlashAd request uid:%d term:%d versoin:%d", in.Head.Uid,
+		in.Term, in.Version)
+	if !util.IsWhiteUser(db, in.Head.Uid, util.FlashAdWhiteType) &&
+		isAdBan(db, in.Term, in.Version) {
+		log.Printf("FetchFlashAd ban uid:%d term:%d version:%d", in.Head.Uid,
+			in.Term, in.Version)
+		return &fetch.AdReply{
+			Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}}, nil
 	}
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.FlashAdDbgType)
 	info := getFlashAd(db, flag)
-	return &fetch.AdReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Info: &info}, nil
+	return &fetch.AdReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Info: &info}, nil
 }
 
 func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.ConfReply, error) {
@@ -658,7 +723,8 @@ func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.
 		infos = append(infos, &info)
 	}
 
-	return &fetch.ConfReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.ConfReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
 }
 
@@ -671,8 +737,9 @@ func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.K
 		log.Printf("FetchKvConf query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.KvReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	return &fetch.KvReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Val: val}, nil
+	return &fetch.KvReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Val:  val}, nil
 }
 
 func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fetch.ActivityReply, error) {
@@ -691,7 +758,8 @@ func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fe
 		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("title:%s dst:%s", info.Title, info.Dst)
-	return &fetch.ActivityReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.ActivityReply{
+		Head:     &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Activity: &info}, nil
 }
 
@@ -729,7 +797,8 @@ func getGoodsIntro(db *sql.DB, gid int64) fetch.GoodsIntro {
 func (s *server) FetchGoodsIntro(ctx context.Context, in *common.CommRequest) (*fetch.GoodsIntroReply, error) {
 	log.Printf("FetchGoodsIntro request uid:%d gid:%d", in.Head.Uid, in.Id)
 	info := getGoodsIntro(db, in.Id)
-	return &fetch.GoodsIntroReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.GoodsIntroReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info}, nil
 }
 
@@ -766,7 +835,8 @@ func getPurchaseRecords(db *sql.DB, sid, seq, num int64) []*fetch.PurchaseRecord
 func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest) (*fetch.PurchaseRecordReply, error) {
 	log.Printf("FetchPurchaseRecord request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getPurchaseRecords(db, in.Id, in.Seq, int64(in.Num))
-	return &fetch.PurchaseRecordReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.PurchaseRecordReply{
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Records: infos}, nil
 }
 
@@ -810,7 +880,8 @@ func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
 func (s *server) FetchBetHistory(ctx context.Context, in *common.CommRequest) (*fetch.BetHistoryReply, error) {
 	log.Printf("FetchBetHistory request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getBetHistory(db, in.Id, in.Seq, int64(in.Num))
-	return &fetch.BetHistoryReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.BetHistoryReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Bets: infos}, nil
 }
 
@@ -878,7 +949,8 @@ func getShareInfo(db *sql.DB, uid, stype, id, num, seq int64) []*fetch.ShareInfo
 
 func getMyShare(db *sql.DB, uid, num, seq int64) []*fetch.ShareInfo {
 	var infos []*fetch.ShareInfo
-	query := "SELECT s.sid, s.num, g.image, g.title, l.share FROM sales s, goods g, logistics l WHERE s.gid = g.gid AND s.sid = l.sid AND l.status >= 6 AND s.win_uid = " + strconv.Itoa(int(uid))
+	query := "SELECT s.sid, s.num, g.image, g.title, l.share FROM sales s, goods g, logistics l WHERE s.gid = g.gid AND s.sid = l.sid AND l.status >= 6 AND s.win_uid = " +
+		strconv.Itoa(int(uid))
 	if seq > 0 {
 		query += fmt.Sprintf(" AND s.sid = %d", seq)
 	}
@@ -927,7 +999,8 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 		infos = getMyShare(db, in.Head.Uid, int64(in.Num), in.Seq)
 	}
 
-	return &fetch.ShareReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.ShareReply{
+		Head:   &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Shares: infos, Reddot: reddot}, nil
 }
 
@@ -957,7 +1030,8 @@ func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (
 	var share fetch.ShareInfo
 	var imageNum int
 	err := db.QueryRow("SELECT hid, h.uid, h.title, content, image_num, UNIX_TIMESTAMP(h.ctime), nickname FROM share_history h, user u WHERE h.uid = u.uid AND h.deleted = 0 AND h.reviewed = 1 AND h.sid = ?", in.Id).
-		Scan(&share.Sid, &share.Uid, &share.Title, &share.Text, &imageNum, &share.Sharetime, &share.Nickname)
+		Scan(&share.Sid, &share.Uid, &share.Title, &share.Text, &imageNum,
+			&share.Sharetime, &share.Nickname)
 	if err != nil {
 		log.Printf("FetchShareDetail query share failed sid:%d %v", in.Id, err)
 		return &fetch.ShareDetailReply{Head: &common.Head{Retcode: 1}}, err
@@ -975,7 +1049,8 @@ func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (
 	award.Num = util.GetSalesCount(db, in.Id, share.Uid)
 	bet.Award = &award
 
-	return &fetch.ShareDetailReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.ShareDetailReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Share: &share, Bet: &bet}, nil
 }
 
@@ -1042,7 +1117,8 @@ func (s *server) FetchUserInfo(ctx context.Context, in *common.CommRequest) (*fe
 	log.Printf("FetchUserInfo uid:%d", in.Head.Uid)
 	info := getUserInfo(db, in.Head.Uid)
 	banner := getUserBanner(db)
-	return &fetch.UserInfoReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.UserInfoReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info, Banner: banner}, nil
 }
 
@@ -1099,8 +1175,8 @@ func getUserSales(db *sql.DB, uid, seq, num int64, flag bool) []*common.BidInfo 
 	for rows.Next() {
 		var info common.BidInfo
 		var rest, end int64
-		err = rows.Scan(&info.Bid, &info.Period, &info.Title, &info.Total, &info.Remain,
-			&info.Status, &info.Image, &rest, &end)
+		err = rows.Scan(&info.Bid, &info.Period, &info.Title, &info.Total,
+			&info.Remain, &info.Status, &info.Image, &rest, &end)
 		if err != nil {
 			log.Printf("getUserSales scan failed:%v", err)
 			continue
@@ -1119,14 +1195,16 @@ func getUserSales(db *sql.DB, uid, seq, num int64, flag bool) []*common.BidInfo 
 }
 
 func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fetch.UserBetReply, error) {
-	log.Printf("FetchUserBet uid:%d seq:%d num:%d type:%d", in.Head.Uid, in.Seq, in.Num, in.Type)
+	log.Printf("FetchUserBet uid:%d seq:%d num:%d type:%d", in.Head.Uid, in.Seq,
+		in.Num, in.Type)
 	var infos []*common.BidInfo
 	if in.Type == util.UserAwardType {
 		infos = getUserAward(db, in.Head.Uid, in.Seq, int64(in.Num))
 	} else {
 		infos = getUserBets(db, in.Head.Uid, in.Seq, int64(in.Num))
 	}
-	return &fetch.UserBetReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.UserBetReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
 }
 
@@ -1189,7 +1267,8 @@ func getAdBan(db *sql.DB) []*common.AdBan {
 func (s *server) FetchAdBan(ctx context.Context, in *common.CommRequest) (*fetch.AdBanReply, error) {
 	log.Printf("FetchUserBet uid:%d", in.Head.Uid)
 	infos := getAdBan(db)
-	return &fetch.AdBanReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.AdBanReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
 }
 
@@ -1232,7 +1311,8 @@ func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*f
 	log.Printf("FetchWhiteList uid:%d", in.Head.Uid)
 	infos := getWhiteList(db, in.Seq, int64(in.Num))
 	total := getWhiteTotal(db, int64(in.Type))
-	return &fetch.WhiteReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.WhiteReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
 }
 
@@ -1274,7 +1354,8 @@ func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fe
 	log.Printf("FetchFeedback uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
 	infos := getFeedback(db, in.Seq, int64(in.Num))
 	total := getFeedbackTotal(db)
-	return &fetch.FeedbackReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.FeedbackReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
 }
 
@@ -1301,7 +1382,8 @@ func getMenus(db *sql.DB) []*fetch.MenuInfo {
 func (s *server) FetchMenu(ctx context.Context, in *common.CommRequest) (*fetch.MenuReply, error) {
 	log.Printf("FetchMenu uid:%d", in.Head.Uid)
 	infos := getMenus(db)
-	return &fetch.MenuReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.MenuReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
 }
 
@@ -1319,8 +1401,8 @@ func getWinInfo(db *sql.DB, sid int64) common.BidInfo {
 	var info common.BidInfo
 	var award common.AwardInfo
 	err := db.QueryRow("SELECT g.title, s.num, s.total, s.win_code, s.win_uid, UNIX_TIMESTAMP(s.atime), s.status, g.image, g.type FROM sales s, goods g WHERE s.gid = g.gid AND s.sid = ?", sid).
-		Scan(&info.Title, &info.Period, &info.Total, &award.Awardcode, &award.Uid, &info.End,
-			&info.Status, &info.Image, &info.Gtype)
+		Scan(&info.Title, &info.Period, &info.Total, &award.Awardcode, &award.Uid,
+			&info.End, &info.Status, &info.Image, &info.Gtype)
 	if err != nil {
 		log.Printf("getWinInfo failed sid:%d %v", sid, err)
 		return info
@@ -1368,8 +1450,9 @@ func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*f
 			UNIX_TIMESTAMP(rtime), share, account, award_account FROM logistics WHERE sid = `
 		query += strconv.Itoa(int(in.Id))
 		var eid int64
-		err := db.QueryRow(query).Scan(&address.Id, &eid, &info.Num, &info.Addresstime,
-			&info.Shiptime, &info.Confirmtime, &info.Share, &info.Account, &info.Award)
+		err := db.QueryRow(query).Scan(&address.Id, &eid, &info.Num,
+			&info.Addresstime, &info.Shiptime, &info.Confirmtime,
+			&info.Share, &info.Account, &info.Award)
 		if err != nil {
 			log.Printf("FetchWinStatus query failed:%v", err)
 		}
@@ -1377,8 +1460,9 @@ func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*f
 		address = getAddress(db, address.Id)
 	}
 
-	return &fetch.WinStatusReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Bet: &bet, Address: &address, Info: &info}, nil
+	return &fetch.WinStatusReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Bet:  &bet, Address: &address, Info: &info}, nil
 }
 
 func genApkDownURL(channel, version string) string {
@@ -1395,13 +1479,16 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 		in.Head.Term).Scan(&version, &vname)
 	if err != nil {
 		log.Printf("FetchLatestVersion failed:%v", err)
-		return &fetch.VersionReply{Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
+		return &fetch.VersionReply{
+			Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
 	}
 	if version <= in.Head.Version {
-		return &fetch.VersionReply{Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
+		return &fetch.VersionReply{
+			Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
 	}
 	downurl := genApkDownURL(in.Channel, vname)
-	return &fetch.VersionReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+	return &fetch.VersionReply{
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Version: vname, Downurl: downurl}, nil
 }
 

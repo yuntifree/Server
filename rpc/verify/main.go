@@ -570,8 +570,10 @@ func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
 
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code) {
-		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
+		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s",
+			in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
 
 	}
 	log.Printf("PortalLogin info:%v", in.Info)

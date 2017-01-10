@@ -43,7 +43,8 @@ func parseServer(name string) (Server, error) {
 }
 
 func fetchServers(name string) []string {
-	vals, err := kv.ZRangeByScore(name, redis.ZRangeBy{Min: "-inf", Max: "+inf", Offset: 0, Count: 10}).Result()
+	vals, err := kv.ZRangeByScore(name, redis.ZRangeBy{Min: "-inf", Max: "+inf",
+		Offset: 0, Count: 10}).Result()
 	if err != nil {
 		log.Printf("zrangebyscore failed %s:%v", name, err)
 		return nil
@@ -66,10 +67,12 @@ func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*disc
 	servers := fetchServers(in.Sname)
 	if len(servers) == 0 {
 		log.Printf("fetch servers failed:%s", in.Sname)
-		return &discover.ServerReply{Head: &common.Head{Retcode: common.ErrCode_FETCH_SERVER}}, nil
+		return &discover.ServerReply{
+			Head: &common.Head{Retcode: common.ErrCode_FETCH_SERVER}}, nil
 	}
 	host := servers[util.Randn(int32(len(servers)))]
-	return &discover.ServerReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Host: host}, nil
+	return &discover.ServerReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Host: host}, nil
 }
 
 func main() {

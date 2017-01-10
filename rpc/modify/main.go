@@ -39,9 +39,11 @@ var db *sql.DB
 
 func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*common.CommReply, error) {
 	if in.Reject {
-		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?", in.Head.Uid, in.Id)
+		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?",
+			in.Head.Uid, in.Id)
 	} else {
-		query := "UPDATE news SET review = 1, rtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid))
+		query := "UPDATE news SET review = 1, rtime = NOW(), ruid = " +
+			strconv.Itoa(int(in.Head.Uid))
 		if in.Modify && in.Title != "" {
 			query += ", title = '" + in.Title + "' "
 		}
@@ -49,7 +51,8 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*commo
 		db.Exec(query)
 		if len(in.Tags) > 0 {
 			for i := 0; i < len(in.Tags); i++ {
-				db.Exec("INSERT INTO news_tags(nid, tid, ruid, ctime) VALUES (?, ?, ?, NOW())", in.Id, in.Tags[i], in.Head.Uid)
+				db.Exec("INSERT INTO news_tags(nid, tid, ruid, ctime) VALUES (?, ?, ?, NOW())",
+					in.Id, in.Tags[i], in.Head.Uid)
 			}
 		}
 	}
@@ -59,9 +62,11 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*commo
 
 func (s *server) ReviewVideo(ctx context.Context, in *modify.VideoRequest) (*common.CommReply, error) {
 	if in.Reject {
-		db.Exec("UPDATE youku_video SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE vid = ?", in.Head.Uid, in.Id)
+		db.Exec("UPDATE youku_video SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE vid = ?",
+			in.Head.Uid, in.Id)
 	} else {
-		query := "UPDATE youku_video SET review = 1, rtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid))
+		query := "UPDATE youku_video SET review = 1, rtime = NOW(), ruid = " +
+			strconv.Itoa(int(in.Head.Uid))
 		if in.Modify && in.Title != "" {
 			query += ", title = '" + in.Title + "' "
 		}
@@ -86,7 +91,8 @@ func (s *server) AddTemplate(ctx context.Context, in *modify.AddTempRequest) (*c
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func (s *server) AddWifi(ctx context.Context, in *modify.WifiRequest) (*common.CommReply, error) {
@@ -112,7 +118,9 @@ func (s *server) ModTemplate(ctx context.Context, in *modify.ModTempRequest) (*c
 	if in.Info.Online {
 		online = 1
 	}
-	query += " mtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid)) + ", online = " + strconv.Itoa(online) + " WHERE id = " + strconv.Itoa(int(in.Info.Id))
+	query += " mtime = NOW(), ruid = " + strconv.Itoa(int(in.Head.Uid)) +
+		", online = " + strconv.Itoa(online) + " WHERE id = " +
+		strconv.Itoa(int(in.Info.Id))
 	_, err := db.Exec(query)
 
 	if err != nil {
@@ -128,9 +136,11 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 	var res sql.Result
 	var err error
 	if in.Type != 4 {
-		res, err = db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid, in.Type, in.Id)
+		res, err = db.Exec("INSERT IGNORE INTO click_record(uid, type, id, ctime) VALUES(?, ?, ?, NOW())",
+			in.Head.Uid, in.Type, in.Id)
 	} else {
-		res, err = db.Exec("INSERT INTO service_click_record(uid, sid, ctime) VALUES(?, ?, NOW())", in.Head.Uid, in.Id)
+		res, err = db.Exec("INSERT INTO service_click_record(uid, sid, ctime) VALUES(?, ?, NOW())",
+			in.Head.Uid, in.Id)
 	}
 	if err != nil {
 		log.Printf("query failed:%v", err)
@@ -196,7 +206,8 @@ func (s *server) AddImage(ctx context.Context, in *modify.AddImageRequest) (*com
 		_, err := db.Exec("INSERT IGNORE INTO image(uid, name, ctime) VALUES(?, ?, NOW())",
 			in.Head.Uid, in.Fnames[i])
 		if err != nil {
-			log.Printf("insert into image failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Fnames[i], err)
+			log.Printf("insert into image failed uid:%d name:%s err:%v\n",
+				in.Head.Uid, in.Fnames[i], err)
 		}
 	}
 	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
@@ -213,17 +224,21 @@ func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*common
 
 func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
 	res, err := db.Exec("INSERT INTO banner(img, dst, priority, title, type, ctime, etime) VALUES(?, ?, ?, ?, ?, NOW(), ?)",
-		in.Info.Img, in.Info.Dst, in.Info.Priority, in.Info.Title, in.Info.Type, in.Info.Expire)
+		in.Info.Img, in.Info.Dst, in.Info.Priority, in.Info.Title, in.Info.Type,
+		in.Info.Expire)
 	if err != nil {
-		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
+		log.Printf("insert into banner failed img:%s dst:%s err:%v\n",
+			in.Info.Img, in.Info.Dst, err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("AddBanner get LastInsertId failed:%v\n", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
@@ -245,10 +260,13 @@ func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*comm
 	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Printf("insert into banner failed img:%s dst:%s err:%v\n", in.Info.Img, in.Info.Dst, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		log.Printf("insert into banner failed img:%s dst:%s err:%v\n",
+			in.Info.Img, in.Info.Dst, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify.AddTagReply, error) {
@@ -266,7 +284,8 @@ func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify
 		}
 		ids = append(ids, int32(id))
 	}
-	return &modify.AddTagReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Ids: ids}, nil
+	return &modify.AddTagReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Ids: ids}, nil
 }
 
 func genIDStr(ids []int64) string {
@@ -287,7 +306,8 @@ func (s *server) DelTags(ctx context.Context, in *modify.DelTagRequest) (*common
 	if err != nil {
 		log.Printf("DelTags failed:%v", err)
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func genConfStr(names []string) string {
@@ -308,22 +328,26 @@ func (s *server) DelConf(ctx context.Context, in *modify.DelConfRequest) (*commo
 	if err != nil {
 		log.Printf("DelTags failed:%v", err)
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
 	log.Printf("AddAddress uid:%d detail:%s", in.Head.Uid, in.Info.Detail)
 	res, err := db.Exec("INSERT INTO address(uid, consignee, phone, province, city, district, detail, zip, addr, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-		in.Head.Uid, in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
-		in.Info.Detail, in.Info.Zip, in.Info.Addr)
+		in.Head.Uid, in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City,
+		in.Info.Zone, in.Info.Detail, in.Info.Zip, in.Info.Addr)
 	if err != nil {
-		log.Printf("add address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		log.Printf("add address failed uid:%d detail:%s err:%v\n", in.Head.Uid,
+			in.Info.Detail, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add address failed")
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("add address get insert id failed:%v", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add address failed")
 	}
 	if in.Info.Def {
 		_, err = db.Exec("UPDATE user SET address = ? WHERE uid = ?", id, in.Head.Uid)
@@ -331,7 +355,8 @@ func (s *server) AddAddress(ctx context.Context, in *modify.AddressRequest) (*co
 			log.Printf("update user address failed, uid:%d aid:%d", in.Head.Uid, id)
 		}
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func (s *server) ModAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
@@ -340,10 +365,14 @@ func (s *server) ModAddress(ctx context.Context, in *modify.AddressRequest) (*co
 		in.Info.User, in.Info.Mobile, in.Info.Province, in.Info.City, in.Info.Zone,
 		in.Info.Detail, in.Info.Zip, in.Info.Addr, in.Head.Uid, in.Info.Aid)
 	if err != nil {
-		log.Printf("modify address failed uid:%d detail:%s err:%v\n", in.Head.Uid, in.Info.Detail, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		log.Printf("modify address failed uid:%d detail:%s err:%v\n", in.Head.Uid,
+			in.Info.Detail, err)
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add address failed")
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*common.CommReply, error) {
@@ -351,10 +380,14 @@ func (s *server) DelAddress(ctx context.Context, in *modify.AddressRequest) (*co
 	_, err := db.Exec("UPDATE address SET deleted = 1 WHERE uid = ? AND aid = ?",
 		in.Head.Uid, in.Info.Aid)
 	if err != nil {
-		log.Printf("del address failed uid:%d aid:%d err:%v\n", in.Head.Uid, in.Info.Aid, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add address failed")
+		log.Printf("del address failed uid:%d aid:%d err:%v\n", in.Head.Uid,
+			in.Info.Aid, err)
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add address failed")
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddConf(ctx context.Context, in *modify.ConfRequest) (*common.CommReply, error) {
@@ -362,28 +395,38 @@ func (s *server) AddConf(ctx context.Context, in *modify.ConfRequest) (*common.C
 	_, err := db.Exec("INSERT INTO kv_config(name, val, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE val = ?",
 		in.Info.Key, in.Info.Val, in.Info.Val)
 	if err != nil {
-		log.Printf("add config failed uid:%d name:%s err:%v\n", in.Head.Uid, in.Info.Key, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add conf failed")
+		log.Printf("add config failed uid:%d name:%s err:%v\n", in.Head.Uid,
+			in.Info.Key, err)
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add conf failed")
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddAdBan(ctx context.Context, in *modify.AddBanRequest) (*common.CommReply, error) {
-	log.Printf("AddAdBan uid:%d term:%s version", in.Head.Uid, in.Info.Term, in.Info.Version)
+	log.Printf("AddAdBan uid:%d term:%s version", in.Head.Uid, in.Info.Term,
+		in.Info.Version)
 	res, err := db.Exec("INSERT INTO ad_ban(term, version, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
 		in.Info.Term, in.Info.Version)
 	if err != nil {
 		log.Printf("add adban failed uid:%d term:%d version:%d err:%v\n",
 			in.Head.Uid, in.Info.Term, in.Info.Version, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add adban failed")
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add adban failed")
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("add adban get insert id failed uid:%d term:%d version:%d err:%v\n",
 			in.Head.Uid, in.Info.Term, in.Info.Version, err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("add adban failed")
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("add adban failed")
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func (s *server) DelAdBan(ctx context.Context, in *modify.DelBanRequest) (*common.CommReply, error) {
@@ -395,7 +438,8 @@ func (s *server) DelAdBan(ctx context.Context, in *modify.DelBanRequest) (*commo
 	if err != nil {
 		log.Printf("DelAdBan query failed:%v", err)
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddWhiteList(ctx context.Context, in *modify.WhiteRequest) (*common.CommReply, error) {
@@ -406,7 +450,8 @@ func (s *server) AddWhiteList(ctx context.Context, in *modify.WhiteRequest) (*co
 			continue
 		}
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) DelWhiteList(ctx context.Context, in *modify.WhiteRequest) (*common.CommReply, error) {
@@ -417,7 +462,8 @@ func (s *server) DelWhiteList(ctx context.Context, in *modify.WhiteRequest) (*co
 	if err != nil {
 		log.Printf("DelWhiteList query failed:%v", err)
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*common.CommReply, error) {
@@ -425,12 +471,13 @@ func (s *server) AddFeedback(ctx context.Context, in *modify.FeedRequest) (*comm
 	db.QueryRow("SELECT UNIX_TIMESTAMP(ctime) FROM feedback WHERE uid = ? ORDER BY id DESC LIMIT 1",
 		in.Head.Uid).Scan(&last)
 	if time.Now().Unix() > last+feedInterval {
-		db.Exec("INSERT INTO feedback(uid, content, contact, ctime) VALUES(?, ?, ?, NOW())", in.Head.Uid,
-			in.Content, in.Contact)
+		db.Exec("INSERT INTO feedback(uid, content, contact, ctime) VALUES(?, ?, ?, NOW())",
+			in.Head.Uid, in.Content, in.Contact)
 	} else {
 		log.Printf("frequency exceed limit uid:%d", in.Head.Uid)
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) WifiAccess(ctx context.Context, in *modify.AccessRequest) (*common.CommReply, error) {
@@ -439,21 +486,25 @@ func (s *server) WifiAccess(ctx context.Context, in *modify.AccessRequest) (*com
 		Scan(&phone, &pass)
 	if err != nil {
 		log.Printf("WifiAccess search user failed:%v", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	if !zte.Login(phone, pass, in.Info.Userip, in.Info.Usermac, in.Info.Acip, in.Info.Acname) {
 		log.Printf("WifiAccess zte Login failed, req:%v", in)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	refreshUserAp(db, in.Head.Uid, in.Info.Apmac)
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func recordPurchaseAttempt(db *sql.DB, uid, sid, num int64) {
 	_, err := db.Exec("INSERT INTO purchase_attempt_history(uid, sid, num, ctime) VALUES (?, ?, ?, NOW())",
 		uid, sid, num)
 	if err != nil {
-		log.Printf("recordPurchaseAttempt failed, uid:%d sid:%d num:%d", uid, sid, num)
+		log.Printf("recordPurchaseAttempt failed, uid:%d sid:%d num:%d", uid,
+			sid, num)
 	}
 }
 
@@ -461,12 +512,14 @@ func recordPurchase(db *sql.DB, uid, sid, num int64) int64 {
 	res, err := db.Exec("INSERT INTO purchase_history(uid, sid, num, ctime) VALUES(?, ?, ?, NOW())",
 		uid, sid, num)
 	if err != nil {
-		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid, sid, num)
+		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid,
+			sid, num)
 		return 0
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid, sid, num)
+		log.Printf("recordPurchase query failed, uid:%d sid:%d num:%d", uid,
+			sid, num)
 		return 0
 	}
 	return id
@@ -504,16 +557,19 @@ func (s *server) PurchaseSales(ctx context.Context, in *common.CommRequest) (*mo
 	recordPurchaseAttempt(db, in.Head.Uid, in.Id, int64(in.Num))
 	var phone string
 	var balance int64
-	err := db.QueryRow("SELECT phone, balance FROM user WHERE uid = ?", in.Head.Uid).
-		Scan(&phone, &balance)
+	err := db.QueryRow("SELECT phone, balance FROM user WHERE uid = ?",
+		in.Head.Uid).Scan(&phone, &balance)
 	if err != nil {
-		log.Printf("PusrchaseSales query user info failed uid:%d %v", in.Head.Uid, err)
-		return &modify.PurchaseReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		log.Printf("PusrchaseSales query user info failed uid:%d %v",
+			in.Head.Uid, err)
+		return &modify.PurchaseReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 	}
 	info.Phoneflag = phone == ""
 	if balance < 100 {
 		info.Nocoin = true
-		return &modify.PurchaseReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		return &modify.PurchaseReply{
+			Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 			Info: &info}, nil
 	}
 
@@ -572,31 +628,39 @@ func checkShare(db *sql.DB, uid, sid int64) bool {
 func (s *server) AddShare(ctx context.Context, in *modify.ShareRequest) (*common.CommReply, error) {
 	if !checkShare(db, in.Head.Uid, in.Bid) {
 		log.Printf("AddShare check failed uid:%d bid:%d", in.Head.Uid, in.Bid)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	gid := getSalesGid(db, in.Bid)
-	res, err := db.Exec("INSERT INTo share_history(sid, uid, gid, title, content, image_num, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())", in.Bid, in.Head.Uid, gid, in.Title, in.Text, len(in.Images))
+	res, err := db.Exec("INSERT INTo share_history(sid, uid, gid, title, content, image_num, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+		in.Bid, in.Head.Uid, gid, in.Title, in.Text, len(in.Images))
 	if err != nil {
 		log.Printf("AddShare insert failed uid:%d bid:%d", in.Head.Uid, in.Bid)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	hid, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("AddShare get last insert id failed uid:%d bid:%d", in.Head.Uid, in.Bid)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	for _, v := range in.Images {
-		_, err := db.Exec("INSERT INTO share_image(sid, hid, url, ctime) VALUES (?, ?, ?, NOW())", in.Bid, hid, v)
+		_, err := db.Exec("INSERT INTO share_image(sid, hid, url, ctime) VALUES (?, ?, ?, NOW())",
+			in.Bid, hid, v)
 		if err != nil {
 			log.Printf("AddShare insert image failed:%v", err)
 		}
 	}
 	_, err = db.Exec("UPDATE logistics SET share = 1 WHERE sid = ?", in.Bid)
 	if err != nil {
-		log.Printf("AddShare update share failed uid:%d bid:%d", in.Head.Uid, in.Bid)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		log.Printf("AddShare update share failed uid:%d bid:%d", in.Head.Uid,
+			in.Bid)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func checkAddress(db *sql.DB, uid, aid int64) bool {
@@ -615,7 +679,8 @@ func (s *server) SetWinStatus(ctx context.Context, in *modify.WinStatusRequest) 
 		Scan(&uid, &s1, &s2)
 	if err != nil {
 		log.Printf("SetWinStatus failed:%v", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 	}
 	if s2 > s1 {
 		status = s2
@@ -623,41 +688,55 @@ func (s *server) SetWinStatus(ctx context.Context, in *modify.WinStatusRequest) 
 		status = s1
 	}
 	if uid != in.Head.Uid || status+1 != in.Status {
-		log.Printf("SetWinStatus check failed uid:%d|%d status:%d|%d", in.Head.Uid, uid, in.Status, status)
-		return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("illegal param")
+		log.Printf("SetWinStatus check failed uid:%d|%d status:%d|%d",
+			in.Head.Uid, uid, in.Status, status)
+		return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			errors.New("illegal param")
 	}
 	if in.Status == util.AddressStatus && (in.Aid > 0 || in.Account != "") {
 		if in.Aid > 0 && !checkAddress(db, in.Head.Uid, in.Aid) {
-			log.Printf("SetWinStatus checkAddress failed uid:%d aid:%d", in.Head.Uid, in.Aid)
-			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, errors.New("illegal param")
+			log.Printf("SetWinStatus checkAddress failed uid:%d aid:%d",
+				in.Head.Uid, in.Aid)
+			return &common.CommReply{
+					Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+				errors.New("illegal param")
 		}
 		_, err := db.Exec("UPDATE sales SET status = 4 WHERE sid = ?", in.Bid)
 		if err != nil {
 			log.Printf("SetWinStatus failed:%v", err)
-			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+			return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 		}
-		_, err = db.Exec("INSERT INTO logistics(sid, status, uid, aid, account, ctime) VALUES (?, 4, ?, ?, ?, NOW())", in.Bid, in.Head.Uid, in.Aid)
+		_, err = db.Exec("INSERT INTO logistics(sid, status, uid, aid, account, ctime) VALUES (?, 4, ?, ?, ?, NOW())",
+			in.Bid, in.Head.Uid, in.Aid)
 		if err != nil {
 			log.Printf("SetWinStatus failed:%v", err)
-			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+			return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 		}
 	} else if in.Status == util.ReceiptStatus {
 		_, err := db.Exec("UPDATE logistics SET status = 6, rtime = NOW() WHERE sid = ?", in.Bid)
 		if err != nil {
 			log.Printf("SetWinStatus failed:%v", err)
-			return &common.CommReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
+			return &common.CommReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, err
 		}
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) DelZteAccount(ctx context.Context, in *modify.ZteRequest) (*common.CommReply, error) {
 	log.Printf("DelZteAccount uid:%d account:%s", in.Head.Uid, in.Phone)
 	if !zte.Remove(in.Phone) {
 		log.Printf("DelZteAccount failed, account:%s", in.Phone)
-		return &common.CommReply{Head: &common.Head{Retcode: common.ErrCode_ZTE_REMOVE, Uid: in.Head.Uid}}, nil
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_REMOVE,
+				Uid: in.Head.Uid}}, nil
 	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func main() {

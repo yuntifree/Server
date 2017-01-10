@@ -61,7 +61,8 @@ func queryNews(db *sql.DB, query string) []*hot.HotsInfo {
 	for rows.Next() {
 		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2], &info.Source, &info.Dst, &info.Ctime, &info.Stype)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &img[1], &img[2],
+			&info.Source, &info.Dst, &info.Ctime, &info.Stype)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			continue
@@ -83,7 +84,7 @@ func queryNews(db *sql.DB, query string) []*hot.HotsInfo {
 }
 
 func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype IN (0,1,2,3) "
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype IN (0,1,2,3) AND top = 0 "
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}
@@ -92,11 +93,18 @@ func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 }
 
 func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
-	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND stype = " + strconv.Itoa(int(newsType))
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND top = 0 AND stype = " +
+		strconv.Itoa(int(newsType))
 	if seq != 0 {
 		query += " AND id < " + strconv.Itoa(int(seq))
 	}
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	return queryNews(db, query)
+}
+
+func getTopNews(db *sql.DB, newsType int64) []*hot.HotsInfo {
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND top = 1 AND stype = " +
+		strconv.Itoa(int(newsType))
 	return queryNews(db, query)
 }
 
@@ -118,7 +126,8 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	for rows.Next() {
 		var img [3]string
 		var info hot.HotsInfo
-		err = rows.Scan(&info.Seq, &info.Title, &img[0], &info.Source, &info.Dst, &info.Ctime, &info.Play)
+		err = rows.Scan(&info.Seq, &info.Title, &img[0], &info.Source, &info.Dst,
+			&info.Ctime, &info.Play)
 		if err != nil {
 			log.Printf("scan rows failed: %v", err)
 			return infos
@@ -169,13 +178,26 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 	if in.Type == typeHotNews {
 		if util.CheckTermVersion(in.Head.Term, in.Head.Version) {
 			infos = getHotNews(db, in.Seq, util.MaxListSize)
+			if in.Seq == 0 {
+				max := getMaxNewsSeq(db)
+				tops := getTopNews(db, 0)
+				for i := 0; i < len(tops); i++ {
+					infos[i].Seq += max
+				}
+				infos = append(tops, infos...)
+			}
 		} else {
 			if in.Seq == 0 {
-				infos = getNews(db, in.Seq, util.MaxListSize/2, 10)
 				max := getMaxNewsSeq(db)
+				tops := getTopNews(db, 0)
+				for i := 0; i < len(tops); i++ {
+					infos[i].Seq += max
+				}
+				infos = getNews(db, in.Seq, util.MaxListSize/2, 10)
 				for i := 0; i < len(infos); i++ {
 					infos[i].Seq += max
 				}
+				infos = append(tops, infos...)
 			} else {
 				infos = getHotNews(db, in.Seq, util.MaxListSize)
 			}
@@ -193,7 +215,9 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		}
 		infos = getJokes(db, seq, util.MaxListSize)
 	}
-	return &hot.HotsReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid}, Infos: infos}, nil
+	return &hot.HotsReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
 }
 
 func getCategoryTitleIcon(category int) (string, string) {
@@ -258,12 +282,14 @@ func (s *server) GetServices(ctx context.Context, in *common.CommRequest) (*hot.
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &hot.ServiceReply{Head: &common.Head{Retcode: 0}, Services: categories}, nil
+	return &hot.ServiceReply{
+		Head: &common.Head{Retcode: 0}, Services: categories}, nil
 }
 
 func getWeather(db *sql.DB) (hot.WeatherInfo, error) {
 	var info hot.WeatherInfo
-	err := db.QueryRow("SELECT type, temp, info FROM weather ORDER BY wid DESC LIMIT 1").Scan(&info.Type, &info.Temp, &info.Info)
+	err := db.QueryRow("SELECT type, temp, info FROM weather ORDER BY wid DESC LIMIT 1").
+		Scan(&info.Type, &info.Temp, &info.Info)
 	if err != nil {
 		log.Printf("select weather failed:%v", err)
 		return info, err
@@ -298,7 +324,8 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 
 func getUseInfo(db *sql.DB, uid int64) (hot.UseInfo, error) {
 	var info hot.UseInfo
-	err := db.QueryRow("SELECT times, traffic FROM user WHERE uid = ?", uid).Scan(&info.Total, &info.Save)
+	err := db.QueryRow("SELECT times, traffic FROM user WHERE uid = ?", uid).
+		Scan(&info.Total, &info.Save)
 	if err != nil {
 		log.Printf("select use info failed:%v", err)
 		return info, err
@@ -349,7 +376,8 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	return &hot.FrontReply{Head: &common.Head{Retcode: 0}, User: &uinfo, Banner: binfos}, nil
+	return &hot.FrontReply{
+		Head: &common.Head{Retcode: 0}, User: &uinfo, Banner: binfos}, nil
 }
 
 func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
@@ -372,9 +400,9 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
 	for rows.Next() {
 		var info common.BidInfo
 		var award common.AwardInfo
-		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start,
-			&info.End, &info.Image, &info.Total, &award.Uid, &award.Awardcode,
-			&award.Nickname, &info.Status, &info.Subtitle)
+		err := rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title,
+			&info.Start, &info.End, &info.Image, &info.Total, &award.Uid,
+			&award.Awardcode, &award.Nickname, &info.Status, &info.Subtitle)
 		if err != nil {
 			log.Printf("getOpenedSales scan failed:%v", err)
 			continue
@@ -409,8 +437,9 @@ func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
 	for rows.Next() {
 		var info common.BidInfo
 		var end int64
-		err = rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title, &info.Start, &end,
-			&info.Image, &info.Total, &info.Status, &info.Subtitle)
+		err = rows.Scan(&info.Bid, &info.Gid, &info.Period, &info.Title,
+			&info.Start, &end, &info.Image, &info.Total, &info.Status,
+			&info.Subtitle)
 		if err != nil {
 			log.Printf("getOpening scan failed:%v", err)
 			continue
@@ -638,8 +667,8 @@ func getSalesDetail(db *sql.DB, sid, uid int64) (common.BidInfo, common.AwardInf
 	query += strconv.Itoa(int(sid))
 	var winuid, awardcode, rest int64
 	err := db.QueryRow(query).Scan(&bet.Bid, &bet.Period, &bet.Status, &bet.Gid,
-		&bet.Total, &bet.Remain, &bet.End, &bet.Title, &winuid, &awardcode, &bet.Image,
-		&bet.Subtitle, &rest)
+		&bet.Total, &bet.Remain, &bet.End, &bet.Title, &winuid, &awardcode,
+		&bet.Image, &bet.Subtitle, &rest)
 	if err != nil {
 		log.Printf("getSalesDetail scan failed:%v", err)
 		return bet, award
@@ -715,12 +744,14 @@ func (s *server) GetDetail(ctx context.Context, in *hot.DetailRequest) (*hot.Det
 		bid = getRunningGoodsSid(db, in.Gid)
 	}
 	if bid == 0 {
-		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			nil
 	}
 	bet, award := getSalesDetail(db, bid, in.Head.Uid)
 	if bet.Gid == 0 {
 		log.Printf("getSalesDetail failed, bid:%d uid:%d", bid, in.Head.Uid)
-		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		return &hot.DetailReply{Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}},
+			nil
 	}
 	var next hot.NextInfo
 	if bet.Status > 1 {
@@ -728,8 +759,9 @@ func (s *server) GetDetail(ctx context.Context, in *hot.DetailRequest) (*hot.Det
 	}
 	slides := getGoodsImages(db, bet.Gid)
 	join := getUserJoin(db, in.Head.Uid, in.Bid)
-	return &hot.DetailReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Bet: &bet, Award: &award, Next: &next, Slides: slides, Mine: &join}, nil
+	return &hot.DetailReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Bet:  &bet, Award: &award, Next: &next, Slides: slides, Mine: &join}, nil
 }
 
 func main() {
