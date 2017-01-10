@@ -66,7 +66,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	var req request
 	req.init(r.Body)
 	phone := req.GetParamString("phone")
-	ctype := req.GetParamInt("type")
+	ctype := req.GetParamIntDef("type", 0)
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getPhoneCode illegal phone:%s", phone)
@@ -1163,7 +1163,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	term := req.GetParamInt("term")
 	version := req.GetParamInt("version")
 	seq := req.GetParamInt("seq")
-	log.Printf("uid:%d ctype:%d seq:%d\n", uid, ctype, seq)
+	log.Printf("uid:%d ctype:%d seq:%d term:%d version:%d\n", uid, ctype, seq, term, version)
 	if seq == 0 {
 		flag := util.CheckTermVersion(term, version)
 		key := genSsdbKey(ctype, flag)

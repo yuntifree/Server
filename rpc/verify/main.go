@@ -467,27 +467,27 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 	return &verify.TicketReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Token: token, Ticket: ticket}, nil
 }
 
-func recordZteCode(db *sql.DB, phone, code string) {
-	_, err := db.Exec("INSERT INTO zte_code(phone, code, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
-		phone, code, code)
+func recordZteCode(db *sql.DB, phone, code string, stype uint) {
+	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
+		phone, code, stype, code)
 	if err != nil {
 		log.Printf("recordZteCode query failed:%s %s %v", phone, code, err)
 	}
 }
 
 func (s *server) GetCheckCode(ctx context.Context, in *verify.CodeRequest) (*common.CommReply, error) {
-	code, err := zte.Register(in.Phone, true)
+	code, err := zte.Register(in.Phone, true, zte.SshType)
 	if err != nil {
 		log.Printf("GetCheckCode Register failed:%v", err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	recordZteCode(db, in.Phone, code)
+	recordZteCode(db, in.Phone, code, zte.SshType)
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
 func checkZteCode(db *sql.DB, phone, code string) bool {
 	var eCode string
-	err := db.QueryRow("SELECT code FROM zte_code WHERE phone = ?", phone).Scan(&eCode)
+	err := db.QueryRow("SELECT code FROM zte_code WHERE type = 0 AND phone = ?", phone).Scan(&eCode)
 	if err != nil {
 		log.Printf("checkZteCode query failed:%s %s %v", phone, code, err)
 		return false
@@ -496,6 +496,33 @@ func checkZteCode(db *sql.DB, phone, code string) bool {
 		return true
 	}
 	return false
+}
+
+func getAcSys(db *sql.DB, acname string) uint {
+	var stype uint
+	err := db.QueryRow("SELECT type FROM ac_info WHERE name = ?", acname).
+		Scan(&stype)
+	if err != nil {
+		log.Printf("getAcSys query failed:%v", err)
+	}
+	return stype
+}
+
+func getUserBitmap(db *sql.DB, uid int64) uint {
+	var bitmap uint
+	err := db.QueryRow("SELECT bitmap FROM user WHERE uid = ?", uid).
+		Scan(&bitmap)
+	if err != nil {
+		log.Printf("getUserBitmap failed:%v", err)
+	}
+	return bitmap
+}
+
+func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
+	_, err := db.Exec("UPDATE user SET bitmap = bitmap | ? WHERE uid = ?", bitmap, uid)
+	if err != nil {
+		log.Printf("updateUserBitmap failed, uid:%d %v", uid, err)
+	}
 }
 
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
@@ -507,7 +534,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	log.Printf("PortalLogin info:%v", in.Info)
 	token := util.GenSalt()
 	privdata := util.GenSalt()
-	res, err := db.Exec("INSERT INTO user(username, phone, wifi_passwd, token, private, ctime, atime, etime) VALUES (?, ?, ?,?,?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE phone = ?, wifi_passwd = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
+	res, err := db.Exec("INSERT INTO user(username, phone, wifi_passwd, token, private, ctime, atime, etime, bitmap) VALUES (?, ?, ?,?,?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 1) ON DUPLICATE KEY UPDATE phone = ?, wifi_passwd = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
 		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata, in.Info.Phone, in.Info.Code,
 		token, privdata)
 	if err != nil {
@@ -520,11 +547,26 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("uid:%d\n", uid)
-	flag := zte.Login(in.Info.Phone, in.Info.Code, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
-		in.Info.Acname)
+	stype := getAcSys(db, in.Info.Acname)
+	bitmap := getUserBitmap(db, uid)
+	code := in.Info.Code
+	if bitmap&(1<<stype) == 0 {
+		code, err = zte.Register(in.Info.Phone, true, stype)
+		if err != nil {
+			log.Printf("PortalLogin zte register failed:%v", err)
+			return &verify.LoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
+		recordZteCode(db, in.Info.Phone, code, stype)
+		updateUserBitmap(db, uid, (1 << stype))
+	}
+	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte login failed, phone:%s code:%s", in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		log.Printf("PortalLogin zte login failed, phone:%s code:%s",
+			in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }

@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS user (
     times   int unsigned NOT NULL DEFAULT 0,
     duration int unsigned NOT NULL DEFAULT 0,
     traffic bigint unsigned NOT NULL DEFAULT 0,
+    -- 0x1:songshanhu  0x2: weijiju
+    bitmap  bigint unsinged NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     atime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
@@ -376,11 +378,13 @@ CREATE TABLE IF NOT EXISTS feedback
 CREATE TABLE IF NOT EXISTS zte_code 
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    tinyint unsigned NOT NULL,
     phone   varchar(16) NOT NULL,
     code    varchar(16) NOT NULL,
-    ctime   datetime NOT NULL DEFAULT '2016-01-01',
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    mtime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
-    UNIQUE KEY(phone)
+    UNIQUE KEY(type, phone)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS menu 

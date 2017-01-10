@@ -10,9 +10,14 @@ import (
 )
 
 const (
-	wsmpURL = "http://120.234.130.196:880/wsmp/interface"
-	vnoCode = "ROOT_VNO"
-	dgSsid  = "无线东莞DG-FREE"
+	sshWsmpURL = "http://120.234.130.196:880/wsmp/interface"
+	wjjWsmpURL = "http://120.234.130.194:880/wsmp/interface"
+	vnoCode    = "ROOT_VNO"
+	dgSsid     = "无线东莞DG-FREE"
+	//SshType 松山湖系统
+	SshType = iota
+	//WjjType 卫计局系统
+	WjjType
 )
 
 func genHead(action string) *simplejson.Json {
@@ -69,8 +74,18 @@ func genRegisterBody(phone string, smsFlag bool) (string, error) {
 	return genBodyStr("reg", body)
 }
 
-func getResponse(body string) (*simplejson.Json, error) {
-	resp, err := util.HTTPRequest(wsmpURL, body)
+func genWsmpURL(stype uint) string {
+	switch stype {
+	default:
+		return sshWsmpURL
+	case WjjType:
+		return wjjWsmpURL
+	}
+}
+
+func getResponse(body string, stype uint) (*simplejson.Json, error) {
+	url := genWsmpURL(stype)
+	resp, err := util.HTTPRequest(url, body)
 	if err != nil {
 		log.Printf("Register HTTPRequest failed:%v", err)
 		return nil, err
@@ -96,7 +111,7 @@ func getResponse(body string) (*simplejson.Json, error) {
 
 //Register return password for new user
 //smsFlag send sms or not
-func Register(phone string, smsFlag bool) (string, error) {
+func Register(phone string, smsFlag bool, stype uint) (string, error) {
 	body, err := genRegisterBody(phone, smsFlag)
 	if err != nil {
 		log.Printf("Register genRegisterBody failed:%v", err)
@@ -104,7 +119,7 @@ func Register(phone string, smsFlag bool) (string, error) {
 	}
 
 	log.Printf("Register request body:%s", body)
-	js, err := getResponse(body)
+	js, err := getResponse(body, stype)
 	if err != nil {
 		log.Printf("Register get response failed:%v", err)
 		return "", err
@@ -124,14 +139,14 @@ func genRemoveBody(phone string) (string, error) {
 }
 
 //Remove delete user
-func Remove(phone string) bool {
+func Remove(phone string, stype uint) bool {
 	body, err := genRemoveBody(phone)
 	if err != nil {
 		log.Printf("Remove genRemoveBody failed:%v", err)
 		return false
 	}
 
-	_, err = getResponse(body)
+	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Remove get response failed:%v", err)
 		return false
@@ -147,7 +162,7 @@ func genLoginBody(phone, pass, userip, usermac, acip, acname string) (string, er
 }
 
 //Login user login
-func Login(phone, pass, userip, usermac, acip, acname string) bool {
+func Login(phone, pass, userip, usermac, acip, acname string, stype uint) bool {
 	body, err := genLoginBody(phone, pass, userip, usermac, acip, acname)
 	if err != nil {
 		log.Printf("Login genLoginBody failed:%v", err)
@@ -155,7 +170,7 @@ func Login(phone, pass, userip, usermac, acip, acname string) bool {
 	}
 
 	log.Printf("Login request body:%s", body)
-	_, err = getResponse(body)
+	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Register getResponse failed:%v", err)
 		return false
@@ -171,14 +186,14 @@ func genLoginnopassBody(phone, userip, usermac, acip, acname string) (string, er
 }
 
 //Loginnopass user login without password
-func Loginnopass(phone, userip, usermac, acip, acname string) bool {
+func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 	body, err := genLoginnopassBody(phone, userip, usermac, acip, acname)
 	if err != nil {
 		log.Printf("Login genLoginBody failed:%v", err)
 		return false
 	}
 
-	_, err = getResponse(body)
+	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Register getResponse failed:%v", err)
 		return false
@@ -194,14 +209,14 @@ func genLogoutBody(phone, mac, userip, acip string) (string, error) {
 }
 
 //Logout user quit
-func Logout(phone, mac, userip, acip string) bool {
+func Logout(phone, mac, userip, acip string, stype uint) bool {
 	body, err := genLogoutBody(phone, mac, userip, acip)
 	if err != nil {
 		log.Printf("Logout genLoginBody failed:%v", err)
 		return false
 	}
 
-	_, err = getResponse(body)
+	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Logout getResponse failed:%v", err)
 		return false
