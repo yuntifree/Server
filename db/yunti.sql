@@ -457,3 +457,14 @@ CREATE TABLE IF NOT EXISTS notice
     etime   datetime NOT NULL,
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_mac
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    mac     varchar(32) NOT NULL,
+    phone   varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    etime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(mac)
+) ENGINE = InnoDB;

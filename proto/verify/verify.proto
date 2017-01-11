@@ -18,6 +18,8 @@ service Verify{
      rpc GetCheckCode(CodeRequest) returns (common.CommReply) {}
      rpc PortalLogin(PortalLoginRequest) returns (LoginReply) {}
      rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
+     rpc checkLogin(AccessRequest) returns (CheckReply) {}
+     rpc oneClickLogin(AccessRequest) returns (LoginReply) {}
 }
 
 message TokenRequest {
@@ -128,4 +130,9 @@ message AccessInfo {
 message AccessRequest {
     common.Head head = 1;
     AccessInfo info = 2;
+}
+
+message CheckReply {
+    common.Head head = 1;
+    int64 autologin = 2;
 }

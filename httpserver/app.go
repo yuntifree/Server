@@ -504,6 +504,26 @@ func checkUpdate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	usermac := req.GetParamString("wlanusermac")
+	log.Printf("checkLogin usermac:%s", usermac)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "CheckLogin",
+		&verify.AccessRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &verify.AccessInfo{Usermac: usermac}})
+	checkRPCErr(rpcerr, "FetchLatestVersion")
+	res := resp.Interface().(*verify.CheckReply)
+	checkRPCCode(res.Head.Retcode, "FetchLatestVersion")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1260,6 +1280,30 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	acname := req.GetParamString("wlanacname")
+	acip := req.GetParamString("wlanacip")
+	userip := req.GetParamString("wlanuserip")
+	usermac := req.GetParamString("wlanusermac")
+	log.Printf("oneClickLogin acname:%s acip:%s userip:%s usermac:%s",
+		acname, acip, userip, usermac)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.VerifyServerType, 0, "OneClickLogin",
+		&verify.AccessRequest{Head: &common.Head{Sid: uuid},
+			Info: &verify.AccessInfo{
+				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip}})
+	checkRPCErr(rpcerr, "OneClickLogin")
+	res := resp.Interface().(*verify.LoginReply)
+	checkRPCCode(res.Head.Retcode, "OneClickLogin")
+
+	body := genResponseBody(res, true)
+	w.Write(body)
+	return nil
+}
+
 func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1538,6 +1582,8 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_image_token", appHandler(getImageToken))
 	mux.Handle("/fetch_wifi", appHandler(fetchWifi))
 	mux.Handle("/check_update", appHandler(checkUpdate))
+	mux.Handle("/check_login", appHandler(checkLogin))
+	mux.Handle("/one_click_login", appHandler(oneClickLogin))
 	mux.Handle("/auto_login", appHandler(autoLogin))
 	mux.Handle("/portal_login", appHandler(portalLogin))
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))

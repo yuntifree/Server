@@ -511,6 +511,9 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 }
 
 func recordZteCode(db *sql.DB, phone, code string, stype uint) {
+	if code == "" {
+		return
+	}
 	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
 		phone, code, stype, code)
 	if err != nil {
@@ -569,6 +572,15 @@ func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
 	}
 }
 
+func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
+	_, err := db.Exec("INSERT INTO user_mac(mac, uid, phone, ctime, etime) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 4 HOUR)) ON DUPLICATE KEY UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 4 HOUR)",
+		mac, uid, phone, uid, phone)
+	if err != nil {
+		log.Printf("recordUserMac failed uid:%d mac:%s phone:%s err:%v",
+			uid, mac, phone, err)
+	}
+}
+
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code) {
 		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s",
@@ -604,25 +616,32 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte login failed, phone:%s code:%s",
+		log.Printf("PortalLogin zte loginnopass failed, phone:%s code:%s to retry",
 			in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{
-			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("retry PortalLogin zte loginnopass failed, phone:%s code:%s",
+				in.Info.Phone, in.Info.Code)
+			return &verify.LoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
 	}
+	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	return &verify.LoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }
 
 func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error {
-	if bitmap&(1<<stype) == 0 {
-		code, err := zte.Register(phone, true, stype)
-		if err != nil {
-			log.Printf("PortalLogin zte register failed:%v", err)
-			return err
-		}
-		recordZteCode(db, phone, code, stype)
-		updateUserBitmap(db, uid, (1 << stype))
+	//if bitmap&(1<<stype) == 0 {
+	code, err := zte.Register(phone, true, stype)
+	if err != nil {
+		log.Printf("PortalLogin zte register failed:%v", err)
+		return err
 	}
+	recordZteCode(db, phone, code, stype)
+	updateUserBitmap(db, uid, (1 << stype))
+	//}
 	return nil
 }
 
@@ -653,6 +672,64 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 	util.RefreshUserAp(db, in.Head.Uid, in.Info.Apmac)
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func checkLoginMac(db *sql.DB, mac string) int64 {
+	var num int64
+	err := db.QueryRow("SELECT COUNT(id) FROM user_mac WHERE etime > NOW() AND mac = ?", mac).
+		Scan(&num)
+	if err != nil {
+		log.Printf("checkLoginMac failed, mac:%s %v", err)
+	}
+	if num > 0 {
+		return 1
+	}
+	return 0
+}
+
+func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
+	ret := checkLoginMac(db, in.Info.Usermac)
+	log.Printf("CheckLogin ret:%d", ret)
+	return &verify.CheckReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
+}
+
+func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.LoginReply, error) {
+	var uid int64
+	var phone, token string
+	err := db.QueryRow("SELECT m.phone, u.uid, u.token FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
+		Scan(&phone, &uid, &token)
+	if err != nil {
+		log.Printf("OneClickLogin query failed:%v", err)
+		return &verify.LoginReply{
+			Head: &common.Head{
+				Retcode: common.ErrCode_ZTE_LOGIN, Uid: in.Head.Uid}}, nil
+	}
+
+	stype := getAcSys(db, in.Info.Acname)
+	bitmap := getUserBitmap(db, uid)
+	err = checkZteReg(db, bitmap, stype, uid, phone)
+	if err != nil {
+		return &verify.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	}
+	flag := zte.Loginnopass(phone, in.Info.Userip,
+		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+	if !flag {
+		log.Printf("OneClickLogin zte loginnopass failed, phone:%s to try",
+			phone)
+		flag := zte.Loginnopass(phone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("retry  OneClickLogin zte loginnopass failed, phone:%s ",
+				phone)
+			return &verify.LoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
+	}
+	recordUserMac(db, uid, in.Info.Usermac, phone)
+	return &verify.LoginReply{
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
 }
 
 func main() {

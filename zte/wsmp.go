@@ -89,23 +89,23 @@ func getResponse(body string, stype uint) (*simplejson.Json, error) {
 	url := genWsmpURL(stype)
 	resp, err := util.HTTPRequest(url, body)
 	if err != nil {
-		log.Printf("Register HTTPRequest failed:%v", err)
+		log.Printf("HTTPRequest failed:%v", err)
 		return nil, err
 	}
 	log.Printf("getResponse resp:%s", resp)
 	js, err := simplejson.NewJson([]byte(resp))
 	if err != nil {
-		log.Printf("Register parse response failed:%v", err)
+		log.Printf("parse response failed:%v", err)
 		return nil, err
 	}
 
 	ret, err := js.Get("head").Get("retflag").String()
 	if err != nil {
-		log.Printf("Register get retflag failed:%v", err)
+		log.Printf("get retflag failed:%v", err)
 		return nil, err
 	}
 	if ret != "0" {
-		log.Printf("Register zte op failed retcode:%s resp:%s", ret, resp)
+		log.Printf("zte op failed retcode:%s resp:%s", ret, resp)
 		return nil, errors.New("zte op failed")
 	}
 	return js, nil
@@ -125,6 +125,23 @@ func Register(phone string, smsFlag bool, stype uint) (string, error) {
 	if err != nil {
 		log.Printf("Register get response failed:%v", err)
 		return "", err
+	}
+
+	retflag, err := js.Get("head").Get("retflag").String()
+	if err != nil {
+		log.Printf("Register get retflag failed:%v", err)
+		return "", err
+	}
+
+	if retflag == "1" {
+		reason, err := js.Get("head").Get("reason").String()
+		if err != nil {
+			log.Printf("Register get reason failed:%v", err)
+			return "", err
+		}
+		if reason == "用户已经存在，请勿重复注册" {
+			return "", nil
+		}
 	}
 
 	pass, err := js.Get("body").Get("pwd").String()
@@ -198,7 +215,7 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 	log.Printf("Loginnopass reqbody:%s", body)
 	_, err = getResponse(body, stype)
 	if err != nil {
-		log.Printf("Register getResponse failed:%v", err)
+		log.Printf("Loginnopass getResponse failed:%v", err)
 		return false
 	}
 
