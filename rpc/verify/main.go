@@ -514,7 +514,7 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
 		phone, code, stype, code)
 	if err != nil {
-		log.Printf("recordZteCode query failed:%s %s %v", phone, code, err)
+		log.Printf("recordZteCode query failed:%s %s %d %v", phone, code, stype, err)
 	}
 }
 
@@ -524,6 +524,7 @@ func (s *server) GetCheckCode(ctx context.Context, in *verify.CodeRequest) (*com
 		log.Printf("GetCheckCode Register failed:%v", err)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	log.Printf("recordZteCode phone:%s code:%s type:%d", in.Phone, code, zte.SshType)
 	recordZteCode(db, in.Phone, code, zte.SshType)
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }

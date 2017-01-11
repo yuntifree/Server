@@ -14,6 +14,8 @@ const (
 	wjjWsmpURL = "http://120.234.130.194:880/wsmp/interface"
 	vnoCode    = "ROOT_VNO"
 	dgSsid     = "无线东莞DG-FREE"
+)
+const (
 	//SshType 松山湖系统
 	SshType = iota
 	//WjjType 卫计局系统
@@ -193,6 +195,7 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 		return false
 	}
 
+	log.Printf("Loginnopass reqbody:%s", body)
 	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Register getResponse failed:%v", err)
