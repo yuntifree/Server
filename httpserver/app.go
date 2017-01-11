@@ -678,6 +678,9 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{errInner, err.Error()}
 	}
 	var ids []string
+	if len(ssids) == 0 {
+		return &util.AppError{errInvalidParam, "illegal param:empty ssids"}
+	}
 	for i := 0; i < len(ssids); i++ {
 		ssid := ssids[i].(string)
 		ids = append(ids, ssid)
