@@ -154,9 +154,9 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	apmac := req.GetParamString("apmac")
 
 	uuid := util.GenUUID()
-	resp, rpcerr := callRPC(util.ModifyServerType, uid, "WifiAccess",
-		&modify.AccessRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &modify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname,
+	resp, rpcerr := callRPC(util.VerifyServerType, uid, "WifiAccess",
+		&verify.AccessRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &verify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname,
 				Acip: acip, Apmac: apmac}})
 	checkRPCErr(rpcerr, "WifiAccess")
 	res := resp.Interface().(*common.CommReply)
