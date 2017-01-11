@@ -182,7 +182,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 				max := getMaxNewsSeq(db)
 				tops := getTopNews(db, 0)
 				for i := 0; i < len(tops); i++ {
-					infos[i].Seq += max
+					tops[i].Seq += max
 				}
 				infos = append(tops, infos...)
 			}
@@ -191,7 +191,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 				max := getMaxNewsSeq(db)
 				tops := getTopNews(db, 0)
 				for i := 0; i < len(tops); i++ {
-					infos[i].Seq += max
+					tops[i].Seq += max
 				}
 				infos = getNews(db, in.Seq, util.MaxListSize/2, 10)
 				for i := 0; i < len(infos); i++ {
