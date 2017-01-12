@@ -28,6 +28,7 @@ import (
 const (
 	wxHost     = "http://wx.yunxingzh.com/"
 	maxZipcode = 820000
+	portalDst  = "http://120.76.236.185/dist/"
 )
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -1465,6 +1466,14 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func portal(w http.ResponseWriter, r *http.Request) {
+	pos := strings.Index(r.RequestURI, "?")
+	dst := portalDst + r.RequestURI[pos:]
+	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
+	log.Printf("portal dst:%s", dst)
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 func genNonce() string {
 	nonce := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	var res []byte
@@ -1599,6 +1608,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/pingpp_pay", appHandler(pingppPay))
 	mux.Handle("/services", appHandler(getService))
 	mux.HandleFunc("/jump", jump)
+	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
 	mux.HandleFunc("/pingpp_webhook", pingppWebhook)
