@@ -85,6 +85,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	var req request
 	req.init(r.Body)
 	phone := req.GetParamString("phone")
+	acname := req.GetParamString("wlanacname")
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getCheckCode illegal phone:%s", phone)
@@ -93,8 +94,8 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "GetCheckCode",
-		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
-			Phone: phone})
+		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
+			Info: &verify.PortalInfo{Phone: phone, Acname: acname}})
 	checkRPCErr(rpcerr, "GetPhoneCode")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "GetPhoneCode")
@@ -508,13 +509,14 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	var req request
 	req.init(r.Body)
 	usermac := req.GetParamString("wlanusermac")
+	acname := req.GetParamString("wlanacname")
 	log.Printf("checkLogin usermac:%s", usermac)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "CheckLogin",
 		&verify.AccessRequest{
 			Head: &common.Head{Sid: uuid},
-			Info: &verify.AccessInfo{Usermac: usermac}})
+			Info: &verify.AccessInfo{Usermac: usermac, Acname: acname}})
 	checkRPCErr(rpcerr, "FetchLatestVersion")
 	res := resp.Interface().(*verify.CheckReply)
 	checkRPCCode(res.Head.Retcode, "FetchLatestVersion")
