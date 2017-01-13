@@ -22,6 +22,8 @@ const (
 	WjjType
 )
 
+var errStatus = errors.New("zte op failed")
+
 func genHead(action string) *simplejson.Json {
 	js, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
@@ -106,7 +108,7 @@ func getResponse(body string, stype uint) (*simplejson.Json, error) {
 	}
 	if ret != "0" {
 		log.Printf("zte op failed retcode:%s resp:%s", ret, resp)
-		return nil, errors.New("zte op failed")
+		return js, errStatus
 	}
 	return js, nil
 }
@@ -124,24 +126,17 @@ func Register(phone string, smsFlag bool, stype uint) (string, error) {
 	js, err := getResponse(body, stype)
 	if err != nil {
 		log.Printf("Register get response failed:%v", err)
-		return "", err
-	}
-
-	retflag, err := js.Get("head").Get("retflag").String()
-	if err != nil {
-		log.Printf("Register get retflag failed:%v", err)
-		return "", err
-	}
-
-	if retflag == "1" {
-		reason, err := js.Get("head").Get("reason").String()
-		if err != nil {
-			log.Printf("Register get reason failed:%v", err)
-			return "", err
+		if err == errStatus {
+			reason, err := js.Get("head").Get("reason").String()
+			if err != nil {
+				log.Printf("Register get reason failed:%v", err)
+				return "", err
+			}
+			if reason == "用户已经存在，请勿重复注册" {
+				return "", nil
+			}
 		}
-		if reason == "用户已经存在，请勿重复注册" {
-			return "", nil
-		}
+		return "", err
 	}
 
 	pass, err := js.Get("body").Get("pwd").String()
@@ -213,9 +208,19 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 	}
 
 	log.Printf("Loginnopass reqbody:%s", body)
-	_, err = getResponse(body, stype)
+	js, err := getResponse(body, stype)
 	if err != nil {
 		log.Printf("Loginnopass getResponse failed:%v", err)
+		if err == errStatus {
+			reason, err := js.Get("head").Get("reason").String()
+			if err != nil {
+				log.Printf("Loginnopass get reason failed:%v", err)
+				return false
+			}
+			if reason == "无线接入控制失败或限制接入" {
+				return true
+			}
+		}
 		return false
 	}
 
