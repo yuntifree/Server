@@ -112,6 +112,7 @@ message PortalInfo {
     string usermac = 4;
     string phone = 5;
     string code = 6;
+    string apmac = 7;
 }
 
 message PortalLoginRequest {
@@ -119,17 +120,9 @@ message PortalLoginRequest {
     PortalInfo info = 2;
 }
 
-message AccessInfo {
-    string acname = 1;
-    string userip = 2;
-    string acip = 3;
-    string usermac = 4;
-    string apmac = 5;
-}
-
 message AccessRequest {
     common.Head head = 1;
-    AccessInfo info = 2;
+    PortalInfo info = 2;
 }
 
 message CheckReply {

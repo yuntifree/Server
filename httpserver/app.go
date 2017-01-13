@@ -158,7 +158,7 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, uid, "WifiAccess",
 		&verify.AccessRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &verify.AccessInfo{Userip: userip, Usermac: usermac, Acname: acname,
+			Info: &verify.PortalInfo{Userip: userip, Usermac: usermac, Acname: acname,
 				Acip: acip, Apmac: apmac}})
 	checkRPCErr(rpcerr, "WifiAccess")
 	res := resp.Interface().(*common.CommReply)
@@ -517,7 +517,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "CheckLogin",
 		&verify.AccessRequest{
 			Head: &common.Head{Sid: uuid},
-			Info: &verify.AccessInfo{Usermac: usermac, Acname: acname}})
+			Info: &verify.PortalInfo{Usermac: usermac, Acname: acname}})
 	checkRPCErr(rpcerr, "FetchLatestVersion")
 	res := resp.Interface().(*verify.CheckReply)
 	checkRPCCode(res.Head.Retcode, "FetchLatestVersion")
@@ -1296,7 +1296,7 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "OneClickLogin",
 		&verify.AccessRequest{Head: &common.Head{Sid: uuid},
-			Info: &verify.AccessInfo{
+			Info: &verify.PortalInfo{
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip}})
 	checkRPCErr(rpcerr, "OneClickLogin")
 	res := resp.Interface().(*verify.LoginReply)
