@@ -86,7 +86,8 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	var req request
 	req.init(r.Body)
 	phone := req.GetParamString("phone")
-	acname := req.GetParamString("wlanacname")
+	acname := req.GetParamStringDef("wlanacname", "")
+	term := req.GetParamInt("term")
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getCheckCode illegal phone:%s", phone)
@@ -95,7 +96,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "GetCheckCode",
-		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
+		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid, Term: term},
 			Info: &verify.PortalInfo{Phone: phone, Acname: acname}})
 	checkRPCErr(rpcerr, "GetPhoneCode")
 	res := resp.Interface().(*common.CommReply)

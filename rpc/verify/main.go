@@ -522,7 +522,10 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 }
 
 func (s *server) GetCheckCode(ctx context.Context, in *verify.PortalLoginRequest) (*common.CommReply, error) {
-	stype := getAcSys(db, in.Info.Acname)
+	var stype uint
+	if in.Head.Term == util.WebTerm {
+		stype = getAcSys(db, in.Info.Acname)
+	}
 	code, err := zte.Register(in.Info.Phone, true, stype)
 	if err != nil {
 		log.Printf("GetCheckCode Register failed:%v", err)

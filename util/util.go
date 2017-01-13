@@ -112,7 +112,7 @@ func IsIllegalPhone(phone string) bool {
 
 //CheckTermVersion check for hot news compatibility
 func CheckTermVersion(term, version int64) bool {
-	if (term == 0 && version < 6) || (term == 1 && version < 4) {
+	if (term == AndroidTerm && version < 6) || (term == IosTerm && version < 4) {
 		return false
 	}
 	return true

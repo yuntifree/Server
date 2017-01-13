@@ -36,4 +36,7 @@ const (
 	FetchServerType    = 4
 	ModifyServerType   = 5
 	PushServerType     = 6
+	AndroidTerm        = 0
+	IosTerm            = 1
+	WebTerm            = 2
 )
