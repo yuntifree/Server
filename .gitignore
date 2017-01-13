@@ -1,2 +1,4 @@
 *.sh
 /proto/*/*.go
+/tools/*.log
+/tools/*.csv

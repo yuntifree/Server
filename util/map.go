@@ -2,13 +2,18 @@ package util
 
 import (
 	"fmt"
+	"log"
 	"math"
+
+	simplejson "github.com/bitly/go-simplejson"
 )
 
 const (
 	earthRadius = 6378137
 	pi          = 3.14159265358979324
 	xPi         = 3.14159265358979324 * 3000.0 / 180.0
+	baseURL     = "http://api.map.baidu.com/geocoder/v2/"
+	baiduAk     = "RgVLjMfXqGxi56K69e4mxOIEdvvYT3vG"
 )
 
 //Point point
@@ -164,4 +169,65 @@ func Tx2Bd(p Point) (q Point) {
 	q.Longitude = z*math.Cos(theta) + 0.0065
 	q.Latitude = z*math.Sin(theta) + 0.006
 	return
+}
+
+//GeoDecode return address for position q
+func GeoDecode(q Point) string {
+	url := fmt.Sprintf("%s?output=json&location=%f,%f&ak=%s&pois=1",
+		baseURL, q.Latitude, q.Longitude, baiduAk)
+	resp, err := HTTPRequest(url, "")
+	if err != nil {
+		log.Printf("GeoDecode failed:%v", err)
+		return ""
+	}
+	js, err := simplejson.NewJson([]byte(resp))
+	if err != nil {
+		log.Printf("GeoDecode parse response failed:%v", err)
+		return ""
+	}
+	status, err := js.Get("status").Int()
+	if err != nil {
+		log.Printf("GeoDecode get status failed:%v", err)
+		return ""
+	}
+	if status != 0 {
+		log.Printf("GeoDecode failed, status=:%d", status)
+		return ""
+	}
+	address, err := js.Get("result").Get("formatted_address").String()
+	if err != nil {
+		log.Printf("GeoDecode get formatted_address failed:%v", err)
+		return ""
+	}
+	return address
+}
+
+//GeoEncode return baidu position for address
+func GeoEncode(address string) Point {
+	var p Point
+	url := fmt.Sprintf("%s?output=json&address=%s&ak=%s",
+		baseURL, address, baiduAk)
+	resp, err := HTTPRequest(url, "")
+	if err != nil {
+		log.Printf("GeoDecode failed:%v", err)
+		return p
+	}
+	log.Printf("response:%s", resp)
+	js, err := simplejson.NewJson([]byte(resp))
+	if err != nil {
+		log.Printf("GeoDecode parse response failed:%v", err)
+		return p
+	}
+	status, err := js.Get("status").Int()
+	if err != nil {
+		log.Printf("GeoDecode get status failed:%v", err)
+		return p
+	}
+	if status != 0 {
+		log.Printf("GeoDecode failed, status=:%d", status)
+		return p
+	}
+	p.Longitude, err = js.Get("result").Get("location").Get("lng").Float64()
+	p.Latitude, err = js.Get("result").Get("location").Get("lat").Float64()
+	return p
 }
