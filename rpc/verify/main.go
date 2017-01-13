@@ -594,11 +594,17 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 
 	}
 	log.Printf("PortalLogin info:%v", in.Info)
-	token := util.GenSalt()
-	privdata := util.GenSalt()
-	res, err := db.Exec("INSERT INTO user(username, phone, wifi_passwd, token, private, ctime, atime, etime, bitmap) VALUES (?, ?, ?,?,?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), ?) ON DUPLICATE KEY UPDATE phone = ?, wifi_passwd = ?, token = ?, private = ?, atime = NOW(), etime = DATE_ADD(NOW(), INTERVAL 30 DAY), bitmap = bitmap | ?",
-		in.Info.Phone, in.Info.Phone, in.Info.Code, token, privdata,
-		(1 << stype), in.Info.Phone, in.Info.Code, token, privdata,
+	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+	if !flag {
+		log.Printf("PortalLogin zte loginnopass failed, phone:%s code:%s",
+			in.Info.Phone, in.Info.Code)
+		return &verify.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	}
+
+	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap) VALUES (?, ?, NOW(), NOW(), ?) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?",
+		in.Info.Phone, in.Info.Phone, (1 << stype), in.Info.Phone,
 		(1 << stype))
 	if err != nil {
 		log.Printf("PortalLogin insert user failed, phone:%s code:%s %v",
@@ -611,13 +617,10 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("uid:%d\n", uid)
-	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
-		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-	if !flag {
-		log.Printf("PortalLogin zte loginnopass failed, phone:%s code:%s",
-			in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{
-			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	token, _, _, err := refreshTokenPrivdata(db, uid)
+	if err != nil {
+		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
+		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	return &verify.LoginReply{
