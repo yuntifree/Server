@@ -51,6 +51,7 @@ message LoginReply {
     int32 expire = 4;
     string wifipass = 5;
     string expiretime = 6;
+    string portaldir = 7;
 }
 
 message VerifyReply {

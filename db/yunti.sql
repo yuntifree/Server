@@ -472,6 +472,8 @@ CREATE TABLE IF NOT EXISTS user_mac
 CREATE TABLE IF NOT EXISTS portal_page
 (
     id      bigint unsigned NOT NULL,
+    -- 0:login 1:portal
+    type    tinyint unsigned NOT NULL DEFAULT 0,
     dir     varchar(64) NOT NULL,
     description varchar(512) NOT NULL,
     online  tinyint unsigned NOT NULL DEFAULT 0,

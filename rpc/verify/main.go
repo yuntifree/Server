@@ -24,6 +24,7 @@ const (
 	expiretime = 3600 * 24 * 30
 	mastercode = 251653
 	randrange  = 1000000
+	portalDir  = "http://api.yunxingzh.com/portalpage/"
 )
 
 type server struct{}
@@ -627,8 +628,20 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
+	dir := getPortalDir(db)
 	return &verify.LoginReply{
-		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir}, nil
+}
+
+func getPortalDir(db *sql.DB) string {
+	dir, err := util.GetPortalDir(db, util.PortalType)
+	if err != nil {
+		log.Printf("Register GetPortalDir portal failed type:%v", err)
+		dir = portalDir + "20170117/"
+	} else {
+		dir = portalDir + dir
+	}
+	return dir
 }
 
 func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error {
@@ -730,8 +743,9 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
+	dir := getPortalDir(db)
 	return &verify.LoginReply{
-		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token}, nil
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir}, nil
 }
 
 func main() {

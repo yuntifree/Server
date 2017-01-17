@@ -228,3 +228,10 @@ func RefreshUserAp(db *sql.DB, uid int64, apmac string) {
 	}
 	return
 }
+
+//GetPortalDir return portal dir
+func GetPortalDir(db *sql.DB, ptype int64) (string, error) {
+	var dir string
+	err := db.QueryRow("SELECT dir FROM portal_page WHERE type = ? AND online = 1 ORDER BY id DESC LIMIT 1", ptype).Scan(&dir)
+	return dir, err
+}

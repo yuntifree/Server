@@ -39,4 +39,6 @@ const (
 	AndroidTerm        = 0
 	IosTerm            = 1
 	WebTerm            = 2
+	LoginType          = 0
+	PortalType         = 1
 )
