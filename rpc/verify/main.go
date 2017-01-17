@@ -24,7 +24,7 @@ const (
 	expiretime = 3600 * 24 * 30
 	mastercode = 251653
 	randrange  = 1000000
-	portalDir  = "http://api.yunxingzh.com/portalpage/"
+	portalDir  = "http://120.76.236.185/"
 )
 
 type server struct{}

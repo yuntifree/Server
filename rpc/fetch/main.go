@@ -1503,6 +1503,7 @@ func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetc
 				Retcode: common.ErrCode_NOT_EXIST, Uid: in.Head.Uid,
 				Sid: in.Head.Sid}}, nil
 	}
+	log.Printf("FetchPortal dir:%s", dir)
 	return &fetch.PortalReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Dir:  dir}, nil
