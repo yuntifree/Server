@@ -1492,6 +1492,28 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 		Version: vname, Downurl: downurl}, nil
 }
 
+func getPortalDir(db *sql.DB) (string, error) {
+	var dir string
+	err := db.QueryRow("SELECT dir FROM portal_page WHERE online = 1 ORDER BY id DESC LIMIT 1").Scan(&dir)
+	return dir, err
+}
+
+func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetch.PortalReply, error) {
+	log.Printf("FetchPortal request uid:%d sid:%s",
+		in.Head.Uid, in.Head.Sid)
+	dir, err := getPortalDir(db)
+	if err != nil {
+		log.Printf("getPortalDir failed:%v", err)
+		return &fetch.PortalReply{
+			Head: &common.Head{
+				Retcode: common.ErrCode_NOT_EXIST, Uid: in.Head.Uid,
+				Sid: in.Head.Sid}}, nil
+	}
+	return &fetch.PortalReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Dir:  dir}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

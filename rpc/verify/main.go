@@ -237,10 +237,11 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
+	log.Printf("Register request:%v", in)
 	if in.Code != "" && !checkZteCode(db, in.Username, in.Code, zte.SshType) {
 		log.Printf("Register check code failed, name:%s code:%s",
 			in.Username, in.Code)
-		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, nil
+		return &verify.RegisterReply{Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
 	}
 	token := util.GenSalt()
 	privdata := util.GenSalt()

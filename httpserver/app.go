@@ -28,8 +28,18 @@ import (
 const (
 	wxHost     = "http://wx.yunxingzh.com/"
 	maxZipcode = 820000
-	portalDst  = "http://120.76.236.185/dist/"
+	portalDst  = "http://120.76.236.185/"
 )
+
+type portalDir struct {
+	Dir    string
+	Expire int64
+}
+
+var pdir = portalDir{
+	Dir:    "dist/",
+	Expire: time.Now().Unix() + 60,
+}
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
@@ -1361,13 +1371,16 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	version := req.GetParamInt("version")
 	term := req.GetParamInt("term")
 	regip := extractIP(r.RemoteAddr)
+	code := req.GetParamStringDef("code", "")
 	log.Printf("register request username:%s password:%s udid:%s model:%s channel:%s version:%d term:%d",
 		username, password, udid, model, channel, version, term)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "Register",
-		&verify.RegisterRequest{Head: &common.Head{Sid: uuid}, Username: username, Password: password,
-			Client: &verify.ClientInfo{Udid: udid, Model: model, Channel: channel, Regip: regip,
+		&verify.RegisterRequest{Head: &common.Head{Sid: uuid},
+			Username: username, Password: password, Code: code,
+			Client: &verify.ClientInfo{Udid: udid, Model: model,
+				Channel: channel, Regip: regip,
 				Version: int32(version), Term: int32(term)}})
 	checkRPCErr(rpcerr, "Register")
 	res := resp.Interface().(*verify.RegisterReply)
@@ -1467,9 +1480,34 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func getPortalDir() string {
+	if pdir.Expire > time.Now().Unix() {
+		return pdir.Dir
+	}
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, 0, "FetchPortal",
+		&common.CommRequest{Head: &common.Head{Sid: uuid}})
+	if rpcerr.Interface() != nil {
+		return pdir.Dir
+	}
+	res := resp.Interface().(*fetch.PortalReply)
+	if res.Head.Retcode != 0 {
+		return pdir.Dir
+	}
+	pdir.Expire = time.Now().Unix() + 60
+	pdir.Dir = res.Dir
+	log.Printf("update pdir dir:%s expire:%d", pdir.Dir, pdir.Expire)
+	return res.Dir
+}
+
 func portal(w http.ResponseWriter, r *http.Request) {
 	pos := strings.Index(r.RequestURI, "?")
-	dst := portalDst + r.RequestURI[pos:]
+	var postfix string
+	if pos != -1 {
+		postfix = r.RequestURI[pos:]
+	}
+	dir := getPortalDir()
+	dst := portalDst + dir + postfix
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)

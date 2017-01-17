@@ -35,6 +35,7 @@ service Fetch{
     rpc FetchFeedback(common.CommRequest) returns (FeedbackReply) {}
     rpc FetchMenu(common.CommRequest) returns (MenuReply) {}
     rpc FetchLatestVersion(VersionRequest) returns (VersionReply) {}
+    rpc FetchPortal(common.CommRequest) returns (PortalReply) {}
 }
 
 message NewsInfo {
@@ -399,4 +400,9 @@ message VersionReply {
     common.Head head = 1;
     string version = 2;
     string downurl = 3;
+}
+
+message PortalReply {
+    common.Head head = 1;
+    string dir = 2;
 }

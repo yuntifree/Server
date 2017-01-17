@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS user (
     duration int unsigned NOT NULL DEFAULT 0,
     traffic bigint unsigned NOT NULL DEFAULT 0,
     -- 0x1:songshanhu  0x2: weijiju
-    bitmap  bigint unsinged NOT NULL DEFAULT 0,
+    bitmap  bigint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     atime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
     etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
@@ -467,4 +467,14 @@ CREATE TABLE IF NOT EXISTS user_mac
     etime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(mac)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS portal_page
+(
+    id      bigint unsigned NOT NULL,
+    dir     varchar(64) NOT NULL,
+    description varchar(512) NOT NULL,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
 ) ENGINE = InnoDB;
