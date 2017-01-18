@@ -568,3 +568,24 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 	}
 	return arr[0], arr[1]
 }
+
+func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
+	var req request
+	if back {
+		req.initCheckOss(r.Body)
+	} else {
+		req.initCheckApp(r.Body)
+	}
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchConf",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "FetchConf")
+	res := resp.Interface().(*fetch.ConfReply)
+	checkRPCCode(res.Head.Retcode, "FetchConf")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}

@@ -1589,6 +1589,10 @@ func pingppWebhook(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func getAppConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	return getConf(w, r, false)
+}
+
 //NewAppServer return app http handler
 func NewAppServer() http.Handler {
 	mux := http.NewServeMux()
@@ -1624,6 +1628,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_share_uid", appHandler(getShare))
 	mux.Handle("/get_share_detail", appHandler(getShareDetail))
 	mux.Handle("/get_detail", appHandler(getDetail))
+	mux.Handle("/get_conf", appHandler(getAppConf))
 	mux.Handle("/get_detail_gid", appHandler(getDetail))
 	mux.Handle("/add_address", appHandler(addAddress))
 	mux.Handle("/feedback", appHandler(addFeedback))

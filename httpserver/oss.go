@@ -230,21 +230,8 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
-func getConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r.Body)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchConf",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCErr(rpcerr, "FetchConf")
-	res := resp.Interface().(*fetch.ConfReply)
-	checkRPCCode(res.Head.Retcode, "FetchConf")
-
-	body := genResponseBody(res, false)
-	w.Write(body)
-	return nil
+func getOssConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	return getConf(w, r, true)
 }
 
 func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -736,7 +723,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_ap_stat", appHandler(getApStat))
 	mux.Handle("/get_users", appHandler(getUsers))
 	mux.Handle("/get_templates", appHandler(getTemplates))
-	mux.Handle("/get_conf", appHandler(getConf))
+	mux.Handle("/get_conf", appHandler(getOssConf))
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))
