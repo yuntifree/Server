@@ -113,3 +113,12 @@ message AdBan {
     int64 version = 3;
 }
 
+message PortalDirInfo {
+    int64 id = 1;
+    string dir = 2;
+    string description = 3;
+    int64 online = 4;
+    string ctime = 5;
+    int64 type = 6;
+}
+

@@ -702,6 +702,25 @@ func (s *server) DelZteAccount(ctx context.Context, in *modify.ZteRequest) (*com
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) AddPortalDir(ctx context.Context, in *modify.PortalDirRequest) (*common.CommReply, error) {
+	log.Printf("AddPortalDir info:%v", in.Info)
+	res, err := db.Exec("INSERT INTO portal_page(type, dir, description, ctime) VALUES (?,?,?, NOW())", in.Info.Type, in.Info.Dir, in.Info.Description)
+	if err != nil {
+		log.Printf("AddPortalDir query failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("AddPortalDir get id failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

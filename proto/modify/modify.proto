@@ -32,6 +32,7 @@ service Modify{
     rpc AddShare(ShareRequest) returns (common.CommReply) {}
     rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
     rpc DelZteAccount(ZteRequest) returns (common.CommReply) {}
+    rpc AddPortalDir(PortalDirRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -191,4 +192,9 @@ message PurchaseReply {
 message ZteRequest {
     common.Head head = 1;
     string phone = 2;
+}
+
+message PortalDirRequest {
+    common.Head head = 1;
+    common.PortalDirInfo info = 2;
 }
