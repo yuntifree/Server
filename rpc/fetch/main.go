@@ -1509,6 +1509,46 @@ func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetc
 		Dir:  dir}, nil
 }
 
+func getTotalPortalDir(db *sql.DB, ptype int64) int64 {
+	var num int64
+	err := db.QueryRow("SELECT COUNT(id) FROM portal_page WHERE type = ?", ptype).Scan(&num)
+	if err != nil {
+		log.Printf("getTotalPortalDir failed:%v", err)
+	}
+	return num
+}
+
+func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*fetch.PortalDirInfo {
+	var infos []*fetch.PortalDirInfo
+	rows, err := db.Query("SELECT id, type, dir, description, online, ctime FROM portal_page WHERE type = ? ORDER BY id DESC LIMIT ?,?", ptype, seq, num)
+	if err != nil {
+		log.Printf("getPortalDirInfos query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.PortalDirInfo
+		err := rows.Scan(&info.Id, &info.Type, &info.Dir, &info.Description,
+			&info.Online, &info.Ctime)
+		if err != nil {
+			log.Printf("getPortalDirInfos scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchPortalDir(ctx context.Context, in *common.CommRequest) (*fetch.PortalDirReply, error) {
+	log.Printf("FetchPortalDir seq:%d num:%d type:%d uid:%d",
+		in.Seq, in.Num, in.Type, in.Head.Uid)
+	infos := getPortalDirInfos(db, in.Seq, int64(in.Num), int64(in.Type))
+	total := getTotalPortalDir(db, int64(in.Type))
+	return &fetch.PortalDirReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

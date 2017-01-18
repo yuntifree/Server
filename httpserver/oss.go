@@ -675,6 +675,28 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getPortalDirList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	ptype := req.GetParamIntDef("type", 0)
+	num = genReqNum(num)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchPortalDir",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: int32(num), Type: int32(ptype)})
+	checkRPCErr(rpcerr, "FetchPortalDir")
+	res := resp.Interface().(*fetch.PortalDirReply)
+	checkRPCCode(res.Head.Retcode, "FetchPortalDir")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -746,6 +768,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_videos", appHandler(getVideos))
 	mux.Handle("/get_banners", appHandler(getBanners))
 	mux.Handle("/get_feedback", appHandler(getFeedback))
+	mux.Handle("/get_portal_dir", appHandler(getPortalDirList))
 	mux.Handle("/get_oss_image_policy", appHandler(getOssImagePolicy))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	return mux

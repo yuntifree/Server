@@ -36,6 +36,7 @@ service Fetch{
     rpc FetchMenu(common.CommRequest) returns (MenuReply) {}
     rpc FetchLatestVersion(VersionRequest) returns (VersionReply) {}
     rpc FetchPortal(common.CommRequest) returns (PortalReply) {}
+    rpc FetchPortalDir(common.CommRequest) returns (PortalDirReply) {}
 }
 
 message NewsInfo {
@@ -405,4 +406,19 @@ message VersionReply {
 message PortalReply {
     common.Head head = 1;
     string dir = 2;
+}
+
+message PortalDirInfo {
+    int64 id = 1;
+    string dir = 2;
+    string description = 3;
+    int64 online = 4;
+    string ctime = 5;
+    int64 type = 6;
+}
+
+message PortalDirReply {
+    common.Head head = 1;
+    repeated PortalDirInfo infos = 2;
+    int64 total = 3;
 }
