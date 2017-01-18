@@ -444,6 +444,25 @@ func addPortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func onlinePortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "OnlinePortalDir",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Id:   id})
+	checkRPCErr(rpcerr, "OnlinePortalDir")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "OnlinePortalDir")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -774,6 +793,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_white_list", appHandler(getWhiteList))
 	mux.Handle("/add_white_list", appHandler(addWhiteList))
 	mux.Handle("/add_portal_dir", appHandler(addPortalDir))
+	mux.Handle("/online_portal_dir", appHandler(onlinePortalDir))
 	mux.Handle("/del_white_list", appHandler(delWhiteList))
 	mux.Handle("/add_template", appHandler(addTemplate))
 	mux.Handle("/add_banner", appHandler(addBanner))

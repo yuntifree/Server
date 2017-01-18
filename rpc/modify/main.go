@@ -721,6 +721,36 @@ func (s *server) AddPortalDir(ctx context.Context, in *modify.PortalDirRequest) 
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
+func getPortalDirType(db *sql.DB, id int64) int64 {
+	var ptype int64
+	err := db.QueryRow("SELECT type FROM portal_page WHERE id = ?", id).Scan(&ptype)
+	if err != nil {
+		log.Printf("getPortalDirType query failed:%v", err)
+	}
+	return ptype
+}
+
+func (s *server) OnlinePortalDir(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+	log.Printf("AddPortalDir info:%v", in)
+	ptype := getPortalDirType(db, in.Id)
+	_, err := db.Exec("UPDATE portal_page SET online = 1 WHERE id = ?", in.Id)
+	if err != nil {
+		log.Printf("OnlinePortalDir query update failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+
+	}
+	_, err = db.Exec("UPDATE portal_page SET online = 0 WHERE id != ? AND type = ?",
+		in.Id, ptype)
+	if err != nil {
+		log.Printf("OnlinePortalDir drop failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ModifyServerPort)
 	if err != nil {

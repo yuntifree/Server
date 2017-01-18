@@ -33,6 +33,7 @@ service Modify{
     rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
     rpc DelZteAccount(ZteRequest) returns (common.CommReply) {}
     rpc AddPortalDir(PortalDirRequest) returns (common.CommReply) {}
+    rpc OnlinePortalDir(common.CommRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
