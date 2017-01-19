@@ -34,6 +34,8 @@ service Modify{
     rpc DelZteAccount(ZteRequest) returns (common.CommReply) {}
     rpc AddPortalDir(PortalDirRequest) returns (common.CommReply) {}
     rpc OnlinePortalDir(common.CommRequest) returns (common.CommReply) {}
+    rpc AddChannelVersion(ChannelVersionRequest) returns (common.CommReply) {}
+    rpc ModChannelVersion(ChannelVersionRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -198,4 +200,9 @@ message ZteRequest {
 message PortalDirRequest {
     common.Head head = 1;
     common.PortalDirInfo info = 2;
+}
+
+message ChannelVersionRequest {
+    common.Head head = 1;
+    common.ChannelVersionInfo info = 2;
 }

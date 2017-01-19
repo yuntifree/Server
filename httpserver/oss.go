@@ -787,6 +787,55 @@ func getChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	return nil
 }
 
+func addChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	channel := req.GetParamString("channel")
+	cname := req.GetParamString("cname")
+	vname := req.GetParamString("vname")
+	version := req.GetParamInt("version")
+	downurl := req.GetParamString("downurl")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddChannelVersion",
+		&modify.ChannelVersionRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.ChannelVersionInfo{Channel: channel, Cname: cname,
+				Version: version, Vname: vname, Downurl: downurl}})
+	checkRPCErr(rpcerr, "AddChannelVersion")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddChannelVersion")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func modChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	channel := req.GetParamStringDef("channel", "")
+	cname := req.GetParamStringDef("cname", "")
+	vname := req.GetParamStringDef("vname", "")
+	version := req.GetParamInt("version")
+	downurl := req.GetParamStringDef("downurl", "")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ModChannelVersion",
+		&modify.ChannelVersionRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &common.ChannelVersionInfo{Id: id, Channel: channel, Cname: cname,
+				Version: version, Vname: vname, Downurl: downurl}})
+	checkRPCErr(rpcerr, "ModChannelVersion")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ModChannelVersion")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body)
@@ -862,6 +911,8 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_feedback", appHandler(getFeedback))
 	mux.Handle("/get_portal_dir", appHandler(getPortalDirList))
 	mux.Handle("/get_channel_version", appHandler(getChannelVersion))
+	mux.Handle("/add_channel_version", appHandler(addChannelVersion))
+	mux.Handle("/mod_channel_version", appHandler(modChannelVersion))
 	mux.Handle("/get_oss_image_policy", appHandler(getOssImagePolicy))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
 	return mux
