@@ -111,11 +111,11 @@ func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*ver
 }
 
 func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
-	var uid int64
+	var uid, role int64
 	var epass string
 	var salt string
-	err := db.QueryRow("SELECT uid, password, salt FROM back_login WHERE username = ?",
-		in.Username).Scan(&uid, &epass, &salt)
+	err := db.QueryRow("SELECT uid, password, salt, role FROM back_login WHERE username = ?",
+		in.Username).Scan(&uid, &epass, &salt, &role)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
@@ -132,7 +132,7 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token}, nil
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Role: role}, nil
 }
 
 func recordWxOpenid(db *sql.DB, uid int64, wtype int32, openid string) {
