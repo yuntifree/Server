@@ -122,3 +122,11 @@ message PortalDirInfo {
     int64 type = 6;
 }
 
+message ChannelVersionInfo {
+    int64 id = 1;
+    string channel = 2;
+    string vname = 3;
+    int64 version = 4;
+    string downurl = 5;
+    string cname = 6;
+}

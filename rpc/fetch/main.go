@@ -1548,6 +1548,47 @@ func (s *server) FetchPortalDir(ctx context.Context, in *common.CommRequest) (*f
 		Infos: infos, Total: total}, nil
 }
 
+func getTotalChannelVersion(db *sql.DB) int64 {
+	var total int64
+	err := db.QueryRow("SELECT COUNT(id) FROM app_channel").Scan(&total)
+	if err != nil {
+		log.Printf("getTotalChannelVersion failed:%v", err)
+	}
+	return total
+}
+
+func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo {
+	var infos []*common.ChannelVersionInfo
+	rows, err := db.Query("SELECT id, channel, cname, version, vname, downurl FROM app_channel ORDER BY id LIMIT ?, ?",
+		seq, num)
+	if err != nil {
+		log.Printf("getChannelVersion failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info common.ChannelVersionInfo
+		err := rows.Scan(&info.Id, &info.Channel, &info.Cname, &info.Version, &info.Vname, &info.Downurl)
+		if err != nil {
+			log.Printf("getChannelVersion scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchChannelVersion(ctx context.Context, in *common.CommRequest) (*fetch.ChannelVersionReply, error) {
+	log.Printf("FetchChannelVersion seq:%d num:%d uid:%d",
+		in.Seq, in.Num, in.Head.Uid)
+	infos := getChannelVersion(db, in.Seq, int64(in.Num))
+	total := getTotalChannelVersion(db)
+	return &fetch.ChannelVersionReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

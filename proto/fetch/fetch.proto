@@ -37,6 +37,7 @@ service Fetch{
     rpc FetchLatestVersion(VersionRequest) returns (VersionReply) {}
     rpc FetchPortal(common.CommRequest) returns (PortalReply) {}
     rpc FetchPortalDir(common.CommRequest) returns (PortalDirReply) {}
+    rpc FetchChannelVersion(common.CommRequest) returns (ChannelVersionReply) {}
 }
 
 message NewsInfo {
@@ -411,5 +412,11 @@ message PortalReply {
 message PortalDirReply {
     common.Head head = 1;
     repeated common.PortalDirInfo infos = 2;
+    int64 total = 3;
+}
+
+message ChannelVersionReply {
+    common.Head head = 1;
+    repeated common.ChannelVersionInfo infos = 2;
     int64 total = 3;
 }
