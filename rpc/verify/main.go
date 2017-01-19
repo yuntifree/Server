@@ -589,12 +589,12 @@ func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 	}
 }
 
-func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.LoginReply, error) {
+func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
 	stype := getAcSys(db, in.Info.Acname)
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code, stype) {
 		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s stype:%d",
 			in.Info.Phone, in.Info.Code, stype)
-		return &verify.LoginReply{
+		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
 
 	}
@@ -604,7 +604,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	if !flag {
 		log.Printf("PortalLogin zte loginnopass failed, phone:%s code:%s",
 			in.Info.Phone, in.Info.Code)
-		return &verify.LoginReply{
+		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 
@@ -614,23 +614,25 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	if err != nil {
 		log.Printf("PortalLogin insert user failed, phone:%s code:%s %v",
 			in.Info.Phone, in.Info.Code, err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, nil
+		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, nil
 	}
 	uid, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("PortalLogin add user failed:%v", err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("uid:%d\n", uid)
 	token, _, _, err := refreshTokenPrivdata(db, uid)
 	if err != nil {
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
-		return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
+		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	dir := getPortalDir(db)
-	return &verify.LoginReply{
-		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir}, nil
+	live := getLiveVal(db, uid)
+	return &verify.PortalLoginReply{
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
+		Live: live}, nil
 }
 
 func getPortalDir(db *sql.DB) string {
@@ -715,14 +717,14 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
 }
 
-func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.LoginReply, error) {
+func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
 	var uid int64
 	var phone, token string
 	err := db.QueryRow("SELECT m.phone, u.uid, u.token FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
 		Scan(&phone, &uid, &token)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
-		return &verify.LoginReply{
+		return &verify.PortalLoginReply{
 			Head: &common.Head{
 				Retcode: common.ErrCode_ZTE_LOGIN, Uid: in.Head.Uid}}, nil
 	}
@@ -731,7 +733,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	bitmap := getUserBitmap(db, uid)
 	err = checkZteReg(db, bitmap, stype, uid, phone)
 	if err != nil {
-		return &verify.LoginReply{
+		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	flag := zte.Loginnopass(phone, in.Info.Userip,
@@ -739,13 +741,22 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	if !flag {
 		log.Printf("OneClickLogin zte loginnopass failed, phone:%s",
 			phone)
-		return &verify.LoginReply{
+		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	dir := getPortalDir(db)
-	return &verify.LoginReply{
-		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir}, nil
+	live := getLiveVal(db, uid)
+	return &verify.PortalLoginReply{
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
+		Live: live}, nil
+}
+
+func getLiveVal(db *sql.DB, uid int64) string {
+	if util.IsWhiteUser(db, uid, util.LiveDbgType) {
+		return "livetrue"
+	}
+	return "livefalse"
 }
 
 func main() {

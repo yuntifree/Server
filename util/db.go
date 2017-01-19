@@ -20,6 +20,7 @@ const (
 	BannerWhiteType
 	ActivityWhiteType
 	FlashAdDbgType
+	LiveDbgType
 )
 
 //UserInfo user base information

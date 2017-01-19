@@ -16,10 +16,10 @@ service Verify{
      rpc UnionLogin(LoginRequest) returns (LoginReply) {}
      rpc GetWxTicket(TicketRequest) returns (TicketReply) {}
      rpc GetCheckCode(PortalLoginRequest) returns (common.CommReply) {}
-     rpc PortalLogin(PortalLoginRequest) returns (LoginReply) {}
+     rpc PortalLogin(PortalLoginRequest) returns (PortalLoginReply) {}
      rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
      rpc checkLogin(AccessRequest) returns (CheckReply) {}
-     rpc oneClickLogin(AccessRequest) returns (LoginReply) {}
+     rpc oneClickLogin(AccessRequest) returns (PortalLoginReply) {}
 }
 
 message TokenRequest {
@@ -51,7 +51,13 @@ message LoginReply {
     int32 expire = 4;
     string wifipass = 5;
     string expiretime = 6;
-    string portaldir = 7;
+}
+
+message PortalLoginReply {
+    common.Head head = 1;
+    string token = 2;
+    string portaldir = 3;
+    string live = 4;
 }
 
 message VerifyReply {
