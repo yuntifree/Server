@@ -1474,9 +1474,9 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 	log.Printf("FetchLatestVersion request uid:%d term:%d versoin:%d channel:%s",
 		in.Head.Uid, in.Head.Term, in.Head.Version, in.Channel)
 	var version int64
-	var vname string
-	err := db.QueryRow("SELECT version, vname FROM app_version WHERE term = ? ORDER BY version DESC LIMIT 1",
-		in.Head.Term).Scan(&version, &vname)
+	var vname, downurl string
+	err := db.QueryRow("SELECT version, vname, downurl FROM app_channel WHERE channel = ?",
+		in.Channel).Scan(&version, &vname, &downurl)
 	if err != nil {
 		log.Printf("FetchLatestVersion failed:%v", err)
 		return &fetch.VersionReply{
@@ -1486,7 +1486,6 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 		return &fetch.VersionReply{
 			Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
 	}
-	downurl := genApkDownURL(in.Channel, vname)
 	return &fetch.VersionReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Version: vname, Downurl: downurl}, nil
@@ -1518,8 +1517,8 @@ func getTotalPortalDir(db *sql.DB, ptype int64) int64 {
 	return num
 }
 
-func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*fetch.PortalDirInfo {
-	var infos []*fetch.PortalDirInfo
+func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*common.PortalDirInfo {
+	var infos []*common.PortalDirInfo
 	rows, err := db.Query("SELECT id, type, dir, description, online, ctime FROM portal_page WHERE type = ? ORDER BY id DESC LIMIT ?,?", ptype, seq, num)
 	if err != nil {
 		log.Printf("getPortalDirInfos query failed:%v", err)
@@ -1527,7 +1526,7 @@ func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*fetch.PortalDirInfo
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var info fetch.PortalDirInfo
+		var info common.PortalDirInfo
 		err := rows.Scan(&info.Id, &info.Type, &info.Dir, &info.Description,
 			&info.Online, &info.Ctime)
 		if err != nil {

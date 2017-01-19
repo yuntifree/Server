@@ -480,3 +480,15 @@ CREATE TABLE IF NOT EXISTS portal_page
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS app_channel
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    channel varchar(64) NOT NULL,
+    version int unsigned NOT NULL,
+    vname   varchar(32) NOT NULL,
+    downurl varchar(512) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(channel)
+) ENGINE = InnoDB;
