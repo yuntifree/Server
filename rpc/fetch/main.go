@@ -85,8 +85,11 @@ func genTypeQuery(ctype int64) string {
 	}
 }
 
-func getTotalNews(db *sql.DB, ctype int64) int64 {
+func getTotalNews(db *sql.DB, ctype, stype int64) int64 {
 	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 " + genTypeQuery(ctype)
+	if stype != 0 {
+		query += " AND stype = 10 "
+	}
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
@@ -202,7 +205,7 @@ func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num, in.Type)
 	news := getReviewNews(db, in.Seq, in.Num, in.Type, in.Subtype)
-	total := getTotalNews(db, in.Type)
+	total := getTotalNews(db, in.Type, in.Subtype)
 	return &fetch.NewsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: news, Total: total}, nil
