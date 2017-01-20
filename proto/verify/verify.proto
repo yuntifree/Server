@@ -25,13 +25,13 @@ service Verify{
 message TokenRequest {
     common.Head head = 1;
     string token = 2;
-    int32 type = 3;
+    int64 type = 3;
 }
 
 message CodeRequest {
     common.Head head = 1;
     string phone = 2;
-    int32 ctype = 3;
+    int64 ctype = 3;
 }
 
 message LoginRequest {
@@ -48,7 +48,7 @@ message LoginReply {
     common.Head head = 1;
     string token = 2;
     string privdata = 3;
-    int32 expire = 4;
+    int64 expire = 4;
     string wifipass = 5;
     string expiretime = 6;
     int64 role = 7;
@@ -71,8 +71,8 @@ message ClientInfo {
     string udid = 2;
     string channel = 3;
     string regip = 4;
-    int32 version = 5;
-    int32 term = 6;
+    int64 version = 5;
+    int64 term = 6;
 }
 
 message RegisterRequest {
@@ -87,7 +87,7 @@ message RegisterReply {
     common.Head head = 1;
     string token = 2;
     string privdata = 3;
-    int32 expire = 4;
+    int64 expire = 4;
     string expiretime = 5;
 }
 
@@ -104,7 +104,7 @@ message AutoRequest {
 
 message TicketRequest {
     common.Head head = 1;
-    int32 type = 2;
+    int64 type = 2;
 }
 
 message TicketReply {

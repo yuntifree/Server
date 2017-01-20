@@ -368,7 +368,7 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	uinfo.Save = int32(float64(uinfo.Save) * saveRate)
+	uinfo.Save = int64(float64(uinfo.Save) * saveRate)
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
 	binfos, err := getBanners(db, flag)
 	if err != nil {
@@ -380,7 +380,7 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 		Head: &common.Head{Retcode: 0}, User: &uinfo, Banner: binfos}, nil
 }
 
-func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
+func getOpenedSales(db *sql.DB, num, seq int64) []*common.BidInfo {
 	var opened []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime),
 	 image, total, win_uid, win_code, nickname, s.status, sub_title FROM sales s, 
@@ -418,7 +418,7 @@ func getOpenedSales(db *sql.DB, num int32, seq int64) []*common.BidInfo {
 	return opened
 }
 
-func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
+func getOpeningSales(db *sql.DB, num int64) []*common.BidInfo {
 	var opening []*common.BidInfo
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(etime), 
 	image, s.total, s.status, sub_title FROM sales s, goods g WHERE s.gid = g.gid 
@@ -450,7 +450,7 @@ func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
 		opening = append(opening, &info)
 	}
 	if len(opening) < int(num) {
-		opened := getOpenedSales(db, num-int32(len(opening)), 0)
+		opened := getOpenedSales(db, num-int64(len(opening)), 0)
 		opening = append(opening, opened...)
 	}
 	return opening
@@ -459,7 +459,7 @@ func getOpeningSales(db *sql.DB, num int32) []*common.BidInfo {
 func (s *server) GetOpening(ctx context.Context, in *common.CommRequest) (*hot.OpeningReply, error) {
 	log.Printf("GetOpening uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	opening := getOpeningSales(db, 0)
-	var reddot int32
+	var reddot int64
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
@@ -488,7 +488,7 @@ func isNewUser(db *sql.DB, uid int64) bool {
 	return flag
 }
 
-func getRunningSales(db *sql.DB, uid int64, num int32, seq int64) []*common.BidInfo {
+func getRunningSales(db *sql.DB, uid, num, seq int64) []*common.BidInfo {
 	var infos []*common.BidInfo
 	flag := isNewUser(db, uid)
 	query := `SELECT sid, s.gid, num, title, UNIX_TIMESTAMP(s.ctime), UNIX_TIMESTAMP(s.etime), 
@@ -617,7 +617,7 @@ func getSlides(db *sql.DB) []*hot.SlideInfo {
 func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.HotListReply, error) {
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	opening := getOpeningSales(db, 4)
-	reddot := 0
+	var reddot int64
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
@@ -625,7 +625,7 @@ func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.H
 	promotion := getPromotion(db)
 	return &hot.HotListReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Opening: opening, Slides: slides,
-		Promotion: &promotion, Reddot: int32(reddot)}, nil
+		Promotion: &promotion, Reddot: reddot}, nil
 }
 
 func (s *server) GetMarquee(ctx context.Context, in *common.CommRequest) (*hot.MarqueeReply, error) {

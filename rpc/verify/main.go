@@ -32,13 +32,12 @@ type server struct{}
 var db *sql.DB
 var kv *redis.Client
 
-func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
+func checkPhoneCode(db *sql.DB, phone string, code int64) (bool, error) {
 	if code == mastercode {
 		return true, nil
 	}
 
-	var realcode int32
-	var pid int32
+	var realcode, pid int64
 	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1",
 		phone).Scan(&realcode, &pid)
 	if err != nil {
@@ -62,7 +61,7 @@ func checkPhoneCode(db *sql.DB, phone string, code int32) (bool, error) {
 	return false, errors.New("code not match")
 }
 
-func getPhoneCode(phone string, ctype int32) (bool, error) {
+func getPhoneCode(phone string, ctype int64) (bool, error) {
 	log.Printf("request phone:%s, ctype:%d", phone, ctype)
 	if ctype == 1 {
 		if flag := util.ExistPhone(db, phone); !flag {
@@ -135,7 +134,7 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Role: role}, nil
 }
 
-func recordWxOpenid(db *sql.DB, uid int64, wtype int32, openid string) {
+func recordWxOpenid(db *sql.DB, uid, wtype int64, openid string) {
 	_, err := db.Exec("INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) VALUES (?, ?, ?, NOW())",
 		uid, wtype, openid)
 	if err != nil {
@@ -294,7 +293,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format("2006-01-02 15:04:05")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
-		Token: token, Privdata: privdata, Expire: int32(expire),
+		Token: token, Privdata: privdata, Expire: expire,
 		Expiretime: strTime}, nil
 }
 
@@ -446,7 +445,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format("2006-01-02 15:04:05")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Token: token, Privdata: privdata, Expire: int32(expire), Expiretime: strTime}, nil
+		Token: token, Privdata: privdata, Expire: expire, Expiretime: strTime}, nil
 }
 
 func unionToID(db *sql.DB, unionid string) (int64, error) {

@@ -84,7 +84,7 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchReviewNews",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Type: int32(ctype), Subtype: stype})
+			Seq: seq, Num: num, Type: ctype, Subtype: stype})
 	checkRPCErr(rpcerr, "FetchReviewNews")
 	res := resp.Interface().(*fetch.NewsReply)
 	checkRPCCode(res.Head.Retcode, "FetchReviewNews")
@@ -105,7 +105,7 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchTags",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchTags")
 	res := resp.Interface().(*fetch.TagsReply)
 	checkRPCCode(res.Head.Retcode, "FetchTags")
@@ -126,7 +126,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchUsers",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchUsers")
 	res := resp.Interface().(*fetch.UserReply)
 	checkRPCCode(res.Head.Retcode, "FetchUsers")
@@ -169,7 +169,7 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	reject := req.GetParamInt("reject")
 	mod := req.GetParamIntDef("modify", 0)
 	var title string
-	var tags []int32
+	var tags []int64
 
 	if mod != 0 {
 		title = req.GetParamStringDef("title", "")
@@ -178,8 +178,8 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	arr, err := req.Post.Get("data").Get("tags").Array()
 	if err == nil {
 		for i := 0; i < len(arr); i++ {
-			tid, _ := req.Post.Get("data").Get("tags").GetIndex(i).Int()
-			tags = append(tags, int32(tid))
+			tid, _ := req.Post.Get("data").Get("tags").GetIndex(i).Int64()
+			tags = append(tags, tid)
 		}
 	}
 
@@ -206,7 +206,7 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchApStat",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchApStat")
 	res := resp.Interface().(*fetch.ApStatReply)
 	checkRPCCode(res.Head.Retcode, "FetchApStat")
@@ -228,7 +228,7 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchVideos",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Type: int32(ctype)})
+			Seq: seq, Num: num, Type: ctype})
 	checkRPCErr(rpcerr, "FetchVideos")
 	res := resp.Interface().(*fetch.VideoReply)
 	checkRPCCode(res.Head.Retcode, "FetchVideos")
@@ -249,7 +249,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchTemplates",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchTemplates")
 	res := resp.Interface().(*fetch.TemplateReply)
 	checkRPCCode(res.Head.Retcode, "FetchTemplates")
@@ -324,8 +324,8 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "AddBanner",
 		&modify.BannerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: int32(priority),
-				Title: title, Type: int32(btype), Expire: expire}})
+			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: priority,
+				Title: title, Type: btype, Expire: expire}})
 	checkRPCErr(rpcerr, "AddBanner")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "AddBanner")
@@ -414,7 +414,7 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchWhiteList",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Type: int32(wtype)})
+			Seq: seq, Num: num, Type: wtype})
 	checkRPCErr(rpcerr, "FetchWhiteList")
 	res := resp.Interface().(*fetch.WhiteReply)
 	checkRPCCode(res.Head.Retcode, "FetchWhiteList")
@@ -563,7 +563,7 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "Push",
 		&push.PushRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &push.PushInfo{PushType: int32(pushtype), Target: target, TermType: int32(term),
+			Info: &push.PushInfo{PushType: pushtype, Target: target, TermType: term,
 				Desc: desc, Content: content}})
 	checkRPCErr(rpcerr, "Push")
 	res := resp.Interface().(*common.CommReply)
@@ -662,7 +662,7 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ModTemplate",
 		&modify.ModTempRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &modify.TemplateInfo{Id: int32(id), Title: title, Content: content, Online: online != 0}})
+			Info: &modify.TemplateInfo{Id: id, Title: title, Content: content, Online: online != 0}})
 	checkRPCErr(rpcerr, "ModTemplate")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "ModTemplate")
@@ -687,8 +687,8 @@ func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ModBanner",
 		&modify.BannerRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: int32(priority),
-				Online: int32(online), Deleted: int32(deleted), Title: title, Expire: expire}})
+			Info: &common.BannerInfo{Id: id, Img: img, Dst: dst, Priority: priority,
+				Online: online, Deleted: deleted, Title: title, Expire: expire}})
 	checkRPCErr(rpcerr, "ModBanner")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "ModBanner")
@@ -713,7 +713,7 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchBanners",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Type: int32(btype), Num: int32(num)})
+			Seq: seq, Type: btype, Num: num})
 	checkRPCErr(rpcerr, "FetchBanners")
 	res := resp.Interface().(*fetch.BannerReply)
 	checkRPCCode(res.Head.Retcode, "FetchBanners")
@@ -735,7 +735,7 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchFeedback",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchFeedback")
 	res := resp.Interface().(*fetch.FeedbackReply)
 	checkRPCCode(res.Head.Retcode, "FetchFeedback")
@@ -757,7 +757,7 @@ func getPortalDirList(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchPortalDir",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Type: int32(ptype)})
+			Seq: seq, Num: num, Type: ptype})
 	checkRPCErr(rpcerr, "FetchPortalDir")
 	res := resp.Interface().(*fetch.PortalDirReply)
 	checkRPCCode(res.Head.Retcode, "FetchPortalDir")
@@ -778,7 +778,7 @@ func getChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchChannelVersion",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "FetchChannelVersion")
 	res := resp.Interface().(*fetch.ChannelVersionReply)
 	checkRPCCode(res.Head.Retcode, "FetchChannelVersion")

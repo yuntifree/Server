@@ -44,7 +44,7 @@ message NewsRequest {
     bool reject = 3;
     bool modify = 4;
     string title = 5;
-    repeated int32 tags = 6;
+    repeated int64 tags = 6;
 }
 
 message VideoRequest {
@@ -56,7 +56,7 @@ message VideoRequest {
 }
 
 message TemplateInfo {
-    int32 id = 1;
+    int64 id = 1;
     string title = 2;
     string content = 3;
     bool online = 4;
@@ -80,7 +80,7 @@ message WifiRequest {
 message ClickRequest {
     common.Head head = 1;
     int64 id = 2;
-    int32 type = 3;
+    int64 type = 3;
 }
 
 message ApmacRequest {
@@ -92,8 +92,8 @@ message ImageInfo {
     int64 id = 1;
     string name = 2;
     int64 size = 3;
-    int32 height = 4;
-    int32 width = 5;
+    int64 height = 4;
+    int64 width = 5;
 }
 
 message AddImageRequest {
@@ -118,7 +118,7 @@ message AddTagRequest {
 
 message AddTagReply {
     common.Head head = 1;
-    repeated int32 ids = 2;
+    repeated int64 ids = 2;
 }
 
 message DelTagRequest {

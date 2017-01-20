@@ -19,7 +19,7 @@ enum ErrCode{
 message Head {
     int64 uid = 1;
     ErrCode retcode = 2;
-    int32 timecost = 3;
+    int64 timecost = 3;
     int64 ts = 4;
     string sid = 5;
     int64 term = 6;
@@ -29,8 +29,8 @@ message Head {
 message CommRequest {
     Head head = 1;
     int64 seq = 2;
-    int32 num = 3;
-    int32 type = 4;
+    int64 num = 3;
+    int64 type = 4;
     int64 id = 5;
     int64 subtype = 6;
 }
@@ -53,13 +53,13 @@ message BannerInfo {
     int64 id = 1;
     string img = 2;
     string dst = 3;
-    int32 online = 4;
-    int32 priority = 5;
-    int32 deleted = 6;
+    int64 online = 4;
+    int64 priority = 5;
+    int64 deleted = 6;
     string title = 7;
-    int32 type = 8;
+    int64 type = 8;
     string expire = 9;
-    int32 dbg = 10;
+    int64 dbg = 10;
 }
 
 message AddressInfo {
@@ -85,27 +85,27 @@ message AwardInfo {
     string nickname = 2;
     int64 awardcode = 3;
     string head = 4;
-    int32 num = 5;
+    int64 num = 5;
     repeated int64 codes = 6;
 }
 
 message BidInfo {
     int64 bid = 1;
     int64 gid = 2;
-    int32 period = 3;
+    int64 period = 3;
     string title = 4;
     string subtitle = 5;
     int64 start = 6;
     int64 end = 7;
-    int32 total = 8;
+    int64 total = 8;
     string image = 9;
     int64 seq = 10;
-    int32 rest = 11;
-    int32 status = 12;
+    int64 rest = 11;
+    int64 status = 12;
     AwardInfo award = 13;
-    int32 remain = 14;
+    int64 remain = 14;
     repeated int64 codes = 15;
-    int32 gtype = 16;
+    int64 gtype = 16;
 }
 
 message AdBan {

@@ -21,7 +21,7 @@ message HotsInfo {
     string source = 3;
     string dst = 4;
     string ctime = 5;
-    int32 stype = 6;
+    int64 stype = 6;
     int64 seq = 7;
     int64 play = 8;
     int64 id = 9; 
@@ -38,7 +38,7 @@ message HotsReply {
 message ServiceInfo {
     string title = 1;
     string dst = 2;
-    int32 sid = 3;
+    int64 sid = 3;
     string icon = 4;
 }
 
@@ -54,8 +54,8 @@ message ServiceReply {
 }
 
 message WeatherInfo {
-    int32 type = 1;
-    int32 temp = 2;
+    int64 type = 1;
+    int64 temp = 2;
     string info = 3;
     string dst = 4;
 }
@@ -74,8 +74,8 @@ message WeatherNewsReply {
 }
 
 message UseInfo {
-    int32 total = 1;
-    int32 save = 2;
+    int64 total = 1;
+    int64 save = 2;
 }
 
 message FrontReply {
@@ -87,7 +87,7 @@ message FrontReply {
 message OpeningReply {
     common.Head head = 1;
     repeated common.BidInfo opening = 2;
-    int32 reddot = 3;
+    int64 reddot = 3;
 }
 
 message OpenedReply {
@@ -104,7 +104,7 @@ message MarqueeInfo {
     int64 uid = 1;
     int64 bid = 2;
     string nickname = 3;
-    int32 type = 4;
+    int64 type = 4;
     string gname = 5;
 }
 
@@ -118,7 +118,7 @@ message HotListReply {
     repeated common.BidInfo opening = 2;
     repeated SlideInfo slides = 3;
     PromotionInfo promotion = 4;
-    int32 reddot = 5;
+    int64 reddot = 5;
 }
 
 message MarqueeReply {
@@ -139,7 +139,7 @@ message DetailRequest {
 
 message JoinInfo {
     int64 uid = 1;
-    int32 join = 2;
+    int64 join = 2;
     repeated int64 codes = 3;
 }
 

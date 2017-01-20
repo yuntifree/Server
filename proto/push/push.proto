@@ -9,19 +9,19 @@ service Push {
 }
 
 message PushInfo {
-    int32 pushType = 1;
-    int32 notifyType = 2;
-    int32 termType = 3;
-    int32 notifyEffect = 4;
-    int32 passthrough = 5;
+    int64 pushType = 1;
+    int64 notifyType = 2;
+    int64 termType = 3;
+    int64 notifyEffect = 4;
+    int64 passthrough = 5;
     string target = 6;//for alias or topic
     string pack = 7;//package name
     string title = 8;
     string desc = 9;
     string content = 10;
     string extra = 11;//for Intent
-    int32 notifyID = 12;
-    int32 foreground = 13;
+    int64 notifyID = 12;
+    int64 foreground = 13;
 }
 
 message PushRequest {

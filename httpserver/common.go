@@ -181,7 +181,7 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 	uid := getJSONInt(r.Post, "uid")
 	token := getJSONString(r.Post, "token")
 
-	var ctype int32
+	var ctype int64
 	if back {
 		ctype = 1
 	}
@@ -275,7 +275,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func checkToken(uid int64, token string, ctype int32) bool {
+func checkToken(uid int64, token string, ctype int64) bool {
 	address := getNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {

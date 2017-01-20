@@ -62,7 +62,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func getCode(phone string, ctype int32) (bool, error) {
+func getCode(phone string, ctype int64) (bool, error) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.VerifyServerType, 0, "GetPhoneCode",
 		&verify.CodeRequest{Head: &common.Head{Sid: uuid},
@@ -84,7 +84,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{errIllegalPhone, "请输入正确的手机号"}
 	}
 
-	flag, err := getCode(phone, int32(ctype))
+	flag, err := getCode(phone, ctype)
 	if err != nil || !flag {
 		return &util.AppError{errCode, "获取验证码失败"}
 	}
@@ -434,19 +434,19 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return nil
 	}
 	size := r.Form["size"]
-	fsize, _ := strconv.Atoi(size[0])
+	fsize, _ := strconv.ParseInt(size[0], 10, 64)
 	height := r.Form["height"]
-	fheight, _ := strconv.Atoi(height[0])
+	fheight, _ := strconv.ParseInt(height[0], 10, 64)
 	width := r.Form["width"]
-	fwidth, _ := strconv.Atoi(width[0])
+	fwidth, _ := strconv.ParseInt(width[0], 10, 64)
 	log.Printf("upload_callback fname:%s size:%d height:%d width:%d\n", fname, fsize,
 		fheight, fwidth)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.ModifyServerType, 0, "FinImage",
 		&modify.ImageRequest{Head: &common.Head{Sid: uuid},
-			Info: &modify.ImageInfo{Name: fname[0], Size: int64(fsize),
-				Height: int32(fheight), Width: int32(fwidth)}})
+			Info: &modify.ImageInfo{Name: fname[0], Size: fsize,
+				Height: fheight, Width: fwidth}})
 	checkRPCErr(rpcerr, "FinImage")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "FinImage")
@@ -466,7 +466,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ReportClick",
 		&modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: id, Type: int32(ctype)})
+			Id: id, Type: ctype})
 	checkRPCErr(rpcerr, "ReportClick")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "ReportClick")
@@ -613,7 +613,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.HotServerType, uid, "GetOpened",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "GetOpened")
 	res := resp.Interface().(*hot.OpenedReply)
 	checkRPCCode(res.Head.Retcode, "GetOpened")
@@ -645,7 +645,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.HotServerType, uid, "GetRunning",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num)})
+			Seq: seq, Num: num})
 	checkRPCErr(rpcerr, "GetRunning")
 	res := resp.Interface().(*hot.RunningReply)
 	checkRPCCode(res.Head.Retcode, "GetRunning")
@@ -745,7 +745,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	num := req.GetParamIntDef("num", util.MaxListSize)
 	path := r.URL.Path
 	log.Printf("path:%s", path)
-	var stype int32
+	var stype int64
 	if path == "/get_share_gid" {
 		stype = util.GidShareType
 	} else if path == "/get_share_list" {
@@ -758,7 +758,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchShare",
 		&fetch.ShareRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: stype, Seq: seq, Num: int32(num), Id: gid})
+			Type: stype, Seq: seq, Num: num, Id: gid})
 	checkRPCErr(rpcerr, "FetchShare")
 	res := resp.Interface().(*fetch.ShareReply)
 	checkRPCCode(res.Head.Retcode, "FetchShare")
@@ -885,7 +885,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchZipcode",
 		&fetch.ZipcodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: int32(ziptype), Code: int32(code)})
+			Type: ziptype, Code: code})
 	checkRPCErr(rpcerr, "FetchZipcode")
 	res := resp.Interface().(*fetch.ZipcodeReply)
 	checkRPCCode(res.Head.Retcode, "FetchZipcode")
@@ -960,7 +960,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchBetHistory",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Id: gid})
+			Seq: seq, Num: num, Id: gid})
 	checkRPCErr(rpcerr, "FetchBetHistory")
 	res := resp.Interface().(*fetch.BetHistoryReply)
 	checkRPCCode(res.Head.Retcode, "FetchBetHistory")
@@ -981,7 +981,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchPurchaseRecord",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Id: bid})
+			Seq: seq, Num: num, Id: bid})
 	checkRPCErr(rpcerr, "FetchPurchaseRecord")
 	res := resp.Interface().(*fetch.PurchaseRecordReply)
 	checkRPCCode(res.Head.Retcode, "FetchPurchaseRecord")
@@ -1015,7 +1015,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
 	path := r.URL.Path
-	var stype int32
+	var stype int64
 	if path == "/get_user_award" {
 		stype = util.UserAwardType
 	} else {
@@ -1025,7 +1025,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchUserBet",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: int32(num), Type: stype})
+			Seq: seq, Num: num, Type: stype})
 	checkRPCErr(rpcerr, "FetchUserBet")
 	res := resp.Interface().(*fetch.UserBetReply)
 	checkRPCCode(res.Head.Retcode, "FetchUserBet")
@@ -1217,7 +1217,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.HotServerType, uid, "GetHots",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
-			Type: int32(ctype), Seq: seq})
+			Type: ctype, Seq: seq})
 	checkRPCErr(rpcerr, "GetHots")
 	res := resp.Interface().(*hot.HotsReply)
 	checkRPCCode(res.Head.Retcode, "GetHots")
@@ -1381,7 +1381,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Username: username, Password: password, Code: code,
 			Client: &verify.ClientInfo{Udid: udid, Model: model,
 				Channel: channel, Regip: regip,
-				Version: int32(version), Term: int32(term)}})
+				Version: version, Term: term}})
 	checkRPCErr(rpcerr, "Register")
 	res := resp.Interface().(*verify.RegisterReply)
 	checkRPCCode(res.Head.Retcode, "Register")

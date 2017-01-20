@@ -32,14 +32,14 @@ const (
 
 type server struct{}
 
-func genAuthStr(term int32) string {
+func genAuthStr(term int64) string {
 	if term == iosTerm {
 		return iosSecret
 	}
 	return androidSecret
 }
 
-func genHost(pushType int32) string {
+func genHost(pushType int64) string {
 	if pushType == aliasType {
 		return aliasHost
 	}

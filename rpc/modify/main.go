@@ -252,7 +252,7 @@ func (s *server) ModBanner(ctx context.Context, in *modify.BannerRequest) (*comm
 }
 
 func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify.AddTagReply, error) {
-	var ids []int32
+	var ids []int64
 	for i := 0; i < len(in.Tags); i++ {
 		res, err := db.Exec("INSERT INTO tags(content, ctime) VALUES (?, NOW())", in.Tags[i])
 		if err != nil {
@@ -264,7 +264,7 @@ func (s *server) AddTags(ctx context.Context, in *modify.AddTagRequest) (*modify
 			log.Printf("get tag insert id failed:%v", err)
 			continue
 		}
-		ids = append(ids, int32(id))
+		ids = append(ids, id)
 	}
 	return &modify.AddTagReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Ids: ids}, nil
@@ -517,7 +517,7 @@ func getRemainSales(db *sql.DB, sid int64) int64 {
 
 func (s *server) PurchaseSales(ctx context.Context, in *common.CommRequest) (*modify.PurchaseReply, error) {
 	var info modify.PurchaseResult
-	recordPurchaseAttempt(db, in.Head.Uid, in.Id, int64(in.Num))
+	recordPurchaseAttempt(db, in.Head.Uid, in.Id, in.Num)
 	var phone string
 	var balance int64
 	err := db.QueryRow("SELECT phone, balance FROM user WHERE uid = ?",
@@ -536,7 +536,7 @@ func (s *server) PurchaseSales(ctx context.Context, in *common.CommRequest) (*mo
 			Info: &info}, nil
 	}
 
-	pid := recordPurchase(db, in.Head.Uid, in.Id, int64(in.Num))
+	pid := recordPurchase(db, in.Head.Uid, in.Id, in.Num)
 
 	var ret, hid int64
 	err = db.QueryRow("call purchase_sales(?, ?,100)", in.Id, in.Head.Uid).

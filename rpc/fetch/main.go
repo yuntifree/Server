@@ -74,7 +74,7 @@ func getNewsTag(db *sql.DB, id int64) string {
 	return tags
 }
 
-func genTypeQuery(ctype int32) string {
+func genTypeQuery(ctype int64) string {
 	switch ctype {
 	default:
 		return " AND review = 0 "
@@ -85,7 +85,7 @@ func genTypeQuery(ctype int32) string {
 	}
 }
 
-func getTotalNews(db *sql.DB, ctype int32) int64 {
+func getTotalNews(db *sql.DB, ctype int64) int64 {
 	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 " + genTypeQuery(ctype)
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
@@ -96,7 +96,7 @@ func getTotalNews(db *sql.DB, ctype int32) int64 {
 	return total
 }
 
-func getTotalVideos(db *sql.DB, ctype int32) int64 {
+func getTotalVideos(db *sql.DB, ctype int64) int64 {
 	query := "SELECT COUNT(vid) FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
@@ -151,7 +151,7 @@ func getTotalUsers(db *sql.DB) int64 {
 	return total
 }
 
-func getTotalBanners(db *sql.DB, btype int32) int64 {
+func getTotalBanners(db *sql.DB, btype int64) int64 {
 	query := "SELECT COUNT(id) FROM banner WHERE deleted = 0 AND type = " +
 		strconv.Itoa(int(btype))
 	var total int64
@@ -166,7 +166,7 @@ func getTotalBanners(db *sql.DB, btype int32) int64 {
 func getReviewNews(db *sql.DB, seq, num, ctype, stype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
 	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " +
-		genTypeQuery(int32(ctype))
+		genTypeQuery(ctype)
 	if stype != 0 {
 		query += " AND stype = 10 "
 	}
@@ -201,7 +201,7 @@ func getReviewNews(db *sql.DB, seq, num, ctype, stype int64) []*fetch.NewsInfo {
 func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num, in.Type)
-	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type), in.Subtype)
+	news := getReviewNews(db, in.Seq, in.Num, in.Type, in.Subtype)
 	total := getTotalNews(db, in.Type)
 	return &fetch.NewsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
@@ -236,7 +236,7 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 func (s *server) FetchTags(ctx context.Context, in *common.CommRequest) (*fetch.TagsReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num)
-	tags := getTags(db, in.Seq, int64(in.Num))
+	tags := getTags(db, in.Seq, in.Num)
 	total := getTotalTags(db)
 	return &fetch.TagsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
@@ -336,7 +336,7 @@ func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.W
 		Infos: infos}, nil
 }
 
-func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
+func getApStat(db *sql.DB, seq, num int64) []*fetch.ApStatInfo {
 	var infos []*fetch.ApStatInfo
 	query := "SELECT id, address, mac, count, bandwidth, online FROM ap ORDER BY id DESC LIMIT " +
 		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
@@ -367,7 +367,7 @@ func getApStat(db *sql.DB, seq, num int32) []*fetch.ApStatInfo {
 func (s *server) FetchApStat(ctx context.Context, in *common.CommRequest) (*fetch.ApStatReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num)
-	infos := getApStat(db, int32(in.Seq), in.Num)
+	infos := getApStat(db, in.Seq, in.Num)
 	total := getTotalAps(db)
 	return &fetch.ApStatReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
@@ -412,14 +412,14 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 func (s *server) FetchUsers(ctx context.Context, in *common.CommRequest) (*fetch.UserReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
-	infos := getUsers(db, in.Seq, int64(in.Num))
+	infos := getUsers(db, in.Seq, in.Num)
 	total := getTotalUsers(db)
 	return &fetch.UserReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
 }
 
-func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
+func getTemplates(db *sql.DB, seq, num int64) []*fetch.TemplateInfo {
 	var infos []*fetch.TemplateInfo
 	query := "SELECT id, title, content, online FROM template ORDER BY id DESC LIMIT " +
 		strconv.Itoa(int(seq)) + "," + strconv.Itoa(int(num))
@@ -447,14 +447,14 @@ func getTemplates(db *sql.DB, seq, num int32) []*fetch.TemplateInfo {
 func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*fetch.TemplateReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
-	infos := getTemplates(db, int32(in.Seq), in.Num)
+	infos := getTemplates(db, in.Seq, in.Num)
 	total := getTotalTemplates(db)
 	return &fetch.TemplateReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
 }
 
-func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
+func getVideos(db *sql.DB, seq, num, ctype int64) []*fetch.VideoInfo {
 	var infos []*fetch.VideoInfo
 	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " +
 		genTypeQuery(ctype)
@@ -485,14 +485,14 @@ func getVideos(db *sql.DB, seq, num, ctype int32) []*fetch.VideoInfo {
 func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetch.VideoReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
-	infos := getVideos(db, int32(in.Seq), in.Num, in.Type)
+	infos := getVideos(db, in.Seq, in.Num, in.Type)
 	total := getTotalVideos(db, in.Type)
 	return &fetch.VideoReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
 }
 
-func getBanners(db *sql.DB, seq int64, btype, num int32) []*common.BannerInfo {
+func getBanners(db *sql.DB, seq, btype, num int64) []*common.BannerInfo {
 	var infos []*common.BannerInfo
 	query := fmt.Sprintf("SELECT id, img, dst, online, priority, title, etime, dbg FROM banner WHERE deleted = 0 AND type = %d ORDER BY priority DESC LIMIT %d, %d",
 		btype, seq, num)
@@ -837,7 +837,7 @@ func getPurchaseRecords(db *sql.DB, sid, seq, num int64) []*fetch.PurchaseRecord
 
 func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest) (*fetch.PurchaseRecordReply, error) {
 	log.Printf("FetchPurchaseRecord request uid:%d gid:%d", in.Head.Uid, in.Id)
-	infos := getPurchaseRecords(db, in.Id, in.Seq, int64(in.Num))
+	infos := getPurchaseRecords(db, in.Id, in.Seq, in.Num)
 	return &fetch.PurchaseRecordReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Records: infos}, nil
@@ -882,7 +882,7 @@ func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
 
 func (s *server) FetchBetHistory(ctx context.Context, in *common.CommRequest) (*fetch.BetHistoryReply, error) {
 	log.Printf("FetchBetHistory request uid:%d gid:%d", in.Head.Uid, in.Id)
-	infos := getBetHistory(db, in.Id, in.Seq, int64(in.Num))
+	infos := getBetHistory(db, in.Id, in.Seq, in.Num)
 	return &fetch.BetHistoryReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Bets: infos}, nil
@@ -985,21 +985,21 @@ func getMyShare(db *sql.DB, uid, num, seq int64) []*fetch.ShareInfo {
 func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
 	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
 		in.Type, in.Seq, in.Num, in.Id)
-	var reddot int32
+	var reddot int64
 	if in.Type != util.UidShareType && util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
 	var infos []*fetch.ShareInfo
 	switch in.Type {
 	case util.GidShareType:
-		infos = getShareInfo(db, in.Head.Uid, util.GidShareType, in.Id, int64(in.Num),
+		infos = getShareInfo(db, in.Head.Uid, util.GidShareType, in.Id, in.Num,
 			in.Seq)
 	case util.ListShareType:
-		top := getShareInfo(db, in.Head.Uid, util.TopShareType, 0, int64(in.Num), in.Seq)
-		list := getShareInfo(db, in.Head.Uid, util.ListShareType, 0, int64(in.Num), in.Seq)
+		top := getShareInfo(db, in.Head.Uid, util.TopShareType, 0, in.Num, in.Seq)
+		list := getShareInfo(db, in.Head.Uid, util.ListShareType, 0, in.Num, in.Seq)
 		infos = append(top, list...)
 	case util.UidShareType:
-		infos = getMyShare(db, in.Head.Uid, int64(in.Num), in.Seq)
+		infos = getMyShare(db, in.Head.Uid, in.Num, in.Seq)
 	}
 
 	return &fetch.ShareReply{
@@ -1202,9 +1202,9 @@ func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fet
 		in.Num, in.Type)
 	var infos []*common.BidInfo
 	if in.Type == util.UserAwardType {
-		infos = getUserAward(db, in.Head.Uid, in.Seq, int64(in.Num))
+		infos = getUserAward(db, in.Head.Uid, in.Seq, in.Num)
 	} else {
-		infos = getUserBets(db, in.Head.Uid, in.Seq, int64(in.Num))
+		infos = getUserBets(db, in.Head.Uid, in.Seq, in.Num)
 	}
 	return &fetch.UserBetReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
@@ -1312,8 +1312,8 @@ func getWhiteList(db *sql.DB, seq, num int64) []*fetch.WhiteUser {
 
 func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*fetch.WhiteReply, error) {
 	log.Printf("FetchWhiteList uid:%d", in.Head.Uid)
-	infos := getWhiteList(db, in.Seq, int64(in.Num))
-	total := getWhiteTotal(db, int64(in.Type))
+	infos := getWhiteList(db, in.Seq, in.Num)
+	total := getWhiteTotal(db, in.Type)
 	return &fetch.WhiteReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1355,7 +1355,7 @@ func getFeedbackTotal(db *sql.DB) int64 {
 
 func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fetch.FeedbackReply, error) {
 	log.Printf("FetchFeedback uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
-	infos := getFeedback(db, in.Seq, int64(in.Num))
+	infos := getFeedback(db, in.Seq, in.Num)
 	total := getFeedbackTotal(db)
 	return &fetch.FeedbackReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
@@ -1414,7 +1414,7 @@ func getWinInfo(db *sql.DB, sid int64) common.BidInfo {
 	award.Num = util.GetSalesCount(db, sid, award.Uid)
 	info.Award = &award
 	if info.Status >= 4 {
-		info.Status = int32(getLogisticsStatus(db, sid))
+		info.Status = getLogisticsStatus(db, sid)
 	}
 	return info
 }
@@ -1544,8 +1544,8 @@ func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*common.PortalDirInf
 func (s *server) FetchPortalDir(ctx context.Context, in *common.CommRequest) (*fetch.PortalDirReply, error) {
 	log.Printf("FetchPortalDir seq:%d num:%d type:%d uid:%d",
 		in.Seq, in.Num, in.Type, in.Head.Uid)
-	infos := getPortalDirInfos(db, in.Seq, int64(in.Num), int64(in.Type))
-	total := getTotalPortalDir(db, int64(in.Type))
+	infos := getPortalDirInfos(db, in.Seq, in.Num, in.Type)
+	total := getTotalPortalDir(db, in.Type)
 	return &fetch.PortalDirReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1585,7 +1585,7 @@ func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo 
 func (s *server) FetchChannelVersion(ctx context.Context, in *common.CommRequest) (*fetch.ChannelVersionReply, error) {
 	log.Printf("FetchChannelVersion seq:%d num:%d uid:%d",
 		in.Seq, in.Num, in.Head.Uid)
-	infos := getChannelVersion(db, in.Seq, int64(in.Num))
+	infos := getChannelVersion(db, in.Seq, in.Num)
 	total := getTotalChannelVersion(db)
 	return &fetch.ChannelVersionReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},

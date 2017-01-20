@@ -55,7 +55,7 @@ message NewsReply {
 }
 
 message TagInfo {
-    int32 id = 1;
+    int64 id = 1;
     string content = 2;
 }
 
@@ -66,19 +66,19 @@ message TagsReply {
 }
 
 message ApInfo {
-    int32 id = 1;
+    int64 id = 1;
     double longitude = 2;
     double latitude = 3;
     string address = 4;
 }
 
 message ApStatInfo {
-    int32 id = 1;
+    int64 id = 1;
     string address = 2;
     string mac = 3;
-    int32 count = 4;
-    int32 bandwidth = 5;
-    int32 online = 6;
+    int64 count = 4;
+    int64 bandwidth = 5;
+    int64 online = 6;
 }
 
 message ApRequest {
@@ -111,10 +111,10 @@ message UserInfo {
 }
 
 message TemplateInfo {
-    int32 id = 1;
+    int64 id = 1;
     string title = 2;
     string content = 3;
-    int32 online = 4;
+    int64 online = 4;
 }
 
 message UserReply {
@@ -153,7 +153,7 @@ message VideoInfo {
     string dst = 4;
     string ctime = 5;
     string source = 6;
-    int32 duration = 7;
+    int64 duration = 7;
 }
 
 message VideoReply {
@@ -199,12 +199,12 @@ message StsReply {
 
 message ZipcodeRequest {
     common.Head head = 1;
-    int32 type = 2;
-    int32 code = 3;
+    int64 type = 2;
+    int64 code = 3;
 }
 
 message ZipcodeInfo {
-    int32 code = 1;
+    int64 code = 1;
     string address = 2;
 }
 
@@ -236,8 +236,8 @@ message ConfReply {
 
 message ShareRequest {
     common.Head head = 1;
-    int32 type = 2;
-    int32 num = 3;
+    int64 type = 2;
+    int64 num = 3;
     int64 seq = 4;
     int64 id = 5;
 }
@@ -262,7 +262,7 @@ message ShareInfo {
 message ShareReply {
     common.Head head = 1;
     repeated ShareInfo shares = 2;
-    int32 reddot = 3;
+    int64 reddot = 3;
 }
 
 message KvRequest {

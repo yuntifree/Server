@@ -44,7 +44,7 @@ func ExistPhone(db *sql.DB, phone string) bool {
 }
 
 //CheckToken verify user's token
-func CheckToken(db *sql.DB, uid int64, token string, ctype int32) bool {
+func CheckToken(db *sql.DB, uid int64, token string, ctype int64) bool {
 	var tk string
 	var expire bool
 	var err error
@@ -155,8 +155,8 @@ func HasReddot(db *sql.DB, uid int64) bool {
 }
 
 //GetSalesCount return purchase sales count
-func GetSalesCount(db *sql.DB, sid, uid int64) int32 {
-	var num int32
+func GetSalesCount(db *sql.DB, sid, uid int64) int64 {
+	var num int64
 	err := db.QueryRow("SELECT COUNT(*) FROM sales_history WHERE uid = ? AND sid = ?", uid, sid).
 		Scan(&num)
 	if err != nil {
@@ -190,11 +190,11 @@ func GetSalesCodes(db *sql.DB, sid, uid int64) []int64 {
 }
 
 //GetRemainSeconds return remain seconds for next award
-func GetRemainSeconds(now int64) int32 {
+func GetRemainSeconds(now int64) int64 {
 	tt := time.Unix(now, 0)
 	award := GetNextCqssc(tt)
 	award = award.Add(120 * time.Second)
-	return int32(award.Unix() - tt.Unix())
+	return award.Unix() - tt.Unix()
 }
 
 //IsWhiteUser check white list for uid
