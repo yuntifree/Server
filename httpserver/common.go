@@ -441,7 +441,6 @@ func genResponseBody(res interface{}, flag bool) []byte {
 		panic(util.AppError{errInner, err.Error()})
 	}
 	val := reflect.ValueOf(res).Elem()
-	log.Printf("val:%v", val)
 	for i := 0; i < val.NumField(); i++ {
 		valueField := val.Field(i)
 		typeField := val.Type().Field(i)
@@ -455,7 +454,8 @@ func genResponseBody(res interface{}, flag bool) []byte {
 				continue
 			}
 		} else {
-			js.SetPath([]string{"data", strings.ToLower(typeField.Name)}, valueField.Interface())
+			js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
+				valueField.Interface())
 		}
 	}
 	data, err := js.MarshalJSON()
