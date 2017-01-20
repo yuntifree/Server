@@ -32,6 +32,7 @@ message CommRequest {
     int32 num = 3;
     int32 type = 4;
     int64 id = 5;
+    int64 subtype = 6;
 }
 
 message CommReply {

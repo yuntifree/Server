@@ -163,10 +163,13 @@ func getTotalBanners(db *sql.DB, btype int32) int64 {
 	return total
 }
 
-func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
+func getReviewNews(db *sql.DB, seq, num, ctype, stype int64) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
 	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " +
 		genTypeQuery(int32(ctype))
+	if stype != 0 {
+		query += " AND stype = 10 "
+	}
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," +
 		strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
@@ -198,7 +201,7 @@ func getReviewNews(db *sql.DB, seq, num, ctype int64) []*fetch.NewsInfo {
 func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num, in.Type)
-	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type))
+	news := getReviewNews(db, in.Seq, int64(in.Num), int64(in.Type), in.Subtype)
 	total := getTotalNews(db, in.Type)
 	return &fetch.NewsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
