@@ -33,6 +33,7 @@ message CommRequest {
     int64 type = 4;
     int64 id = 5;
     int64 subtype = 6;
+    string search = 7;
 }
 
 message CommReply {

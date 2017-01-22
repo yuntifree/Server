@@ -79,12 +79,13 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	seq := req.GetParamInt("seq")
 	ctype := req.GetParamInt("type")
 	stype := req.GetParamIntDef("stype", 0)
+	search := req.GetParamStringDef("search", "")
 	num = genReqNum(num)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchReviewNews",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num, Type: ctype, Subtype: stype})
+			Seq: seq, Num: num, Type: ctype, Subtype: stype, Search: search})
 	checkRPCErr(rpcerr, "FetchReviewNews")
 	res := resp.Interface().(*fetch.NewsReply)
 	checkRPCCode(res.Head.Retcode, "FetchReviewNews")

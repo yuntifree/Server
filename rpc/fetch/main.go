@@ -85,10 +85,13 @@ func genTypeQuery(ctype int64) string {
 	}
 }
 
-func getTotalNews(db *sql.DB, ctype, stype int64) int64 {
+func getTotalNews(db *sql.DB, ctype, stype int64, search string) int64 {
 	query := "SELECT COUNT(id) FROM news WHERE 1 = 1 " + genTypeQuery(ctype)
 	if stype != 0 {
 		query += " AND stype = 10 "
+	}
+	if search != "" {
+		query += " AND title LIKE '%" + search + "%' "
 	}
 	var total int64
 	err := db.QueryRow(query).Scan(&total)
@@ -166,12 +169,15 @@ func getTotalBanners(db *sql.DB, btype int64) int64 {
 	return total
 }
 
-func getReviewNews(db *sql.DB, seq, num, ctype, stype int64) []*fetch.NewsInfo {
+func getReviewNews(db *sql.DB, seq, num, ctype, stype int64, search string) []*fetch.NewsInfo {
 	var infos []*fetch.NewsInfo
 	query := "SELECT id, title, ctime, source FROM news WHERE 1 = 1 " +
 		genTypeQuery(ctype)
 	if stype != 0 {
 		query += " AND stype = 10 "
+	}
+	if search != "" {
+		query += " AND title LIKE '%" + search + "%' "
 	}
 	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(seq)) + "," +
 		strconv.Itoa(int(num))
@@ -202,10 +208,10 @@ func getReviewNews(db *sql.DB, seq, num, ctype, stype int64) []*fetch.NewsInfo {
 }
 
 func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
-	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d", in.Head.Uid,
-		in.Head.Sid, in.Seq, in.Num, in.Type)
-	news := getReviewNews(db, in.Seq, in.Num, in.Type, in.Subtype)
-	total := getTotalNews(db, in.Type, in.Subtype)
+	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d search:%s", in.Head.Uid,
+		in.Head.Sid, in.Seq, in.Num, in.Type, in.Search)
+	news := getReviewNews(db, in.Seq, in.Num, in.Type, in.Subtype, in.Search)
+	total := getTotalNews(db, in.Type, in.Subtype, in.Search)
 	return &fetch.NewsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: news, Total: total}, nil
