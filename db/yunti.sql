@@ -212,6 +212,16 @@ CREATE TABLE IF NOT EXISTS click_record (
     UNIQUE KEY(type, id, uid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS click_stat (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    int unsigned NOT NULL,
+    name    varchar(64) NOT NULL,
+    ctime   date NOT NULL DEFAULT '2017-01-01',
+    total   bigint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(id),
+    UNIQUE KEY(type, name, ctime)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS weather (
     wid     bigint unsigned NOT NULL AUTO_INCREMENT,
     temp    int unsigned NOT NULL,

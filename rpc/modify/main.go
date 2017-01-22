@@ -30,6 +30,9 @@ const (
 	adClickType
 	serviceClickType
 	jokeHeartType
+	downloadType
+	tabSwitchType
+	portalServiceType
 )
 
 type server struct{}
@@ -41,7 +44,7 @@ func (s *server) ReviewNews(ctx context.Context, in *modify.NewsRequest) (*commo
 		db.Exec("UPDATE news SET review = 1, deleted = 1, rtime = NOW(), ruid = ? WHERE id = ?",
 			in.Head.Uid, in.Id)
 	} else {
-		query := "UPDATE news SET review = 1, rtime = NOW(), ruid = " +
+		query := "UPDATE news SET review = 1, rtime = NOW(), deleted = 0, ruid = " +
 			strconv.Itoa(int(in.Head.Uid))
 		if in.Modify && in.Title != "" {
 			query += ", title = '" + in.Title + "' "
@@ -165,6 +168,13 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 			_, err = db.Exec("INSERT INTO service_click(sid, click, ctime) VALUES (?, 1, CURDATE()) ON DUPLICATE KEY UPDATE click = click + 1", in.Id)
 		case jokeHeartType:
 			_, err = db.Exec("UPDATE joke SET heart = heart + 1 WHERE id = ?", in.Id)
+		case downloadType, tabSwitchType, portalServiceType:
+			name := in.Name
+			if in.Type == downloadType {
+				name = "portal"
+			}
+			_, err = db.Exec("INSERT INTO click_stat(type, name, ctime, total) VALUES (?,?,NOW(),1) ON DUPLICATE KEY UPDATE total = total + 1",
+				in.Type, name)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 

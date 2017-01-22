@@ -461,12 +461,13 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	ctype := req.GetParamInt("type")
-	log.Printf("reportClick uid:%d type:%d id:%d", uid, ctype, id)
+	name := req.GetParamStringDef("name", "")
+	log.Printf("reportClick uid:%d type:%d id:%d name:%s", uid, ctype, id, name)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.ModifyServerType, uid, "ReportClick",
 		&modify.ClickRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: id, Type: ctype})
+			Id: id, Type: ctype, Name: name})
 	checkRPCErr(rpcerr, "ReportClick")
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "ReportClick")
