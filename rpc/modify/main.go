@@ -9,11 +9,12 @@ import (
 	"strconv"
 	"time"
 
-	"../../util"
+	"Server/util"
 
-	common "../../proto/common"
-	modify "../../proto/modify"
-	zte "../../zte"
+	"Server/proto/common"
+	"Server/proto/modify"
+	"Server/zte"
+
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

@@ -6,9 +6,9 @@ import (
 	"net"
 	"net/url"
 
-	common "../../proto/common"
-	push "../../proto/push"
-	util "../../util"
+	"Server/proto/common"
+	"Server/proto/push"
+	"Server/util"
 
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"

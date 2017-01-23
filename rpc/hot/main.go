@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	common "../../proto/common"
-	hot "../../proto/hot"
-	util "../../util"
+	"Server/proto/common"
+	"Server/proto/hot"
+	"Server/util"
+
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

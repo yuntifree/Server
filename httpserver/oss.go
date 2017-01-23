@@ -7,13 +7,14 @@ import (
 	"os"
 	"strconv"
 
-	aliyun "../aliyun"
-	common "../proto/common"
-	fetch "../proto/fetch"
-	modify "../proto/modify"
-	push "../proto/push"
-	verify "../proto/verify"
-	util "../util"
+	"Server/aliyun"
+	"Server/proto/common"
+	"Server/proto/fetch"
+	"Server/proto/modify"
+	"Server/proto/push"
+	"Server/proto/verify"
+	"Server/util"
+
 	simplejson "github.com/bitly/go-simplejson"
 )
 

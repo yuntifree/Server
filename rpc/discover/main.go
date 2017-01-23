@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	common "../../proto/common"
-	discover "../../proto/discover"
-	util "../../util"
+	"Server/proto/common"
+	"Server/proto/discover"
+	"Server/util"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	redis "gopkg.in/redis.v5"

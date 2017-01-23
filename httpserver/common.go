@@ -14,14 +14,15 @@ import (
 
 	"google.golang.org/grpc"
 
-	common "../proto/common"
-	discover "../proto/discover"
-	fetch "../proto/fetch"
-	hot "../proto/hot"
-	modify "../proto/modify"
-	push "../proto/push"
-	verify "../proto/verify"
-	util "../util"
+	"Server/proto/common"
+	"Server/proto/discover"
+	"Server/proto/fetch"
+	"Server/proto/hot"
+	"Server/proto/modify"
+	"Server/proto/push"
+	"Server/proto/verify"
+	"Server/util"
+
 	simplejson "github.com/bitly/go-simplejson"
 )
 

@@ -13,10 +13,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	aliyun "../../aliyun"
-	common "../../proto/common"
-	fetch "../../proto/fetch"
-	util "../../util"
+	"Server/aliyun"
+	"Server/proto/common"
+	"Server/proto/fetch"
+	"Server/util"
+
 	simplejson "github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 )

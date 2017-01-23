@@ -11,14 +11,17 @@ import (
 	"strings"
 	"time"
 
-	aliyun "../aliyun"
-	pay "../pay"
-	common "../proto/common"
-	fetch "../proto/fetch"
-	hot "../proto/hot"
-	modify "../proto/modify"
-	verify "../proto/verify"
-	util "../util"
+	"Server/aliyun"
+	"Server/pay"
+	"Server/proto/common"
+	"Server/proto/fetch"
+
+	"Server/proto/hot"
+
+	"Server/proto/modify"
+	"Server/proto/verify"
+	"Server/util"
+
 	simplejson "github.com/bitly/go-simplejson"
 	pingpp "github.com/pingplusplus/pingpp-go/pingpp"
 	"golang.org/x/net/context"

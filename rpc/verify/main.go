@@ -8,16 +8,15 @@ import (
 
 	"database/sql"
 
-	redis "gopkg.in/redis.v5"
+	"Server/proto/common"
+	"Server/proto/verify"
+	"Server/util"
+	"Server/zte"
 
-	"../../util"
-	"../../zte"
-
-	common "../../proto/common"
-	verify "../../proto/verify"
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	redis "gopkg.in/redis.v5"
 )
 
 const (
