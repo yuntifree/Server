@@ -1,20 +1,13 @@
 #!/bin/bash
-ROOTDIR=/data/darren/Server
-cd $ROOTDIR/access
-go build -o appserver app.go
+go build ../access/appserver
 ./release.sh 1 appserver
-cd $ROOTDIR/rpc/discover
-go build
+go build ../rpc/discover
 ./release.sh 2 discover
-cd $ROOTDIR/rpc/fetch
-go build
+go build ../rpc/fetch
 ./release.sh 2 fetch
-cd $ROOTDIR/rpc/hot
-go build
+go build ../rpc/hot
 ./release.sh 2 hot
-cd $ROOTDIR/rpc/modify
-go build
+go build ../rpc/modify
 ./release.sh 2 modify
-cd $ROOTDIR/rpc/verify
-go build
+go build ../rpc/verify
 ./release.sh 2 verify
