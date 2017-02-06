@@ -3,6 +3,7 @@ package zte
 import (
 	"errors"
 	"log"
+	"time"
 
 	"Server/util"
 
@@ -208,19 +209,9 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 	}
 
 	log.Printf("Loginnopass reqbody:%s", body)
-	js, err := getResponse(body, stype)
+	_, err = getResponse(body, stype)
 	if err != nil {
 		log.Printf("Loginnopass getResponse failed:%v", err)
-		if err == errStatus {
-			reason, err := js.Get("head").Get("reason").String()
-			if err != nil {
-				log.Printf("Loginnopass get reason failed:%v", err)
-				return false
-			}
-			if reason == "无线接入控制失败或限制接入" {
-				return true
-			}
-		}
 		return false
 	}
 
@@ -247,5 +238,39 @@ func Logout(phone, mac, userip, acip string, stype uint) bool {
 		return false
 	}
 
+	return true
+}
+
+func genQueryOnlineBody(phone string) (string, error) {
+	end := time.Now().Format(util.TimeFormat)
+	body := genBody(map[string]string{"custCode": phone,
+		"opervnocode": "ROOT_VNO", "status": "30A", "enddate": end,
+		"isbysubvno": "1", "pageno": "0", "pagesize": "10"})
+	return genBodyStr("logout", body)
+}
+
+//QueryOnline query phone online status
+func QueryOnline(phone string, stype uint) bool {
+	body, err := genQueryOnlineBody(phone)
+	if err != nil {
+		log.Printf("QueryOnline genQueryOnlineBody failed:%v", err)
+		return false
+	}
+
+	res, err := getResponse(body, stype)
+	if err != nil {
+		log.Printf("QueryOnline getResponse failed:%v", err)
+		return false
+	}
+
+	rspbody, err := res.Get("body").Array()
+	if err != nil {
+		log.Printf("QueryOnline get body failed:%v", err)
+		return false
+	}
+
+	if len(rspbody) == 0 {
+		return false
+	}
 	return true
 }

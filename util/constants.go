@@ -16,6 +16,7 @@ const (
 	MaxIdleConns       = 3
 	DebugHost          = "10.26.210.175"
 	APIHosts           = "10.27.178.90,10.27.178.90"
+	TimeFormat         = "2006-01-02 15:04:05"
 	UidShareType       = 1
 	GidShareType       = 2
 	ListShareType      = 3

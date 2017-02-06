@@ -196,7 +196,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	recordWxUnionid(db, uid, privdata)
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
-		Format("2006-01-02 15:04:05")
+		Format(util.TimeFormat)
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime, Wifipass: wifipass}, nil
@@ -229,7 +229,7 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	util.SetCachedToken(kv, uid, token)
 
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
-		Format("2006-01-02 15:04:05")
+		Format(util.TimeFormat)
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime, Wifipass: wifipass}, nil
@@ -290,7 +290,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		}
 	}
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
-		Format("2006-01-02 15:04:05")
+		Format(util.TimeFormat)
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expire,
 		Expiretime: strTime}, nil
@@ -442,7 +442,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 			errors.New("refresh token failed")
 	}
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
-		Format("2006-01-02 15:04:05")
+		Format(util.TimeFormat)
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Token: token, Privdata: privdata, Expire: expire, Expiretime: strTime}, nil
 }
@@ -467,7 +467,7 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	updatePrivdata(db, uid, token, privdata)
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
-		Format("2006-01-02 15:04:05")
+		Format(util.TimeFormat)
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime}, nil
@@ -600,10 +600,14 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte loginnopass failed, phone:%s code:%s",
+		log.Printf("PortalLogin zte loginnopass failed, to queryonline phone:%s code:%s",
 			in.Info.Phone, in.Info.Code)
-		return &verify.PortalLoginReply{
-			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		if !zte.QueryOnline(in.Info.Phone, stype) {
+			log.Printf("PortalLogin zte queryonline failed, phone:%s code:%s",
+				in.Info.Phone, in.Info.Code)
+			return &verify.PortalLoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
 	}
 
 	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap) VALUES (?, ?, NOW(), NOW(), ?) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?",
