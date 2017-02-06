@@ -4,7 +4,7 @@ import (
 	"log"
 	"strconv"
 
-	"../util"
+	"Server/util"
 
 	simplejson "github.com/bitly/go-simplejson"
 )

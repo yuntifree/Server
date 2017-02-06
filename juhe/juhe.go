@@ -15,8 +15,9 @@ import (
 	"github.com/axgle/mahonia"
 	simplejson "github.com/bitly/go-simplejson"
 
-	aliyun "../aliyun"
-	util "../util"
+	"Server/aliyun"
+	"Server/util"
+
 	"github.com/PuerkitoBio/goquery"
 )
 

@@ -4,9 +4,10 @@ import (
 	"log"
 	"os"
 
-	juhe "../juhe"
+	"Server/juhe"
 
-	util "../util"
+	"Server/util"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
