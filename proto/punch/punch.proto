@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package punch;
+
+service Punch {
+    rpc Punch(PunchRequest) returns (common.CommReply) {}
+}
+
+message PunchRequest {
+    common.Head head = 1;
+    string apmac = 2;
+}

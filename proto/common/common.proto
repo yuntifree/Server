@@ -14,6 +14,7 @@ enum ErrCode{
     ZTE_LOGIN = 10008;
     ZTE_REMOVE = 10009;
     NO_NEW_VERSION = 10010;
+    HAS_PUNCH = 10011;
 }
 
 message Head {

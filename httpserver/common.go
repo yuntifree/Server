@@ -19,6 +19,7 @@ import (
 	"Server/proto/fetch"
 	"Server/proto/hot"
 	"Server/proto/modify"
+	"Server/proto/punch"
 	"Server/proto/push"
 	"Server/proto/verify"
 	"Server/util"
@@ -68,6 +69,7 @@ const (
 	errZteLogin
 	errZteRemove
 	errNoNewVersion
+	errHasPunch
 )
 
 func genParamErr(key string) string {
@@ -502,6 +504,8 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{errZteRemove, "删除中兴账号失败"})
 	} else if retcode == common.ErrCode_NO_NEW_VERSION {
 		panic(util.AppError{errNoNewVersion, "当前已是最新版本"})
+	} else if retcode == common.ErrCode_HAS_PUNCH {
+		panic(util.AppError{errHasPunch, "此地已经被别人打过卡"})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}
@@ -521,6 +525,8 @@ func genServerName(rtype int64) string {
 		return util.ModifyServerName
 	case util.PushServerType:
 		return util.PushServerName
+	case util.PunchServerType:
+		return util.PunchServerName
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
@@ -541,6 +547,8 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 		cli = modify.NewModifyClient(conn)
 	case util.PushServerType:
 		cli = push.NewPushClient(conn)
+	case util.PunchServerType:
+		cli = punch.NewPunchClient(conn)
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
