@@ -109,6 +109,8 @@ func main() {
 
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.PushServerName, util.PushServerPort)
+	cli := util.InitEtcdCli()
+	go util.ReportEtcd(cli, util.PushServerName, util.PushServerPort)
 
 	s := grpc.NewServer()
 	push.RegisterPushServer(s, &server{})
