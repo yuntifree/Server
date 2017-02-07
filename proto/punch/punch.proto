@@ -8,6 +8,7 @@ service Punch {
     rpc Punch(PunchRequest) returns (common.CommReply) {}
     rpc Praise(PunchRequest) returns (common.CommReply) {}
     rpc GetPunch(common.CommRequest) returns (PunchReply) {}
+    rpc GetStat(PunchRequest) returns (PunchStatReply) {}
 }
 
 message PunchRequest {
@@ -27,4 +28,23 @@ message PunchInfo {
 message PunchReply {
     common.Head head = 1;
     repeated PunchInfo infos = 2;
+}
+
+message PunchUserInfo {
+    int64 uid = 1;
+    string nickname = 2;
+    string headurl = 3;
+    string time = 4;
+}
+
+message PraiseInfo {
+    int64 total = 1;
+    repeated string nicknames = 2;
+}
+
+message PunchStatReply {
+    common.Head head = 1;
+    int64 pflag = 2;
+    PunchUserInfo info = 3;
+    PraiseInfo praise = 4;
 }

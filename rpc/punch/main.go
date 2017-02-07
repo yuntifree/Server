@@ -22,12 +22,19 @@ var db *sql.DB
 
 var kv *redis.Client
 
+func getApID(db *sql.DB, apmac string) int64 {
+	var aid int64
+	err := db.QueryRow("SELECT id FROM ap WHERE mac = ?", apmac).Scan(&aid)
+	if err != nil {
+		log.Printf("getApID failed:%v", err)
+	}
+	return aid
+}
+
 func (s *server) Punch(ctx context.Context, in *punch.PunchRequest) (*common.CommReply, error) {
 	log.Printf("punch request uid:%d apmac:%s", in.Head.Uid, in.Apmac)
-	var aid int64
-	err := db.QueryRow("SELECT id FROM ap WHERE mac = ?", in.Apmac).Scan(&aid)
-	if err != nil {
-		log.Printf("Punch query failed:%v", err)
+	aid := getApID(db, in.Apmac)
+	if aid == 0 {
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
@@ -56,14 +63,12 @@ func (s *server) Punch(ctx context.Context, in *punch.PunchRequest) (*common.Com
 
 func (s *server) Praise(ctx context.Context, in *punch.PunchRequest) (*common.CommReply, error) {
 	log.Printf("praise request uid:%d apmac:%s", in.Head.Uid, in.Apmac)
-	var aid int64
-	err := db.QueryRow("SELECT id FROM ap WHERE mac = ?", in.Apmac).Scan(&aid)
-	if err != nil {
-		log.Printf("Punch query failed:%v", err)
+	aid := getApID(db, in.Apmac)
+	if aid == 0 {
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	_, err = db.Exec("INSERT IGNORE INTO punch_praise(aid, uid, ctime) VALUES (?, ?, NOW())",
+	_, err := db.Exec("INSERT IGNORE INTO punch_praise(aid, uid, ctime) VALUES (?, ?, NOW())",
 		aid, in.Head.Uid)
 	if err != nil {
 		log.Printf("Punch insert record failed:%v", err)
@@ -111,6 +116,62 @@ func (s *server) GetPunch(ctx context.Context, in *common.CommRequest) (*punch.P
 	infos := getPunch(db, in.Head.Uid)
 	return &punch.PunchReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
+}
+
+func getApPunch(db *sql.DB, aid int64) punch.PunchUserInfo {
+	var info punch.PunchUserInfo
+	err := db.QueryRow("SELECT u.uid, u.nickname, u.headurl, p.ctime FROM user u, punch p WHERE p.uid = u.uid AND p.aid = ?", aid).
+		Scan(&info.Uid, &info.Nickname, &info.Headurl, &info.Time)
+	if err != nil {
+		log.Printf("getApPunch failed:%v", err)
+	}
+	return info
+}
+
+func getApPraise(db *sql.DB, aid int64) *punch.PraiseInfo {
+	var praise punch.PraiseInfo
+	err := db.QueryRow("SELECT COUNT(id) FROM punch_praise WHERE aid = ?", aid).Scan(&praise.Total)
+	if err != nil {
+		log.Printf("getApPraise get total failed:%v", err)
+		return &praise
+	}
+
+	rows, err := db.Query("SELECT nickname FROM user u, punch_praise p WHERE p.uid = u.uid AND p.aid = ?", aid)
+	if err != nil {
+		log.Printf("getApPraise query nickname failed:%v", err)
+		return &praise
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var name string
+		err := rows.Scan(&name)
+		if err != nil {
+			log.Printf("getApPraise scan nickname failed:%v", err)
+			continue
+		}
+		names = append(names, name)
+	}
+	praise.Nicknames = names
+	return &praise
+}
+
+func (s *server) GetStat(ctx context.Context, in *punch.PunchRequest) (*punch.PunchStatReply, error) {
+	log.Printf("GetStat request uid:%d apmac:%s", in.Head.Uid, in.Apmac)
+	aid := getApID(db, in.Apmac)
+	if aid == 0 {
+		return &punch.PunchStatReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	info := getApPunch(db, aid)
+	if info.Uid == 0 {
+		return &punch.PunchStatReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}, Pflag: 0}, nil
+	}
+	praise := getApPraise(db, aid)
+	return &punch.PunchStatReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Pflag: 1,
+		Info: &info, Praise: praise}, nil
 }
 
 func main() {

@@ -1406,6 +1406,25 @@ func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	apmac := req.GetParamString("apmac")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.PunchServerType, uid, "GetStat",
+		&punch.PunchRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}, Apmac: apmac})
+	checkRPCErr(rpcerr, "GetStat")
+	res := resp.Interface().(*punch.PunchStatReply)
+	checkRPCCode(res.Head.Retcode, "GetStat")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getAppAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, false)
 }
@@ -1708,6 +1727,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/punch", appHandler(punchAp))
 	mux.Handle("/praise", appHandler(praiseAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
+	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
