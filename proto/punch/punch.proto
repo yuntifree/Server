@@ -6,6 +6,7 @@ package punch;
 
 service Punch {
     rpc Punch(PunchRequest) returns (common.CommReply) {}
+    rpc Praise(PunchRequest) returns (common.CommReply) {}
 }
 
 message PunchRequest {

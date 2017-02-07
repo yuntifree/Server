@@ -54,6 +54,26 @@ func (s *server) Punch(ctx context.Context, in *punch.PunchRequest) (*common.Com
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) Praise(ctx context.Context, in *punch.PunchRequest) (*common.CommReply, error) {
+	log.Printf("praise request uid:%d apmac:%s", in.Head.Uid, in.Apmac)
+	var aid int64
+	err := db.QueryRow("SELECT id FROM ap WHERE mac = ?", in.Apmac).Scan(&aid)
+	if err != nil {
+		log.Printf("Punch query failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("INSERT IGNORE INTO punch_praise(aid, uid, ctime) VALUES (?, ?, NOW())",
+		aid, in.Head.Uid)
+	if err != nil {
+		log.Printf("Punch insert record failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.PunchServerPort)
 	if err != nil {
