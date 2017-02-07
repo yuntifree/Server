@@ -74,6 +74,45 @@ func (s *server) Praise(ctx context.Context, in *punch.PunchRequest) (*common.Co
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func getPraiseTotal(db *sql.DB, aid int64) int64 {
+	var total int64
+	err := db.QueryRow("SELECT COUNT(id) FROM punch_praise WHERE aid = ?", aid).Scan(&total)
+	if err != nil {
+		log.Printf("getPraiseTotal failed:%v", err)
+	}
+	return total
+}
+
+func getPunch(db *sql.DB, uid int64) []*punch.PunchInfo {
+	var infos []*punch.PunchInfo
+	rows, err := db.Query("SELECT a.id, longitude, latitude, address, p.ctime FROM punch p, ap a WHERE p.aid = a.id AND p.uid = ?", uid)
+	if err != nil {
+		log.Printf("getPunch query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info punch.PunchInfo
+		err := rows.Scan(&info.Aid, &info.Longitude, &info.Latitude, &info.Address,
+			&info.Time)
+		if err != nil {
+			log.Printf("getPunch scan failed:%v", err)
+			continue
+		}
+		info.Total = getPraiseTotal(db, info.Aid)
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetPunch(ctx context.Context, in *common.CommRequest) (*punch.PunchReply, error) {
+	log.Printf("GetPunch request uid:%d", in.Head.Uid)
+	infos := getPunch(db, in.Head.Uid)
+	return &punch.PunchReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.PunchServerPort)
 	if err != nil {
