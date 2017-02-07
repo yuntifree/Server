@@ -389,7 +389,7 @@ func getNameServer(uid int64, name string) string {
 	}
 	uuid := util.GenUUID()
 	res, err := c.Resolve(context.Background(),
-		&discover.ServerRequest{Head: &common.Head{Sid: uuid}, Sname: name})
+		&discover.ServerRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Sname: name})
 	if err != nil {
 		log.Printf("Resolve failed %s: %v", name, err)
 		panic(util.AppError{errInner, err.Error()})

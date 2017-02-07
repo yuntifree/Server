@@ -1616,6 +1616,8 @@ func main() {
 
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.FetchServerName, util.FetchServerPort)
+	cli := util.InitEtcdCli()
+	go util.ReportEtcd(cli, util.FetchServerName, util.FetchServerPort)
 
 	s := grpc.NewServer()
 	fetch.RegisterFetchServer(s, &server{})

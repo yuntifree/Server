@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coreos/etcd/clientv3"
+
 	"Server/proto/common"
 	"Server/proto/discover"
 	"Server/util"
@@ -14,6 +16,11 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	redis "gopkg.in/redis.v5"
+)
+
+const (
+	addServer = iota
+	dropServer
 )
 
 type server struct{}
@@ -25,6 +32,10 @@ type Server struct {
 	host string
 	port int32
 }
+
+type serviceMap map[string][]string
+
+var srvMap serviceMap
 
 func parseServer(name string) (Server, error) {
 	var srv Server
@@ -41,6 +52,68 @@ func parseServer(name string) (Server, error) {
 	srv.host = vals[0]
 	srv.port = int32(port)
 	return srv, nil
+}
+
+func updateServiceMap(mp serviceMap, key, srv string, op int64) {
+	arr := mp[key]
+	switch op {
+	case addServer:
+		if len(arr) == 0 {
+			arr = append(arr, srv)
+		} else {
+			flag := false
+			for i := 0; i < len(arr); i++ {
+				if arr[i] == srv {
+					flag = true
+					break
+				}
+			}
+			if !flag {
+				arr = append(arr, srv)
+			}
+		}
+		mp[key] = arr
+	case dropServer:
+		if len(arr) == 0 {
+			break
+		}
+		idx := 0
+		for i := 0; i < len(arr); i++ {
+			if arr[i] == srv {
+				idx = i
+				break
+			}
+		}
+		arr := append(arr[:idx], arr[idx+1:]...)
+		mp[key] = arr
+	}
+}
+
+func extractService(path string) string {
+	arr := strings.Split(path, ":")
+	if len(arr) != 3 {
+		log.Printf("illegal service path:%s", path)
+		return ""
+	}
+	return arr[1]
+}
+
+func watcher(cli *clientv3.Client) {
+	rch := cli.Watch(context.Background(), "service", clientv3.WithPrefix())
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			log.Printf("%s %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+			service := extractService(string(ev.Kv.Key))
+			if service == "" {
+				continue
+			}
+			if ev.Type.String() == "PUT" {
+				updateServiceMap(srvMap, service, string(ev.Kv.Value), addServer)
+			} else if ev.Type.String() == "DELETE" {
+				updateServiceMap(srvMap, service, string(ev.Kv.Value), dropServer)
+			}
+		}
+	}
 }
 
 func fetchServers(name string) []string {
@@ -63,9 +136,33 @@ func fetchServers(name string) []string {
 	return servers
 }
 
+func isEtcdTestUid(uid int64) bool {
+	if uid == 1 {
+		return true
+	}
+	return false
+}
+
+func convertServerName(name string) string {
+	arr := strings.Split(name, ":")
+	var server string
+	if len(arr) == 3 {
+		server = arr[1] + "-" + arr[2]
+	} else if len(arr) == 2 {
+		server = arr[1]
+	}
+	return server
+}
+
 func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*discover.ServerReply, error) {
 	log.Printf("resolve request uid:%d server:%s", in.Head.Uid, in.Sname)
-	servers := fetchServers(in.Sname)
+	var servers []string
+	if !isEtcdTestUid(in.Head.Uid) {
+		servers = fetchServers(in.Sname)
+	} else {
+		name := convertServerName(in.Sname)
+		servers = srvMap[name]
+	}
 	if len(servers) == 0 {
 		log.Printf("fetch servers failed:%s", in.Sname)
 		return &discover.ServerReply{
@@ -81,9 +178,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	srvMap = make(map[string][]string)
 
 	kv = util.InitRedis()
 	go util.ReportHandler(kv, util.DiscoverServerName, util.DiscoverServerPort)
+	cli := util.InitEtcdCli()
+	go watcher(cli)
 
 	s := grpc.NewServer()
 	discover.RegisterDiscoverServer(s, &server{})
