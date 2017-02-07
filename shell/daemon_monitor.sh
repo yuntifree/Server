@@ -64,6 +64,22 @@ function check_ssdb()
     fi
 }
 
+function check_etcd()
+{
+    ip=`ifconfig  | grep 'inet '|grep -v '127.0.0.1' |grep ' 10.'|gawk '{print $2}'`
+    if [ -z "$(ps -ef |grep etcd| grep -v grep)" ]; then
+        err "Server etcd not running, restart."
+        if [ "$ip" = "10.26.210.175" ]; then
+            nohup /usr/local/etcd/etcd --name infra0 --data-dir /data/infra0.etcd --initial-advertise-peer-urls http://10.26.210.175:2380 --listen-peer-urls http://10.26.210.175:2380 --listen-client-urls http://10.26.210.175:2379,http://127.0.0.1:2379 --advertise-client-urls http://10.26.210.175:2379 --initial-cluster-token etcd-cluster-1 1>>/data/etcd.log 2>&1 &
+        elif [ "$ip" = "10.27.178.90" ]; then 
+            nohup /usr/local/etcd/etcd --name infra1 --data-dir /data/infra1.etcd --initial-advertise-peer-urls http://10.27.178.90:2380 --listen-peer-urls http://10.27.178.90:2380 --listen-client-urls http://10.27.178.90:2379,http://127.0.0.1:2379 --advertise-client-urls http://10.27.178.90:2379 --initial-cluster-token etcd-cluster-1 1>>/data/etcd.log 2>&1 &
+        elif [ "$ip" = "10.27.168.11" ]; then
+            nohup /usr/local/etcd/etcd --name infra2 --data-dir /data/infra2.etcd --initial-advertise-peer-urls http://10.27.168.11:2380 --listen-peer-urls http://10.27.168.11:2380 --listen-client-urls http://10.27.168.11:2379,http://127.0.0.1:2379 --advertise-client-urls http://10.27.168.11:2379 --initial-cluster-token etcd-cluster-1 1>>/data/etcd.log 2>&1 &
+        fi
+    fi
+}
+
 check_http
 check_rpc
 check_ssdb
+check_etcd
