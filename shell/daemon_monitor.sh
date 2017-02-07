@@ -66,7 +66,7 @@ function check_ssdb()
 
 function check_etcd()
 {
-    ip=`ifconfig  | grep 'inet '|grep -v '127.0.0.1' |grep ' 10.'|gawk '{print $2}'`
+    ip=`/usr/sbin/ifconfig  | grep 'inet '|grep -v '127.0.0.1' |grep ' 10.'|/usr/bin/gawk '{print $2}'`
     if [ -z "$(ps -ef |grep etcd| grep -v grep)" ]; then
         err "Server etcd not running, restart."
         if [ "$ip" = "10.26.210.175" ]; then
