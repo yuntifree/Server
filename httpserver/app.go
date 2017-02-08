@@ -1291,7 +1291,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip,
 				Phone: phone, Code: code}})
 	checkRPCErr(rpcerr, "PortalLogin")
-	res := resp.Interface().(*verify.LoginReply)
+	res := resp.Interface().(*verify.PortalLoginReply)
 	checkRPCCode(res.Head.Retcode, "PortalLogin")
 
 	body := genResponseBody(res, true)
@@ -1315,7 +1315,7 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 			Info: &verify.PortalInfo{
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip}})
 	checkRPCErr(rpcerr, "OneClickLogin")
-	res := resp.Interface().(*verify.LoginReply)
+	res := resp.Interface().(*verify.PortalLoginReply)
 	checkRPCCode(res.Head.Retcode, "OneClickLogin")
 
 	body := genResponseBody(res, true)
