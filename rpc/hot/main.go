@@ -111,7 +111,7 @@ func getTopNews(db *sql.DB, newsType int64) []*hot.HotsInfo {
 
 func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	var infos []*hot.HotsInfo
-	query := "SELECT vid, title, img, source, dst, ctime, play FROM youku_video WHERE 1 = 1 AND duration < 300 "
+	query := "SELECT vid, title, img, source, dst, ctime, play FROM youku_video WHERE 1 = 1 AND duration < 300 AND deleted = 0 "
 	if seq != 0 {
 		query += " AND vid < " + strconv.Itoa(int(seq))
 	}
