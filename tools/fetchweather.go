@@ -1,11 +1,10 @@
 package main
 
 import (
+	"Server/juhe"
+	"Server/util"
 	"log"
 	"os"
-
-	juhe "../juhe"
-	util "../util"
 
 	_ "github.com/go-sql-driver/mysql"
 )

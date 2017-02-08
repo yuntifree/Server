@@ -1,12 +1,12 @@
 package main
 
 import (
+	"Server/util"
 	"log"
 	"math"
 	"os"
 	"strconv"
 
-	util "../util"
 	_ "github.com/go-sql-driver/mysql"
 )
 

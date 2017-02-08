@@ -1,13 +1,13 @@
 package main
 
 import (
+	"Server/util"
 	"bufio"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	"../util"
 	_ "github.com/go-sql-driver/mysql"
 )
 

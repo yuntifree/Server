@@ -1,11 +1,11 @@
 package main
 
 import (
+	"Server/util"
+	"Server/zte"
 	"log"
 	"os"
 
-	util "../util"
-	zte "../zte"
 	_ "github.com/go-sql-driver/mysql"
 )
 
