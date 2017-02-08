@@ -193,7 +193,8 @@ func (s *server) SubmitCode(ctx context.Context, in *punch.CodeRequest) (*punch.
 	var uid int64
 	err = db.QueryRow("SELECT uid FROM user u, xcx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).Scan(&uid)
 	if err != nil {
-		_, err = db.Exec("INSERT INTO xcx_openid(openid, skey, sid, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?", openid, skey, sid, skey)
+		_, err = db.Exec("INSERT INTO xcx_openid(openid, skey, sid, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?, sid = ?",
+			openid, skey, sid, skey, sid)
 		if err != nil {
 			log.Printf("record failed:%v", err)
 			return &punch.LoginReply{
@@ -234,7 +235,11 @@ func decryptData(skey, encrypted, iv string) ([]byte, error) {
 	if err != nil {
 		return []byte(""), err
 	}
-	dst, err := util.AesDecrypt(src, key, []byte(iv))
+	vec, err := base64.StdEncoding.DecodeString(iv)
+	if err != nil {
+		return []byte(""), err
+	}
+	dst, err := util.AesDecrypt(src, key, vec)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -270,7 +275,7 @@ func (s *server) Login(ctx context.Context, in *punch.LoginRequest) (*punch.Logi
 			return &punch.LoginReply{
 				Head: &common.Head{Retcode: 1}}, nil
 		}
-		unionid, err := js.Get("unionid").String()
+		unionid, err := js.Get("unionId").String()
 		if err != nil {
 			log.Printf("get unionid failed:%v", err)
 			return &punch.LoginReply{
@@ -283,21 +288,24 @@ func (s *server) Login(ctx context.Context, in *punch.LoginRequest) (*punch.Logi
 			return &punch.LoginReply{
 				Head: &common.Head{Retcode: 1}}, nil
 		}
-		nickname, _ := js.Get("nickName").String()
-		headurl, _ := js.Get("avatarUrl").String()
-		gender, _ := js.Get("gender").Int64()
-		sex := 0
-		if gender == 1 {
-			sex = 1
+		db.QueryRow("SELECT uid FROM user WHERE username = ?", unionid).Scan(&uid)
+		if uid == 0 {
+			nickname, _ := js.Get("nickName").String()
+			headurl, _ := js.Get("avatarUrl").String()
+			gender, _ := js.Get("gender").Int64()
+			sex := 0
+			if gender == 1 {
+				sex = 1
+			}
+			res, err := db.Exec("INSERT IGNORE INTO user(username, nickname, headurl, sex, term, channel, ctime) VALUES (?, ?, ?, ?, 2, 'xcx', NOW())",
+				unionid, nickname, headurl, sex)
+			if err != nil {
+				log.Printf("create user failed:%v", err)
+				return &punch.LoginReply{
+					Head: &common.Head{Retcode: 1}}, nil
+			}
+			uid, _ = res.LastInsertId()
 		}
-		res, err := db.Exec("INSERT IGNORE INTO user(username, nickname, headurl, sex, term, channel, ctime) VALUES (?, ?, ?, ?, 2, 'xcx', NOW())",
-			unionid, nickname, headurl, sex)
-		if err != nil {
-			log.Printf("create user failed:%v", err)
-			return &punch.LoginReply{
-				Head: &common.Head{Retcode: 1}}, nil
-		}
-		uid, _ = res.LastInsertId()
 	} else {
 		db.QueryRow("SELECT uid FROM user WHERE username = ?", unionid).Scan(&uid)
 	}

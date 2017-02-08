@@ -169,9 +169,13 @@ type request struct {
 	Post *simplejson.Json
 }
 
-func (r *request) init(body io.ReadCloser) (err error) {
+func (r *request) init(body io.ReadCloser) {
+	var err error
 	r.Post, err = simplejson.NewFromReader(body)
-	return
+	if err != nil {
+		log.Printf("parse reqbody failed:%v", err)
+		panic(util.AppError{errInvalidParam, "invalid param"})
+	}
 }
 
 func (r *request) initCheck(body io.ReadCloser, back bool) {
