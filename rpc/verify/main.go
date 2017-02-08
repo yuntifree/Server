@@ -283,7 +283,8 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		token, privdata, expire, err = refreshTokenPrivdata(db, uid)
+		token, privdata, expire, err = util.RefreshTokenPrivdata(db, kv,
+			uid, expiretime)
 		if err != nil {
 			log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -388,43 +389,6 @@ func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
 	return err
 }
 
-func backupToken(db *sql.DB, uid int64, token, privdata string) {
-	_, err := db.Exec("INSERT INTO token_backup(uid, token, private, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, private = ?",
-		uid, token, privdata, token, privdata)
-	if err != nil {
-		log.Printf("backupToken failed uid:%d token:%s privdata:%s",
-			uid, token, privdata)
-	}
-}
-
-func refreshTokenPrivdata(db *sql.DB, uid int64) (string, string, int64, error) {
-	var token, privdata string
-	var expire int64
-	err := db.QueryRow("SELECT token, private, UNIX_TIMESTAMP(etime) FROM user WHERE uid = ?", uid).
-		Scan(&token, &privdata, &expire)
-	if err != nil {
-		log.Printf("refreshTokenPrivdata query failed uid:%d %v", uid, err)
-		return token, privdata, expire, err
-	}
-	log.Printf("expire:%d, now:%d", expire, time.Now().Unix())
-	if expire > time.Now().Unix() { //not expire
-		return token, privdata, expire - time.Now().Unix(), nil
-	}
-	backupToken(db, uid, token, privdata)
-	//token expire, update token
-	token = util.GenSalt()
-	privdata = util.GenSalt()
-	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
-		token, privdata, uid)
-	if err != nil {
-		log.Printf("refreshTokenPrivdata update failed uid:%d %v", uid, err)
-		return token, privdata, expire, err
-	}
-	util.SetCachedToken(kv, uid, token)
-	expire = expiretime
-	return token, privdata, expire, nil
-}
-
 func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.RegisterReply, error) {
 	backFlag := checkBackupPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 	if !backFlag {
@@ -436,7 +400,8 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 				errors.New("check privdata failed")
 		}
 	}
-	token, privdata, expire, err := refreshTokenPrivdata(db, in.Head.Uid)
+	token, privdata, expire, err := util.RefreshTokenPrivdata(db, kv,
+		in.Head.Uid, expiretime)
 	if err != nil {
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}},
 			errors.New("refresh token failed")
@@ -624,7 +589,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("uid:%d\n", uid)
-	token, _, _, err := refreshTokenPrivdata(db, uid)
+	token, _, _, err := util.RefreshTokenPrivdata(db, kv, uid, expiretime)
 	if err != nil {
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err

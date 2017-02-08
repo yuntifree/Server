@@ -1443,6 +1443,30 @@ func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	sid := req.GetParamString("sid")
+	rawData := req.GetParamString("rawData")
+	signature := req.GetParamString("signature")
+	encryptedData := req.GetParamString("encryptedData")
+	iv := req.GetParamString("iv")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.PunchServerType, 0, "Login",
+		&punch.LoginRequest{
+			Head: &common.Head{Sid: uuid}, Sid: sid,
+			Rawdata: rawData, Signature: signature,
+			Encrypteddata: encryptedData, Iv: iv})
+	checkRPCErr(rpcerr, "Login")
+	res := resp.Interface().(*punch.LoginReply)
+	checkRPCCode(res.Head.Retcode, "Login")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getAppAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, false)
 }
@@ -1747,6 +1771,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
+	mux.Handle("/xcx_login", appHandler(xcxLogin))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

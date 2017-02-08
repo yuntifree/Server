@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	redis "gopkg.in/redis.v5"
 )
 
 const (
@@ -235,4 +237,42 @@ func GetPortalDir(db *sql.DB, ptype int64) (string, error) {
 	var dir string
 	err := db.QueryRow("SELECT dir FROM portal_page WHERE type = ? AND online = 1 ORDER BY id DESC LIMIT 1", ptype).Scan(&dir)
 	return dir, err
+}
+
+func backupToken(db *sql.DB, uid int64, token, privdata string) {
+	_, err := db.Exec("INSERT INTO token_backup(uid, token, private, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, private = ?",
+		uid, token, privdata, token, privdata)
+	if err != nil {
+		log.Printf("backupToken failed uid:%d token:%s privdata:%s",
+			uid, token, privdata)
+	}
+}
+
+//RefreshTokenPrivdata refresh user token and privdata
+func RefreshTokenPrivdata(db *sql.DB, kv *redis.Client, uid int64, expiretime int64) (string, string, int64, error) {
+	var token, privdata string
+	var expire int64
+	err := db.QueryRow("SELECT token, private, UNIX_TIMESTAMP(etime) FROM user WHERE uid = ?", uid).
+		Scan(&token, &privdata, &expire)
+	if err != nil {
+		log.Printf("refreshTokenPrivdata query failed uid:%d %v", uid, err)
+		return token, privdata, expire, err
+	}
+	log.Printf("expire:%d, now:%d", expire, time.Now().Unix())
+	if expire > time.Now().Unix() { //not expire
+		return token, privdata, expire - time.Now().Unix(), nil
+	}
+	backupToken(db, uid, token, privdata)
+	//token expire, update token
+	token = GenSalt()
+	privdata = GenSalt()
+	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+		token, privdata, uid)
+	if err != nil {
+		log.Printf("refreshTokenPrivdata update failed uid:%d %v", uid, err)
+		return token, privdata, expire, err
+	}
+	SetCachedToken(kv, uid, token)
+	expire = expiretime
+	return token, privdata, expire, nil
 }

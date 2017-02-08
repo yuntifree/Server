@@ -24,8 +24,10 @@ CREATE TABLE IF NOT EXISTS xcx_openid (
     openid  varchar(32) NOT NULL,
     skey    varchar(32) NOT NULL,
     unionid varchar(36) NOT NULL,
+    sid     varchar(32) NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(openid),
+    KEY(sid),
     KEY(unionid)
 ) ENGINE = InnoDB;
