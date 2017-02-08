@@ -9,6 +9,7 @@ service Punch {
     rpc Praise(PunchRequest) returns (common.CommReply) {}
     rpc GetPunch(common.CommRequest) returns (PunchReply) {}
     rpc GetStat(PunchRequest) returns (PunchStatReply) {}
+    rpc SubmitCode(CodeRequest) returns (LoginReply) {}
 }
 
 message PunchRequest {
@@ -47,4 +48,16 @@ message PunchStatReply {
     int64 pflag = 2;
     PunchUserInfo info = 3;
     PraiseInfo praise = 4;
+}
+
+message CodeRequest {
+    common.Head head = 1;
+    string code = 2;
+}
+
+message LoginReply {
+    common.Head head = 1;
+    int64 uid = 2;
+    string token = 3;
+    int64 flag = 4;
 }

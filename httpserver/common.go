@@ -70,6 +70,7 @@ const (
 	errZteRemove
 	errNoNewVersion
 	errHasPunch
+	errIllegalCode
 )
 
 func genParamErr(key string) string {
@@ -506,6 +507,8 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{errNoNewVersion, "当前已是最新版本"})
 	} else if retcode == common.ErrCode_HAS_PUNCH {
 		panic(util.AppError{errHasPunch, "此地已经被别人打过卡"})
+	} else if retcode == common.ErrCode_ILLEGAL_CODE {
+		panic(util.AppError{errIllegalCode, "code已过期"})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}

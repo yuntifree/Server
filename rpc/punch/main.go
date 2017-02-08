@@ -10,6 +10,7 @@ import (
 	"Server/proto/common"
 	"Server/proto/punch"
 	"Server/util"
+	"Server/weixin"
 
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
@@ -172,6 +173,43 @@ func (s *server) GetStat(ctx context.Context, in *punch.PunchRequest) (*punch.Pu
 	return &punch.PunchStatReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Pflag: 1,
 		Info: &info, Praise: praise}, nil
+}
+
+func (s *server) SubmitCode(ctx context.Context, in *punch.CodeRequest) (*punch.LoginReply, error) {
+	log.Printf("SubmitCode request uid:%d code:%s", in.Head.Uid, in.Code)
+	openid, skey, err := weixin.GetSession(in.Code)
+	if err != nil {
+		log.Printf("SubmitCode GetSession failed:%v", err)
+		return &punch.LoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ILLEGAL_CODE}}, nil
+	}
+	var uid int64
+	err = db.QueryRow("SELECT uid FROM user u, xcx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).Scan(&uid)
+	if err != nil {
+		_, err = db.Exec("INSERT INTO xcx_openid(openid, skey, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?", openid, skey, skey)
+		if err != nil {
+			log.Printf("record failed:%v", err)
+			return &punch.LoginReply{
+				Head: &common.Head{Retcode: 1}}, nil
+		}
+	}
+	if uid == 0 {
+		log.Printf("user not found, openid:%s", openid)
+		return &punch.LoginReply{
+			Head: &common.Head{Retcode: 0}, Flag: 0}, nil
+	}
+
+	token := util.GenSalt()
+	privdata := util.GenSalt()
+	_, err = db.Exec("UPDATE user SET token = ?, private = ? WHERE uid = ?", token, privdata, err)
+	if err != nil {
+		log.Printf("SubmitCode update token failed:%v", err)
+		return &punch.LoginReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	util.SetCachedToken(kv, uid, token)
+	return &punch.LoginReply{
+		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token}, nil
 }
 
 func main() {

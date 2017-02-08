@@ -1425,6 +1425,24 @@ func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body)
+	code := req.GetParamString("code")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.PunchServerType, 0, "SubmitCode",
+		&punch.CodeRequest{
+			Head: &common.Head{Sid: uuid}, Code: code})
+	checkRPCErr(rpcerr, "SubmitCode")
+	res := resp.Interface().(*punch.LoginReply)
+	checkRPCCode(res.Head.Retcode, "SubmitCode")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getAppAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, false)
 }
@@ -1728,6 +1746,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/praise", appHandler(praiseAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
+	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
