@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	certPath    = "/etc/letsencrypt/live/yunxingzh.com/fullchain.pem"
-	privKeyPath = "/etc/letsencrypt/live/yunxingzh.com/privkey.pem"
+	certPath    = "/data/server/fullchain.pem"
+	privKeyPath = "/data/server/privkey.pem"
 )
 
 func main() {
