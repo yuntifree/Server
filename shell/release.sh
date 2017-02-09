@@ -46,7 +46,13 @@ function install_http()
 	for ip in $IPLIST; do
         scp $1 root@$ip:/tmp
         ssh root@$ip "mv -f /tmp/$1 $HTTPDIR"
-        ssh root@$ip "ps -ef|grep $HTTPDIR/$1 |grep -v grep|gawk -e '{print \$2}'|xargs kill -SIGUSR2"
+        n=`ssh root@$ip "ps -ef|grep $HTTPDIR/$1 |grep -v grep|gawk -e '{print \$2}'|wc -l"`
+        echo $n
+        if [ $n -eq 0 ]; then
+            ssh root@$ip "nohup $HTTPDIR/$1 1>>$HTTPDIR/$1.log 2>&1 &"
+        else 
+            ssh root@$ip "ps -ef|grep $HTTPDIR/$1 |grep -v grep|gawk -e '{print \$2}'|xargs kill -SIGUSR2"
+        fi
     done
     rm -f $1 
 }
