@@ -20,7 +20,7 @@ import (
 
 var roleConf *simplejson.Json
 
-func init() {
+func initRoleConf() {
 	file, err := os.Open("role.json")
 	if err != nil {
 		log.Fatal("open role.json failed:%v", err)
@@ -59,6 +59,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{errInner, "invalid param"}
 	}
 	role := strconv.Itoa(int(res.Role))
+	initRoleConf()
 	js.SetPath([]string{"data", "uid"}, res.Head.Uid)
 	js.SetPath([]string{"data", "token"}, res.Token)
 	js.SetPath([]string{"data", "roleconf"}, roleConf.Get(role))
