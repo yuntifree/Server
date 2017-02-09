@@ -1075,11 +1075,14 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchMenu",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCErr(rpcerr, "FetchKvConf")
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid,
+			Term: term, Version: version}})
+	checkRPCErr(rpcerr, "FetchMenu")
 	res := resp.Interface().(*fetch.MenuReply)
 	checkRPCCode(res.Head.Retcode, "FetchMenu")
 

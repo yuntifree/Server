@@ -1372,9 +1372,13 @@ func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fe
 		Infos: infos, Total: total}, nil
 }
 
-func getMenus(db *sql.DB) []*fetch.MenuInfo {
+func getMenus(db *sql.DB, term, version int64) []*fetch.MenuInfo {
 	var infos []*fetch.MenuInfo
-	rows, err := db.Query("SELECT type, ctype, title, dst FROM menu WHERE deleted = 0")
+	query := "SELECT type, ctype, title, dst FROM menu WHERE deleted = 0"
+	if term == 0 && version <= 6 {
+		query += " AND ctype < 4 "
+	}
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("getMenus failed:%v", err)
 		return infos
@@ -1394,7 +1398,7 @@ func getMenus(db *sql.DB) []*fetch.MenuInfo {
 
 func (s *server) FetchMenu(ctx context.Context, in *common.CommRequest) (*fetch.MenuReply, error) {
 	log.Printf("FetchMenu uid:%d", in.Head.Uid)
-	infos := getMenus(db)
+	infos := getMenus(db, in.Head.Term, in.Head.Version)
 	return &fetch.MenuReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
