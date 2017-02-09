@@ -4,7 +4,7 @@ HTTPDIR=/data/server
 RPCDIR=/data/rpc
 BACKDIR=/data/backup
 HTTPLIST="appserver"
-RPCLIST="discover fetch hot modify push verify"
+RPCLIST="discover fetch hot modify push verify punch"
 
 function backup_http()
 {
