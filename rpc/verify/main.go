@@ -23,7 +23,7 @@ const (
 	expiretime = 3600 * 24 * 30
 	mastercode = 251653
 	randrange  = 1000000
-	portalDir  = "http://120.76.236.185/"
+	portalDir  = "http://120.25.133.234/"
 )
 
 type server struct{}

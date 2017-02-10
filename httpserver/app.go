@@ -32,7 +32,7 @@ import (
 const (
 	wxHost     = "http://wx.yunxingzh.com/"
 	maxZipcode = 820000
-	portalDst  = "http://120.76.236.185/"
+	portalDst  = "http://120.25.133.234/"
 )
 
 type portalDir struct {
