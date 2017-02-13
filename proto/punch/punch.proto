@@ -6,7 +6,6 @@ package punch;
 
 service Punch {
     rpc Punch(PunchRequest) returns (common.CommReply) {}
-    rpc Praise(PunchRequest) returns (common.CommReply) {}
     rpc GetPunch(common.CommRequest) returns (PunchReply) {}
     rpc GetStat(PunchRequest) returns (PunchStatReply) {}
     rpc SubmitCode(CodeRequest) returns (LoginReply) {}
@@ -24,7 +23,6 @@ message PunchInfo {
     double latitude = 3;
     string address = 4;
     string time = 5;
-    int64 total = 6;
 }
 
 message PunchReply {
@@ -32,23 +30,9 @@ message PunchReply {
     repeated PunchInfo infos = 2;
 }
 
-message PunchUserInfo {
-    int64 uid = 1;
-    string nickname = 2;
-    string headurl = 3;
-    string time = 4;
-}
-
-message PraiseInfo {
-    int64 total = 1;
-    repeated string nicknames = 2;
-}
-
 message PunchStatReply {
     common.Head head = 1;
-    int64 pflag = 2;
-    PunchUserInfo info = 3;
-    PraiseInfo praise = 4;
+    int64 total = 2;
 }
 
 message CodeRequest {

@@ -1375,22 +1375,6 @@ func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func praiseAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckApp(r.Body)
-	uid := req.GetParamInt("uid")
-	apmac := req.GetParamString("apmac")
-	uuid := util.GenUUID()
-	resp, rpcerr := callRPC(util.PunchServerType, uid, "Praise",
-		&punch.PunchRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Apmac: apmac})
-	checkRPCErr(rpcerr, "Praise")
-	res := resp.Interface().(*common.CommReply)
-	checkRPCCode(res.Head.Retcode, "Praise")
-
-	w.Write([]byte(`{"errno":0}`))
-	return nil
-}
-
 func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1779,7 +1763,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/pingpp_pay", appHandler(pingppPay))
 	mux.Handle("/services", appHandler(getService))
 	mux.Handle("/punch", appHandler(punchAp))
-	mux.Handle("/praise", appHandler(praiseAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
