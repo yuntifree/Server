@@ -575,7 +575,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		}
 	}
 
-	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap) VALUES (?, ?, NOW(), NOW(), ?) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?",
+	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), ?, 2, NOW()) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?, aptime = NOW()",
 		in.Info.Phone, in.Info.Phone, (1 << stype), in.Info.Phone,
 		(1 << stype))
 	if err != nil {

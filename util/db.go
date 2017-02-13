@@ -222,6 +222,7 @@ func RefreshUserAp(db *sql.DB, uid int64, apmac string) {
 	err := db.QueryRow("SELECT id FROM ap WHERE mac = ? OR mac = ?", apmac, mac).Scan(&aid)
 	if err != nil {
 		log.Printf("select aid from ap failed uid:%d mac:%s err:%v\n", uid, apmac, err)
+		db.Exec("UPDATE user SET aptime = NOW() WHERE uid = ?", uid)
 		return
 	}
 	_, err = db.Exec("UPDATE user SET aid = ?, aptime = NOW() WHERE uid = ?", aid, uid)
