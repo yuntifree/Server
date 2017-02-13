@@ -25,6 +25,7 @@ import (
 	"Server/util"
 
 	simplejson "github.com/bitly/go-simplejson"
+	nsq "github.com/nsqio/go-nsq"
 )
 
 const (
@@ -72,6 +73,31 @@ const (
 	errHasPunch
 	errIllegalCode
 )
+
+var w *nsq.Producer
+
+func init() {
+	w = util.NewNsqProducer()
+}
+
+func reportRequest(uri string) {
+	pos := strings.Index(uri, "?")
+	path := uri
+	if pos != -1 {
+		path = uri[0:pos]
+	}
+	lpos := strings.LastIndex(path, "/")
+	method := path
+	if lpos != -1 {
+		method = path[lpos+1:]
+	}
+	log.Printf("report api:%s", method)
+	err := util.PubRequest(w, method)
+	if err != nil {
+		log.Printf("report api:%s failed:%v", err)
+	}
+	return
+}
 
 func genParamErr(key string) string {
 	return "get param:" + key + " failed"
@@ -169,7 +195,8 @@ type request struct {
 	Post *simplejson.Json
 }
 
-func (r *request) init(body io.ReadCloser) {
+func (r *request) init(body io.ReadCloser, uri string) {
+	reportRequest(uri)
 	var err error
 	r.Post, err = simplejson.NewFromReader(body)
 	if err != nil {
@@ -178,7 +205,8 @@ func (r *request) init(body io.ReadCloser) {
 	}
 }
 
-func (r *request) initCheck(body io.ReadCloser, back bool) {
+func (r *request) initCheck(body io.ReadCloser, uri string, back bool) {
+	reportRequest(uri)
 	var err error
 	r.Post, err = simplejson.NewFromReader(body)
 	if err != nil {
@@ -201,12 +229,12 @@ func (r *request) initCheck(body io.ReadCloser, back bool) {
 	}
 }
 
-func (r *request) initCheckApp(body io.ReadCloser) {
-	r.initCheck(body, false)
+func (r *request) initCheckApp(body io.ReadCloser, uri string) {
+	r.initCheck(body, uri, false)
 }
 
-func (r *request) initCheckOss(body io.ReadCloser) {
-	r.initCheck(body, true)
+func (r *request) initCheckOss(body io.ReadCloser, uri string) {
+	r.initCheck(body, uri, true)
 }
 
 func (r *request) GetParamInt(key string) int64 {
@@ -319,9 +347,9 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 
 	var req request
 	if back {
-		req.initCheckOss(r.Body)
+		req.initCheckOss(r.Body, r.RequestURI)
 	} else {
-		req.initCheckApp(r.Body)
+		req.initCheckApp(r.Body, r.RequestURI)
 	}
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
@@ -589,9 +617,9 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
 	var req request
 	if back {
-		req.initCheckOss(r.Body)
+		req.initCheckOss(r.Body, r.RequestURI)
 	} else {
-		req.initCheckApp(r.Body)
+		req.initCheckApp(r.Body, r.RequestURI)
 	}
 	uid := req.GetParamInt("uid")
 

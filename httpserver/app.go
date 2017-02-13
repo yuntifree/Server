@@ -47,7 +47,7 @@ var pdir = portalDir{
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 	model := req.GetParamString("model")
@@ -79,7 +79,7 @@ func getCode(phone string, ctype int64) (bool, error) {
 
 func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	phone := req.GetParamString("phone")
 	ctype := req.GetParamIntDef("type", 0)
 
@@ -98,7 +98,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	phone := req.GetParamString("phone")
 	acname := req.GetParamStringDef("wlanacname", "")
 	term := req.GetParamInt("term")
@@ -122,7 +122,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	token := req.GetParamString("token")
 
@@ -140,7 +140,7 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	ssid := req.GetParamString("ssid")
 	password := req.GetParamString("password")
@@ -162,7 +162,7 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	acname := req.GetParamString("wlanacname")
 	acip := req.GetParamString("wlanacip")
@@ -185,7 +185,7 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	province := req.GetParamInt("province")
 	city := req.GetParamInt("city")
@@ -218,7 +218,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	bid := req.GetParamInt("bid")
 	title := req.GetParamString("title")
@@ -247,7 +247,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	bid := req.GetParamInt("bid")
 	status := req.GetParamInt("status")
@@ -268,7 +268,7 @@ func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	content := req.GetParamString("content")
 	contact := req.GetParamStringDef("contact", "")
@@ -287,7 +287,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	bid := req.GetParamInt("bid")
 
@@ -315,7 +315,7 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	aid := req.GetParamInt("aid")
 	province := req.GetParamInt("province")
@@ -347,7 +347,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	aid := req.GetParamInt("aid")
 
@@ -365,7 +365,7 @@ func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	format := req.GetParamString("format")
 
@@ -398,7 +398,7 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 
 func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	amount := req.GetParamInt("amount")
 	channel := req.GetParamString("channel")
@@ -412,7 +412,7 @@ func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	apmac := req.GetParamString("apmac")
 	log.Printf("report_apmac uid:%d apmac:%s\n", uid, apmac)
@@ -431,6 +431,7 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	r.ParseForm()
+	reportRequest(r.RequestURI)
 	fname := r.Form["filename"]
 	if len(fname) < 1 {
 		log.Printf("parse filename failed\n")
@@ -461,7 +462,7 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamIntDef("id", 0)
 	ctype := req.GetParamInt("type")
@@ -482,7 +483,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
@@ -502,7 +503,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func checkUpdate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamInt("term")
 	version := req.GetParamInt("version")
@@ -524,7 +525,7 @@ func checkUpdate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	usermac := req.GetParamString("wlanusermac")
 	acname := req.GetParamString("wlanacname")
 	log.Printf("checkLogin usermac:%s", usermac)
@@ -545,7 +546,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -562,7 +563,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	version := req.GetParamInt("version")
 	term := req.GetParamInt("term")
@@ -593,7 +594,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -610,7 +611,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
@@ -642,7 +643,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
@@ -674,7 +675,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -691,7 +692,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -708,7 +709,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
@@ -743,7 +744,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	gid := req.GetParamIntDef("gid", 0)
 	seq := req.GetParamInt("seq")
@@ -775,7 +776,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	sid := req.GetParamInt("sid")
 
@@ -795,7 +796,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	gid := req.GetParamIntDef("gid", 0)
 	bid := req.GetParamIntDef("bid", 0)
@@ -819,7 +820,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -846,7 +847,7 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	response, err := getRspFromSSDB(hotWeatherKey)
 	if err == nil {
@@ -882,7 +883,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	ziptype := req.GetParamInt("type")
 	code := req.GetParamInt("code")
@@ -902,7 +903,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -928,7 +929,7 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	gid := req.GetParamInt("gid")
 
@@ -956,7 +957,7 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	gid := req.GetParamInt("gid")
 	seq := req.GetParamInt("seq")
@@ -977,7 +978,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	bid := req.GetParamInt("bid")
 	seq := req.GetParamInt("seq")
@@ -998,7 +999,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 
 func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -1015,7 +1016,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
@@ -1054,7 +1055,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	key := req.GetParamString("key")
 
@@ -1073,7 +1074,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamInt("term")
 	version := req.GetParamInt("version")
@@ -1093,7 +1094,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -1110,7 +1111,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	bid := req.GetParamInt("bid")
 
@@ -1202,7 +1203,7 @@ func setSSDBCache(key string, data *simplejson.Json) {
 
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	ctype := req.GetParamInt("type")
 	term := req.GetParamInt("term")
@@ -1256,7 +1257,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	token := req.GetParamString("token")
 	privdata := req.GetParamString("privdata")
@@ -1277,7 +1278,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	phone := req.GetParamString("phone")
 	code := req.GetParamString("code")
 	acname := req.GetParamString("wlanacname")
@@ -1304,7 +1305,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	acname := req.GetParamString("wlanacname")
 	acip := req.GetParamString("wlanacip")
 	userip := req.GetParamString("wlanuserip")
@@ -1328,7 +1329,7 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	response, err := getRspFromSSDB(hotServiceKey)
 	if err == nil {
@@ -1361,7 +1362,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	apmac := req.GetParamString("apmac")
 	uuid := util.GenUUID()
@@ -1377,7 +1378,7 @@ func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func correctAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	aid := req.GetParamInt("aid")
 	etype := req.GetParamInt("type")
@@ -1395,7 +1396,7 @@ func correctAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -1413,7 +1414,7 @@ func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.initCheckApp(r.Body)
+	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
 	apmac := req.GetParamString("apmac")
 
@@ -1432,7 +1433,7 @@ func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	code := req.GetParamString("code")
 
 	uuid := util.GenUUID()
@@ -1450,7 +1451,7 @@ func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	sid := req.GetParamString("sid")
 	rawData := req.GetParamString("rawData")
 	signature := req.GetParamString("signature")
@@ -1483,7 +1484,7 @@ func extractIP(addr string) string {
 
 func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
-	req.init(r.Body)
+	req.init(r.Body, r.RequestURI)
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 	udid := req.GetParamString("udid")
@@ -1513,6 +1514,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func wxMpLogin(w http.ResponseWriter, r *http.Request) {
+	reportRequest(r.RequestURI)
 	r.ParseForm()
 	code := r.Form["code"]
 	if len(code) == 0 {
@@ -1558,6 +1560,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func jump(w http.ResponseWriter, r *http.Request) {
+	reportRequest(r.RequestURI)
 	r.ParseForm()
 	file := r.Form["echofile"]
 	var echostr string
@@ -1622,6 +1625,7 @@ func getPortalDir() string {
 }
 
 func portal(w http.ResponseWriter, r *http.Request) {
+	reportRequest(r.RequestURI)
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
 	var path string
@@ -1655,6 +1659,7 @@ func genNonce() string {
 }
 
 func getJsapiSign(w http.ResponseWriter, r *http.Request) {
+	reportRequest(r.RequestURI)
 	address := getNameServer(0, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
