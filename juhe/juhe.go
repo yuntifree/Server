@@ -210,7 +210,7 @@ func GetContent(url string) (news News, err error) {
 		}
 	})
 
-	tpl, err := template.ParseFiles("/data/darren/Server/templates/content.html")
+	tpl, err := template.ParseFiles("/data/server/templates/content.html")
 	if err != nil {
 		log.Printf("parse template failed")
 		return news, err
