@@ -68,6 +68,19 @@ func (s *server) Punch(ctx context.Context, in *punch.PunchRequest) (*common.Com
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func (s *server) Correct(ctx context.Context, in *punch.ApRequest) (*common.CommReply, error) {
+	log.Printf("correct request:%v", in)
+	_, err := db.Exec("INSERT IGNORE INTO ap_error(aid, uid, type, ctime) VALUES (?, ?, ?, NOW())",
+		in.Aid, in.Head.Uid, in.Etype)
+	if err != nil {
+		log.Printf("correct insert record failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func getPunch(db *sql.DB, uid int64) []*punch.PunchInfo {
 	var infos []*punch.PunchInfo
 	rows, err := db.Query("SELECT a.id, longitude, latitude, address, p.ctime FROM punch p, ap a WHERE p.aid = a.id AND p.uid = ?", uid)

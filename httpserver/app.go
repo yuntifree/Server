@@ -1375,6 +1375,24 @@ func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func correctAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body)
+	uid := req.GetParamInt("uid")
+	aid := req.GetParamInt("aid")
+	etype := req.GetParamInt("type")
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.PunchServerType, uid, "Correct",
+		&punch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Aid: aid,
+			Etype: etype})
+	checkRPCErr(rpcerr, "Correct")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "Correct")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body)
@@ -1767,6 +1785,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
 	mux.Handle("/xcx_login", appHandler(xcxLogin))
+	mux.Handle("/correct_ap", appHandler(correctAp))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

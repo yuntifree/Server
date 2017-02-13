@@ -10,6 +10,7 @@ service Punch {
     rpc GetStat(PunchRequest) returns (PunchStatReply) {}
     rpc SubmitCode(CodeRequest) returns (LoginReply) {}
     rpc Login(LoginRequest) returns (LoginReply) {}
+    rpc Correct(ApRequest) returns (common.CommReply) {}
 }
 
 message PunchRequest {
@@ -55,4 +56,10 @@ message LoginRequest {
     string encrypteddata = 4;
     string iv = 5;
     string sid = 6;
+}
+
+message ApRequest {
+    common.Head head = 1;
+    int64 aid = 2;
+    int64 etype = 3;
 }
