@@ -42,7 +42,7 @@ type portalDir struct {
 
 var pdir = portalDir{
 	Dir:    "dist/",
-	Expire: time.Now().Unix() + 60,
+	Expire: time.Now().Unix(),
 }
 
 func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
@@ -1622,11 +1622,20 @@ func getPortalDir() string {
 func portal(w http.ResponseWriter, r *http.Request) {
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
+	var path string
 	if pos != -1 {
 		postfix = r.RequestURI[pos:]
+		path = r.RequestURI[0:pos]
+	} else {
+		path = r.RequestURI
+	}
+	lpos := strings.LastIndex(path, "/")
+	prefix := portalDst
+	if lpos != -1 {
+		prefix = path[0 : lpos+1]
 	}
 	dir := getPortalDir()
-	dst := portalDst + dir + postfix
+	dst := prefix + dir + postfix
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
