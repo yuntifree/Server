@@ -463,7 +463,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	var req request
 	req.initCheckApp(r.Body)
 	uid := req.GetParamInt("uid")
-	id := req.GetParamInt("id")
+	id := req.GetParamIntDef("id", 0)
 	ctype := req.GetParamInt("type")
 	name := req.GetParamStringDef("name", "")
 	log.Printf("reportClick uid:%d type:%d id:%d name:%s", uid, ctype, id, name)
