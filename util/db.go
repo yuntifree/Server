@@ -86,9 +86,19 @@ func genDsn(readonly bool) string {
 	return "access:^yunti9df3b01c$@tcp(" + host + ":3306)/yunxing?charset=utf8"
 }
 
+func genMonitorDsn() string {
+	return "access:^yunti9df3b01c$@tcp(" + masterRds + ":3306)/monitor?charset=utf8"
+}
+
 //InitDB connect to rds
 func InitDB(readonly bool) (*sql.DB, error) {
 	dsn := genDsn(readonly)
+	return sql.Open("mysql", dsn)
+}
+
+//InitMonitorDB connect to monitor rds
+func InitMonitorDB() (*sql.DB, error) {
+	dsn := genMonitorDsn()
 	return sql.Open("mysql", dsn)
 }
 

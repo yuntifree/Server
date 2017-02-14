@@ -2,7 +2,6 @@ package util
 
 import (
 	"log"
-	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
 	nsq "github.com/nsqio/go-nsq"
@@ -37,7 +36,6 @@ func packData(api string, ptype, code int64) ([]byte, error) {
 	js.Set("type", ptype)
 	host := GetInnerIP()
 	js.Set("host", host)
-	js.Set("ts", time.Now().Unix())
 	if ptype == responseType {
 		js.Set("code", code)
 	}
