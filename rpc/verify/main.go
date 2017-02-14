@@ -660,7 +660,15 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func recordPortalMac(db *sql.DB, mac string) {
+	_, err := db.Exec("INSERT INTO portal_mac(mac, ctime, atime) VALUES (?, NOW(), NOW()) ON DUPLICATE KEY UPDATE atime = NOW()", mac)
+	if err != nil {
+		log.Printf("recordPortalMac failed, mac:%s error:%v", mac, err)
+	}
+}
+
 func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
+	recordPortalMac(db, mac)
 	var phone string
 	var uid int64
 	err := db.QueryRow("SELECT phone, uid FROM user_mac WHERE etime > NOW() AND mac = ?", mac).
