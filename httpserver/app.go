@@ -117,6 +117,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	checkRPCCode(res.Head.Retcode, "GetPhoneCode")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -541,6 +542,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1252,6 +1254,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		data := js.Get("data")
 		setSSDBCache(key, data)
 	}
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1300,6 +1303,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := genResponseBody(res, true)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1324,6 +1328,7 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	body := genResponseBody(res, true)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 

@@ -80,7 +80,7 @@ func init() {
 	w = util.NewNsqProducer()
 }
 
-func reportRequest(uri string) {
+func extractAPIName(uri string) string {
 	pos := strings.Index(uri, "?")
 	path := uri
 	if pos != -1 {
@@ -91,10 +91,23 @@ func reportRequest(uri string) {
 	if lpos != -1 {
 		method = path[lpos+1:]
 	}
-	log.Printf("report api:%s", method)
+	return method
+}
+
+func reportRequest(uri string) {
+	method := extractAPIName(uri)
 	err := util.PubRequest(w, method)
 	if err != nil {
-		log.Printf("report api:%s failed:%v", err)
+		log.Printf("report request api:%s failed:%v", err)
+	}
+	return
+}
+
+func reportSuccResp(uri string) {
+	method := extractAPIName(uri)
+	err := util.PubResponse(w, method, 0)
+	if err != nil {
+		log.Printf("report response api:%s failed:%v", err)
 	}
 	return
 }
