@@ -407,6 +407,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 

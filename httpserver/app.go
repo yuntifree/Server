@@ -63,6 +63,7 @@ func login(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, true)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -93,6 +94,7 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 		return &util.AppError{errCode, "获取验证码失败"}
 	}
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -136,6 +138,7 @@ func logout(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCCode(res.Head.Retcode, "Logout")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -158,6 +161,7 @@ func reportWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	checkRPCCode(res.Head.Retcode, "AddWifi")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -181,6 +185,7 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	checkRPCCode(res.Head.Retcode, "WifiAccess")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -214,6 +219,7 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	body := genResponseBody(res, false)
 
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -243,6 +249,7 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCCode(res.Head.Retcode, "AddShare")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -264,6 +271,7 @@ func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	checkRPCCode(res.Head.Retcode, "SetWinStatus")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -283,6 +291,7 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	checkRPCCode(res.Head.Retcode, "AddFeedback")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -311,6 +320,7 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	}
 
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -343,6 +353,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	checkRPCCode(res.Head.Retcode, "ModAddress")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -361,6 +372,7 @@ func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	checkRPCCode(res.Head.Retcode, "DelAddress")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -394,6 +406,7 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -408,6 +421,7 @@ func pingppPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	res := pay.GetPingPPCharge(int(amount), channel)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(res))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -427,6 +441,7 @@ func reportApmac(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	checkRPCCode(res.Head.Retcode, "ReportApmac")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -458,6 +473,7 @@ func uploadCallback(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	checkRPCCode(res.Head.Retcode, "FinImage")
 
 	w.Write([]byte(`{"Status":"OK"}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -479,6 +495,7 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	checkRPCCode(res.Head.Retcode, "ReportClick")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -499,6 +516,7 @@ func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -521,6 +539,7 @@ func checkUpdate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -560,6 +579,7 @@ func getFrontInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -591,6 +611,7 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -608,6 +629,7 @@ func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -640,6 +662,7 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -672,6 +695,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -689,6 +713,7 @@ func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -706,6 +731,7 @@ func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -741,6 +767,7 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -773,6 +800,7 @@ func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -793,6 +821,7 @@ func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -817,6 +846,7 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -844,6 +874,7 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -880,6 +911,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	rspGzip(w, body)
 	data := js.Get("data")
 	setSSDBCache(hotWeatherKey, data)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -900,6 +932,7 @@ func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -926,6 +959,7 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -954,6 +988,7 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -975,6 +1010,7 @@ func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -996,6 +1032,7 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1013,6 +1050,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1052,6 +1090,7 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1071,6 +1110,7 @@ func getKvConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1091,6 +1131,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1108,6 +1149,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1127,6 +1169,7 @@ func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1276,6 +1319,7 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1362,6 +1406,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	rspGzip(w, body)
 	data := js.Get("data")
 	setSSDBCache(hotServiceKey, data)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1378,6 +1423,7 @@ func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCCode(res.Head.Retcode, "Punch")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1396,6 +1442,7 @@ func correctAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCCode(res.Head.Retcode, "Correct")
 
 	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1414,6 +1461,7 @@ func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1433,6 +1481,7 @@ func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1451,6 +1500,7 @@ func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1475,6 +1525,7 @@ func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, false)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -1515,6 +1566,7 @@ func register(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body := genResponseBody(res, true)
 	w.Write(body)
+	reportSuccResp(r.RequestURI)
 	return nil
 }
 
