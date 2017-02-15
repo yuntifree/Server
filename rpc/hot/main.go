@@ -643,6 +643,40 @@ func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.R
 		Running: running}, nil
 }
 
+func getLiveInfos(db *sql.DB, seq int64) []*hot.LiveInfo {
+	var infos []*hot.LiveInfo
+	query := "SELECT uid, avatar, nickname, live_id, img, p_time, location, watches, live, seq FROM live WHERE seq > (UNIX_TIMESTAMP(NOW())-180)*1000 "
+	if seq != 0 {
+		query += fmt.Sprintf(" AND seq < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY seq DESC LIMIT %d", util.MaxListSize)
+	log.Printf("getLiveInfos query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getLiveInfos query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info hot.LiveInfo
+		err := rows.Scan(&info.Uid, &info.Avatar, &info.Nickname, &info.LiveId,
+			&info.Img, &info.PTime, &info.Location, &info.Watches, &info.Live,
+			&info.Seq)
+		if err != nil {
+			log.Printf("getLiveInfos scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetLive(ctx context.Context, in *common.CommRequest) (*hot.LiveReply, error) {
+	log.Printf("GetLive uid:%d seq:%d", in.Head.Uid, in.Seq)
+	infos := getLiveInfos(db, in.Seq)
+	return &hot.LiveReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, List: infos}, nil
+}
+
 func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
 	var award common.AwardInfo
 	award.Uid = uid

@@ -501,3 +501,22 @@ CREATE TABLE IF NOT EXISTS portal_mac
     PRIMARY KEY(id),
     UNIQUE KEY(mac)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS live 
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    live_id bigint unsigned NOT NULL,
+    uid     int unsigned NOT NULL,
+    avatar  varchar(128) NOT NULL,
+    nickname    varchar(128) NOT NULL,
+    img     varchar(128) NOT NULL,
+    p_time  datetime NOT NULL DEFAULT '2017-01-01',
+    location    varchar(64) NOT NULL,
+    watches     int unsigned NOT NULL DEFAULT 0,
+    live        int unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    seq         bigint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(id),
+    UNIQUE KEY(live_id),
+    KEY(seq)
+) ENGINE = InnoDB;

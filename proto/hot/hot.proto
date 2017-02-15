@@ -13,6 +13,7 @@ service Hot {
     rpc GetRunning(common.CommRequest) returns (RunningReply) {}
     rpc GetHotList(common.CommRequest) returns (HotListReply) {}
     rpc GetDetail(DetailRequest) returns (DetailReply) {}
+    rpc GetLive(common.CommRequest) returns (LiveReply) {}
 }
 
 message HotsInfo {
@@ -155,4 +156,22 @@ message DetailReply {
     common.AwardInfo award = 4;
     JoinInfo mine = 5;
     NextInfo next = 6;
+}
+
+message LiveInfo {
+    int64 uid = 1;
+    int64 live_id = 2;
+    int64 watches = 3;
+    int64 live = 4;
+    string avatar = 5;
+    string nickname = 6;
+    string img = 7;
+    string location = 8;
+    string p_time = 9;
+    int64 seq = 10;
+}
+
+message LiveReply {
+    common.Head head = 1;
+    repeated LiveInfo list = 2;
 }
