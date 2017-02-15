@@ -14,6 +14,7 @@ import (
 	"Server/zte"
 
 	_ "github.com/go-sql-driver/mysql"
+	nsq "github.com/nsqio/go-nsq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	redis "gopkg.in/redis.v5"
@@ -30,6 +31,7 @@ type server struct{}
 
 var db *sql.DB
 var kv *redis.Client
+var w *nsq.Producer
 
 func checkPhoneCode(db *sql.DB, phone string, code int64) (bool, error) {
 	if code == mastercode {
@@ -100,15 +102,18 @@ func getPhoneCode(phone string, ctype int64) (bool, error) {
 }
 
 func (s *server) GetPhoneCode(ctx context.Context, in *verify.CodeRequest) (*verify.VerifyReply, error) {
+	util.PubRPCRequest(w, "verify", "GetPhoneCode")
 	flag, err := getPhoneCode(in.Phone, in.Ctype)
 	if err != nil {
 		return &verify.VerifyReply{Result: false}, err
 	}
 
+	util.PubRPCSuccRsp(w, "verify", "GetPhoneCode")
 	return &verify.VerifyReply{Result: flag}, nil
 }
 
 func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	util.PubRPCRequest(w, "verify", "BackLogin")
 	var uid, role int64
 	var epass string
 	var salt string
@@ -130,6 +135,7 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 
+	util.PubRPCSuccRsp(w, "verify", "BackLogin")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Role: role}, nil
 }
 
@@ -151,6 +157,7 @@ func recordWxUnionid(db *sql.DB, uid int64, unionid string) {
 }
 
 func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	util.PubRPCRequest(w, "verify", "WxMpLogin")
 	var wxi util.WxInfo
 	wxi, err := util.GetCodeToken(in.Code)
 	if err != nil {
@@ -197,12 +204,14 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
 		Format(util.TimeFormat)
+	util.PubRPCSuccRsp(w, "verify", "WxMpLogin")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	util.PubRPCRequest(w, "verify", "Login")
 	var uid int64
 	var epass string
 	var salt string
@@ -230,12 +239,14 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
 		Format(util.TimeFormat)
+	util.PubRPCSuccRsp(w, "verify", "Login")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime, Wifipass: wifipass}, nil
 }
 
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
+	util.PubRPCRequest(w, "verify", "Register")
 	log.Printf("Register request:%v", in)
 	if in.Code != "" && !checkZteCode(db, in.Username, in.Code, zte.SshType) {
 		log.Printf("Register check code failed, name:%s code:%s",
@@ -292,12 +303,14 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	}
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format(util.TimeFormat)
+	util.PubRPCSuccRsp(w, "verify", "Register")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expire,
 		Expiretime: strTime}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "verify", "Logout")
 	flag := util.CheckToken(db, in.Head.Uid, in.Token, 0)
 	if !flag {
 		log.Printf("check token failed uid:%d, token:%s", in.Head.Uid, in.Token)
@@ -305,14 +318,17 @@ func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.
 			errors.New("check token failed")
 	}
 	util.ClearToken(db, in.Head.Uid)
+	util.PubRPCSuccRsp(w, "verify", "Logout")
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
 func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "verify", "CheckToken")
 	if in.Type == 0 {
 		token, err := util.GetCachedToken(kv, in.Head.Uid)
 		if err == nil {
 			if token == in.Token {
+				util.PubRPCSuccRsp(w, "verify", "CheckToken")
 				return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 			}
 			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
@@ -331,6 +347,7 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 			return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 		}
 		if tk == in.Token {
+			util.PubRPCSuccRsp(w, "verify", "CheckToken")
 			return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 		}
 		log.Printf("CheckToken token not match, uid:%d token:%s real:%s\n",
@@ -343,6 +360,7 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 		return &common.CommReply{Head: &common.Head{Retcode: 1}},
 			errors.New("checkToken failed")
 	}
+	util.PubRPCSuccRsp(w, "verify", "CheckToken")
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
@@ -390,6 +408,7 @@ func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
 }
 
 func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify.RegisterReply, error) {
+	util.PubRPCRequest(w, "verify", "AutoLogin")
 	backFlag := checkBackupPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
 	if !backFlag {
 		flag, _ := checkPrivdata(db, in.Head.Uid, in.Token, in.Privdata)
@@ -408,6 +427,7 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 	}
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format(util.TimeFormat)
+	util.PubRPCSuccRsp(w, "verify", "AutoLogin")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Token: token, Privdata: privdata, Expire: expire, Expiretime: strTime}, nil
 }
@@ -423,6 +443,7 @@ func unionToID(db *sql.DB, unionid string) (int64, error) {
 }
 
 func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
+	util.PubRPCRequest(w, "verify", "UnionLogin")
 	uid, err := unionToID(db, in.Unionid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 106}}, nil
@@ -433,6 +454,7 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
 		Format(util.TimeFormat)
+	util.PubRPCSuccRsp(w, "verify", "UnionLogin")
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
 		Expiretime: strTime}, nil
@@ -447,6 +469,7 @@ func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
 }
 
 func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*verify.TicketReply, error) {
+	util.PubRPCRequest(w, "verify", "GetWxTicket")
 	var token, ticket string
 	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1",
 		util.WxAppid).Scan(&token, &ticket)
@@ -470,6 +493,7 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 	}
 
 	updateTokenTicket(db, util.WxAppid, token, ticket)
+	util.PubRPCSuccRsp(w, "verify", "GetWxTicket")
 	return &verify.TicketReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Token: token, Ticket: ticket}, nil
@@ -487,6 +511,7 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 }
 
 func (s *server) GetCheckCode(ctx context.Context, in *verify.PortalLoginRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "verify", "GetCheckCode")
 	var stype uint
 	if in.Head.Term == util.WebTerm {
 		stype = getAcSys(db, in.Info.Acname)
@@ -498,6 +523,7 @@ func (s *server) GetCheckCode(ctx context.Context, in *verify.PortalLoginRequest
 	}
 	log.Printf("recordZteCode phone:%s code:%s type:%d", in.Info.Phone, code, stype)
 	recordZteCode(db, in.Info.Phone, code, stype)
+	util.PubRPCSuccRsp(w, "verify", "GetCheckCode")
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
@@ -553,6 +579,7 @@ func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 }
 
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
+	util.PubRPCRequest(w, "verify", "PortalLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code, stype) {
 		log.Printf("PortalLogin checkZteCode failed, phone:%s code:%s stype:%d",
@@ -597,6 +624,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
+	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Live: live}, nil
@@ -627,6 +655,7 @@ func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error 
 }
 
 func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "verify", "WifiAccess")
 	stype := getAcSys(db, in.Info.Acname)
 	var phone string
 	var bitmap uint
@@ -656,6 +685,7 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 		}
 	}
 	util.RefreshUserAp(db, in.Head.Uid, in.Info.Apmac)
+	util.PubRPCSuccRsp(w, "verify", "WifiAccess")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
@@ -690,14 +720,17 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 }
 
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
+	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin ret:%d", ret)
+	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
 }
 
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
+	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
 	var phone, token string
 	err := db.QueryRow("SELECT m.phone, u.uid, u.token FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
@@ -731,6 +764,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
+	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Live: live}, nil
@@ -748,6 +782,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
+	w = util.NewNsqProducer()
 
 	db, err = util.InitDB(false)
 	if err != nil {
