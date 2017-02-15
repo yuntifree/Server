@@ -20,6 +20,7 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
+	nsq "github.com/nsqio/go-nsq"
 )
 
 const (
@@ -49,6 +50,7 @@ var expressList = []string{
 type server struct{}
 
 var db *sql.DB
+var w *nsq.Producer
 
 func getNewsTag(db *sql.DB, id int64) string {
 	rows, err := db.Query("SELECT t.content FROM news_tags n, tags t WHERE n.tid = t.id AND n.nid = ?", id)
@@ -209,10 +211,12 @@ func getReviewNews(db *sql.DB, seq, num, ctype, stype int64, search string) []*f
 }
 
 func (s *server) FetchReviewNews(ctx context.Context, in *common.CommRequest) (*fetch.NewsReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchReviewNews")
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d type:%d search:%s", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num, in.Type, in.Search)
 	news := getReviewNews(db, in.Seq, in.Num, in.Type, in.Subtype, in.Search)
 	total := getTotalNews(db, in.Type, in.Subtype, in.Search)
+	util.PubRPCSuccRsp(w, "fetch", "FetchReviewNews")
 	return &fetch.NewsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: news, Total: total}, nil
@@ -244,10 +248,12 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 }
 
 func (s *server) FetchTags(ctx context.Context, in *common.CommRequest) (*fetch.TagsReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchTags")
 	log.Printf("request uid:%d, sid:%s seq:%d, num:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num)
 	tags := getTags(db, in.Seq, in.Num)
 	total := getTotalTags(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchTags")
 	return &fetch.TagsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: tags, Total: total}, nil
@@ -292,9 +298,11 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 }
 
 func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchAps")
 	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid,
 		in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getAps(db, in.Longitude, in.Latitude)
+	util.PubRPCSuccRsp(w, "fetch", "FetchAps")
 	return &fetch.ApReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -338,9 +346,11 @@ func getWifis(db *sql.DB, longitude, latitude float64) []*common.WifiInfo {
 }
 
 func (s *server) FetchWifi(ctx context.Context, in *fetch.WifiRequest) (*fetch.WifiReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchWifi")
 	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid,
 		in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getWifis(db, in.Longitude, in.Latitude)
+	util.PubRPCSuccRsp(w, "fetch", "FetchWifi")
 	return &fetch.WifiReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -375,10 +385,12 @@ func getApStat(db *sql.DB, seq, num int64) []*fetch.ApStatInfo {
 }
 
 func (s *server) FetchApStat(ctx context.Context, in *common.CommRequest) (*fetch.ApStatReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchApStat")
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num)
 	infos := getApStat(db, in.Seq, in.Num)
 	total := getTotalAps(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchApStat")
 	return &fetch.ApStatReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -420,10 +432,12 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 }
 
 func (s *server) FetchUsers(ctx context.Context, in *common.CommRequest) (*fetch.UserReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchUsers")
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
 	infos := getUsers(db, in.Seq, in.Num)
 	total := getTotalUsers(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchUsers")
 	return &fetch.UserReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -455,10 +469,12 @@ func getTemplates(db *sql.DB, seq, num int64) []*fetch.TemplateInfo {
 }
 
 func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*fetch.TemplateReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchTemplates")
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
 	infos := getTemplates(db, in.Seq, in.Num)
 	total := getTotalTemplates(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchTemplates")
 	return &fetch.TemplateReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -493,10 +509,12 @@ func getVideos(db *sql.DB, seq, num, ctype int64) []*fetch.VideoInfo {
 }
 
 func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetch.VideoReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchVideos")
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
 		in.Seq, in.Num)
 	infos := getVideos(db, in.Seq, in.Num, in.Type)
 	total := getTotalVideos(db, in.Type)
+	util.PubRPCSuccRsp(w, "fetch", "FetchVideos")
 	return &fetch.VideoReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -530,10 +548,12 @@ func getBanners(db *sql.DB, seq, btype, num int64) []*common.BannerInfo {
 }
 
 func (s *server) FetchBanners(ctx context.Context, in *common.CommRequest) (*fetch.BannerReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchBanners")
 	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid,
 		in.Head.Sid, in.Seq, in.Num)
 	infos := getBanners(db, in.Seq, in.Type, in.Num)
 	total := getTotalBanners(db, in.Type)
+	util.PubRPCSuccRsp(w, "fetch", "FetchBanners")
 	return &fetch.BannerReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -551,6 +571,7 @@ func genSsidStr(ssids []string) string {
 }
 
 func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (*fetch.WifiPassReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchWifiPass")
 	log.Printf("FetchWifiPass request uid:%d, longitude:%f latitude:%f ssid:%v",
 		in.Head.Uid, in.Longitude, in.Latitude, in.Ssids)
 	ssids := genSsidStr(in.Ssids)
@@ -575,12 +596,14 @@ func (s *server) FetchWifiPass(ctx context.Context, in *fetch.WifiPassRequest) (
 		wifis = append(wifis, &info)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchWifiPass")
 	return &fetch.WifiPassReply{
 		Head:     &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Wifipass: wifis}, nil
 }
 
 func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest) (*fetch.StsReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchStsCredentials")
 	res := aliyun.FetchStsCredentials()
 	log.Printf("FetchStsCredentials resp:%s", res)
 	if res == "" {
@@ -598,12 +621,14 @@ func (s *server) FetchStsCredentials(ctx context.Context, in *common.CommRequest
 	cred.Accesskeyid, _ = credential.Get("AccessKeyId").String()
 	cred.Expiration, _ = credential.Get("Expiration").String()
 	cred.Securitytoken, _ = credential.Get("SecurityToken").String()
+	util.PubRPCSuccRsp(w, "fetch", "FetchStsCredential")
 	return &fetch.StsReply{
 		Head:       &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Credential: &cred}, nil
 }
 
 func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*fetch.ZipcodeReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchZipcode")
 	log.Printf("FetchZipcode request uid:%d, type:%d code:%d",
 		in.Head.Uid, in.Type, in.Code)
 	query := "SELECT code, address FROM zipcode WHERE"
@@ -636,12 +661,14 @@ func (s *server) FetchZipcode(ctx context.Context, in *fetch.ZipcodeRequest) (*f
 		infos = append(infos, &info)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchZipcode")
 	return &fetch.ZipcodeReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Zipcode: infos}, nil
 }
 
 func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fetch.AddressReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchAddress")
 	log.Printf("FetchAddress request uid:%d", in.Head.Uid)
 	rows, err := db.Query("SELECT aid, consignee, phone, province, city, district, addr, detail, flag, zip FROM address WHERE deleted = 0 AND uid = ?",
 		in.Head.Uid)
@@ -664,6 +691,7 @@ func (s *server) FetchAddress(ctx context.Context, in *common.CommRequest) (*fet
 		infos = append(infos, &info)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchAddress")
 	return &fetch.AddressReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Address: infos}, nil
@@ -700,6 +728,7 @@ func isAdBan(db *sql.DB, term, version int64) bool {
 }
 
 func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.AdReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchFlashAd")
 	log.Printf("FetchFlashAd request uid:%d term:%d versoin:%d", in.Head.Uid,
 		in.Term, in.Version)
 	if !util.IsWhiteUser(db, in.Head.Uid, util.FlashAdWhiteType) &&
@@ -711,12 +740,14 @@ func (s *server) FetchFlashAd(ctx context.Context, in *fetch.AdRequest) (*fetch.
 	}
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.FlashAdDbgType)
 	info := getFlashAd(db, flag)
+	util.PubRPCSuccRsp(w, "fetch", "FetchFlashAd")
 	return &fetch.AdReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info}, nil
 }
 
 func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.ConfReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchConf")
 	log.Printf("FetchConf request uid:%d", in.Head.Uid)
 	var infos []*common.KvInfo
 	rows, err := db.Query("SELECT name, val FROM kv_config WHERE deleted = 0")
@@ -736,12 +767,14 @@ func (s *server) FetchConf(ctx context.Context, in *common.CommRequest) (*fetch.
 		infos = append(infos, &info)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchConf")
 	return &fetch.ConfReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
 }
 
 func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.KvReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchKvConf")
 	log.Printf("FetchKvConf request uid:%d", in.Head.Uid)
 	var val string
 	err := db.QueryRow("SELECT val FROM kv_config WHERE deleted = 0 AND name = ?", in.Key).
@@ -750,12 +783,14 @@ func (s *server) FetchKvConf(ctx context.Context, in *fetch.KvRequest) (*fetch.K
 		log.Printf("FetchKvConf query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.KvReply{Head: &common.Head{Retcode: 1}}, err
 	}
+	util.PubRPCSuccRsp(w, "fetch", "FetchKvConf")
 	return &fetch.KvReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Val:  val}, nil
 }
 
 func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fetch.ActivityReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchActivity")
 	log.Printf("FetchActivity request uid:%d", in.Head.Uid)
 	var info common.BannerInfo
 	query := "SELECT title, dst FROM banner WHERE deleted = 0 AND type = 2 "
@@ -771,6 +806,7 @@ func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fe
 		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	log.Printf("title:%s dst:%s", info.Title, info.Dst)
+	util.PubRPCSuccRsp(w, "fetch", "FetchActivity")
 	return &fetch.ActivityReply{
 		Head:     &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Activity: &info}, nil
@@ -808,8 +844,10 @@ func getGoodsIntro(db *sql.DB, gid int64) fetch.GoodsIntro {
 }
 
 func (s *server) FetchGoodsIntro(ctx context.Context, in *common.CommRequest) (*fetch.GoodsIntroReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchGoodsIntro")
 	log.Printf("FetchGoodsIntro request uid:%d gid:%d", in.Head.Uid, in.Id)
 	info := getGoodsIntro(db, in.Id)
+	util.PubRPCSuccRsp(w, "fetch", "FetchGoodsIntro")
 	return &fetch.GoodsIntroReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info}, nil
@@ -846,8 +884,10 @@ func getPurchaseRecords(db *sql.DB, sid, seq, num int64) []*fetch.PurchaseRecord
 }
 
 func (s *server) FetchPurchaseRecord(ctx context.Context, in *common.CommRequest) (*fetch.PurchaseRecordReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchPurchaseRecord")
 	log.Printf("FetchPurchaseRecord request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getPurchaseRecords(db, in.Id, in.Seq, in.Num)
+	util.PubRPCSuccRsp(w, "fetch", "FetchPurchaseRecord")
 	return &fetch.PurchaseRecordReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Records: infos}, nil
@@ -891,8 +931,10 @@ func getBetHistory(db *sql.DB, gid, seq, num int64) []*common.BidInfo {
 }
 
 func (s *server) FetchBetHistory(ctx context.Context, in *common.CommRequest) (*fetch.BetHistoryReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchBetHistory")
 	log.Printf("FetchBetHistory request uid:%d gid:%d", in.Head.Uid, in.Id)
 	infos := getBetHistory(db, in.Id, in.Seq, in.Num)
+	util.PubRPCSuccRsp(w, "fetch", "FetchBetHistory")
 	return &fetch.BetHistoryReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Bets: infos}, nil
@@ -993,6 +1035,7 @@ func getMyShare(db *sql.DB, uid, num, seq int64) []*fetch.ShareInfo {
 }
 
 func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch.ShareReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchShare")
 	log.Printf("FetchShare uid:%d type:%d seq:%d num:%d id:%d", in.Head.Uid,
 		in.Type, in.Seq, in.Num, in.Id)
 	var reddot int64
@@ -1012,6 +1055,7 @@ func (s *server) FetchShare(ctx context.Context, in *fetch.ShareRequest) (*fetch
 		infos = getMyShare(db, in.Head.Uid, in.Num, in.Seq)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchShare")
 	return &fetch.ShareReply{
 		Head:   &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Shares: infos, Reddot: reddot}, nil
@@ -1039,6 +1083,7 @@ func getShareImages(db *sql.DB, sid int64) []string {
 }
 
 func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (*fetch.ShareDetailReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchShareDetail")
 	log.Printf("FetchShareDetail request uid:%d sid:%d", in.Head.Uid, in.Id)
 	var share fetch.ShareInfo
 	var imageNum int
@@ -1062,6 +1107,7 @@ func (s *server) FetchShareDetail(ctx context.Context, in *common.CommRequest) (
 	award.Num = util.GetSalesCount(db, in.Id, share.Uid)
 	bet.Award = &award
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchShareDetail")
 	return &fetch.ShareDetailReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Share: &share, Bet: &bet}, nil
@@ -1127,9 +1173,11 @@ func getUserInfo(db *sql.DB, uid int64) fetch.UserInfo {
 }
 
 func (s *server) FetchUserInfo(ctx context.Context, in *common.CommRequest) (*fetch.UserInfoReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchUserInfo")
 	log.Printf("FetchUserInfo uid:%d", in.Head.Uid)
 	info := getUserInfo(db, in.Head.Uid)
 	banner := getUserBanner(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchUserInfo")
 	return &fetch.UserInfoReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Info: &info, Banner: banner}, nil
@@ -1208,6 +1256,7 @@ func getUserSales(db *sql.DB, uid, seq, num int64, flag bool) []*common.BidInfo 
 }
 
 func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fetch.UserBetReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchUserBet")
 	log.Printf("FetchUserBet uid:%d seq:%d num:%d type:%d", in.Head.Uid, in.Seq,
 		in.Num, in.Type)
 	var infos []*common.BidInfo
@@ -1216,6 +1265,7 @@ func (s *server) FetchUserBet(ctx context.Context, in *common.CommRequest) (*fet
 	} else {
 		infos = getUserBets(db, in.Head.Uid, in.Seq, in.Num)
 	}
+	util.PubRPCSuccRsp(w, "fetch", "FetchUserBet")
 	return &fetch.UserBetReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -1278,8 +1328,10 @@ func getAdBan(db *sql.DB) []*common.AdBan {
 }
 
 func (s *server) FetchAdBan(ctx context.Context, in *common.CommRequest) (*fetch.AdBanReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchAdBan")
 	log.Printf("FetchUserBet uid:%d", in.Head.Uid)
 	infos := getAdBan(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchAdBan")
 	return &fetch.AdBanReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -1321,9 +1373,11 @@ func getWhiteList(db *sql.DB, seq, num int64) []*fetch.WhiteUser {
 }
 
 func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*fetch.WhiteReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchWhiteList")
 	log.Printf("FetchWhiteList uid:%d", in.Head.Uid)
 	infos := getWhiteList(db, in.Seq, in.Num)
 	total := getWhiteTotal(db, in.Type)
+	util.PubRPCSuccRsp(w, "fetch", "FetchWhiteList")
 	return &fetch.WhiteReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1364,9 +1418,11 @@ func getFeedbackTotal(db *sql.DB) int64 {
 }
 
 func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fetch.FeedbackReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchFeedback")
 	log.Printf("FetchFeedback uid:%d seq:%d num:%d", in.Head.Uid, in.Seq, in.Num)
 	infos := getFeedback(db, in.Seq, in.Num)
 	total := getFeedbackTotal(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchFeedback")
 	return &fetch.FeedbackReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1397,8 +1453,10 @@ func getMenus(db *sql.DB, term, version int64) []*fetch.MenuInfo {
 }
 
 func (s *server) FetchMenu(ctx context.Context, in *common.CommRequest) (*fetch.MenuReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchMenu")
 	log.Printf("FetchMenu uid:%d", in.Head.Uid)
 	infos := getMenus(db, in.Head.Term, in.Head.Version)
+	util.PubRPCSuccRsp(w, "fetch", "FetchMenu")
 	return &fetch.MenuReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -1455,6 +1513,7 @@ func getAddress(db *sql.DB, aid int64) fetch.AddressInfo {
 }
 
 func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*fetch.WinStatusReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchWinStatus")
 	log.Printf("FetchWinStatus uid:%d sid:%d", in.Head.Uid, in.Id)
 	bet := getWinInfo(db, in.Id)
 	var address fetch.AddressInfo
@@ -1477,6 +1536,7 @@ func (s *server) FetchWinStatus(ctx context.Context, in *common.CommRequest) (*f
 		address = getAddress(db, address.Id)
 	}
 
+	util.PubRPCSuccRsp(w, "fetch", "FetchWinStatus")
 	return &fetch.WinStatusReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Bet:  &bet, Address: &address, Info: &info}, nil
@@ -1488,6 +1548,7 @@ func genApkDownURL(channel, version string) string {
 }
 
 func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionRequest) (*fetch.VersionReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchLatestVersion")
 	log.Printf("FetchLatestVersion request uid:%d term:%d versoin:%d channel:%s",
 		in.Head.Uid, in.Head.Term, in.Head.Version, in.Channel)
 	var version int64
@@ -1503,12 +1564,14 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 		return &fetch.VersionReply{
 			Head: &common.Head{Retcode: common.ErrCode_NO_NEW_VERSION}}, nil
 	}
+	util.PubRPCSuccRsp(w, "fetch", "FetchLatestVersion")
 	return &fetch.VersionReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Version: vname, Downurl: downurl}, nil
 }
 
 func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetch.PortalReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchPortal")
 	log.Printf("FetchPortal request uid:%d sid:%s",
 		in.Head.Uid, in.Head.Sid)
 	dir, err := util.GetPortalDir(db, util.LoginType)
@@ -1520,6 +1583,7 @@ func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetc
 				Sid: in.Head.Sid}}, nil
 	}
 	log.Printf("FetchPortal dir:%s", dir)
+	util.PubRPCSuccRsp(w, "fetch", "FetchPortal")
 	return &fetch.PortalReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Dir:  dir}, nil
@@ -1556,10 +1620,12 @@ func getPortalDirInfos(db *sql.DB, seq, num, ptype int64) []*common.PortalDirInf
 }
 
 func (s *server) FetchPortalDir(ctx context.Context, in *common.CommRequest) (*fetch.PortalDirReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchPortalDir")
 	log.Printf("FetchPortalDir seq:%d num:%d type:%d uid:%d",
 		in.Seq, in.Num, in.Type, in.Head.Uid)
 	infos := getPortalDirInfos(db, in.Seq, in.Num, in.Type)
 	total := getTotalPortalDir(db, in.Type)
+	util.PubRPCSuccRsp(w, "fetch", "FetchPortalDir")
 	return &fetch.PortalDirReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1597,10 +1663,12 @@ func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo 
 }
 
 func (s *server) FetchChannelVersion(ctx context.Context, in *common.CommRequest) (*fetch.ChannelVersionReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchChannelVersion")
 	log.Printf("FetchChannelVersion seq:%d num:%d uid:%d",
 		in.Seq, in.Num, in.Head.Uid)
 	infos := getChannelVersion(db, in.Seq, in.Num)
 	total := getTotalChannelVersion(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchChannelVersion")
 	return &fetch.ChannelVersionReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos, Total: total}, nil
@@ -1618,6 +1686,7 @@ func main() {
 	}
 	db.SetMaxIdleConns(util.MaxIdleConns)
 
+	w = util.NewNsqProducer()
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.FetchServerName, util.FetchServerPort)
 	cli := util.InitEtcdCli()

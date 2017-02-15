@@ -13,6 +13,7 @@ import (
 	"Server/util"
 
 	_ "github.com/go-sql-driver/mysql"
+	nsq "github.com/nsqio/go-nsq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -39,6 +40,7 @@ const (
 type server struct{}
 
 var db *sql.DB
+var w *nsq.Producer
 
 func getMaxNewsSeq(db *sql.DB) int64 {
 	var id int64
@@ -173,6 +175,7 @@ func calcJokeSeq() int64 {
 }
 
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
+	util.PubRPCRequest(w, "hot", "GetHots")
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d term:%d version:%d",
 		in.Head.Uid, in.Head.Sid, in.Type, in.Seq, in.Head.Term, in.Head.Version)
 	var infos []*hot.HotsInfo
@@ -216,6 +219,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		}
 		infos = getJokes(db, seq, util.MaxListSize)
 	}
+	util.PubRPCSuccRsp(w, "hot", "GetHots")
 	return &hot.HotsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil
@@ -277,12 +281,14 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 }
 
 func (s *server) GetServices(ctx context.Context, in *common.CommRequest) (*hot.ServiceReply, error) {
+	util.PubRPCRequest(w, "hot", "GetServices")
 	categories, err := getService(db)
 	if err != nil {
 		log.Printf("getServie failed:%v", err)
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
+	util.PubRPCSuccRsp(w, "hot", "GetServices")
 	return &hot.ServiceReply{
 		Head: &common.Head{Retcode: 0}, Services: categories}, nil
 }
@@ -310,6 +316,7 @@ func getNotice(db *sql.DB) *hot.NoticeInfo {
 }
 
 func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*hot.WeatherNewsReply, error) {
+	util.PubRPCRequest(w, "hot", "GetWeatherNews")
 	weather, err := getWeather(db)
 	if err != nil {
 		log.Printf("getWeather failed:%v", err)
@@ -319,6 +326,7 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 	infos := getNews(db, 0, homeNewsNum, 10)
 	infos = append(infos[:0], infos[1], infos[3], infos[5])
 	notice := getNotice(db)
+	util.PubRPCSuccRsp(w, "hot", "GetWeatherNews")
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0},
 		Weather: &weather, News: infos, Notice: notice}, nil
 }
@@ -363,6 +371,7 @@ func getBanners(db *sql.DB, flag bool) ([]*common.BannerInfo, error) {
 }
 
 func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot.FrontReply, error) {
+	util.PubRPCRequest(w, "hot", "GetFrontInfo")
 	uinfo, err := getUseInfo(db, in.Head.Uid)
 	if err != nil {
 		log.Printf("getUseInfo failed:%v", err)
@@ -377,6 +386,7 @@ func (s *server) GetFrontInfo(ctx context.Context, in *common.CommRequest) (*hot
 		return &hot.FrontReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
+	util.PubRPCSuccRsp(w, "hot", "GetFrontInfo")
 	return &hot.FrontReply{
 		Head: &common.Head{Retcode: 0}, User: &uinfo, Banner: binfos}, nil
 }
@@ -458,19 +468,23 @@ func getOpeningSales(db *sql.DB, num int64) []*common.BidInfo {
 }
 
 func (s *server) GetOpening(ctx context.Context, in *common.CommRequest) (*hot.OpeningReply, error) {
+	util.PubRPCRequest(w, "hot", "GetOpening")
 	log.Printf("GetOpening uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	opening := getOpeningSales(db, 0)
 	var reddot int64
 	if util.HasReddot(db, in.Head.Uid) {
 		reddot = 1
 	}
+	util.PubRPCSuccRsp(w, "hot", "GetOpening")
 	return &hot.OpeningReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Opening: opening, Reddot: reddot}, nil
 }
 
 func (s *server) GetOpened(ctx context.Context, in *common.CommRequest) (*hot.OpenedReply, error) {
+	util.PubRPCRequest(w, "hot", "GetOpened")
 	log.Printf("GetOpened uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	opened := getOpenedSales(db, in.Num, in.Seq)
+	util.PubRPCSuccRsp(w, "hot", "GetOpened")
 	return &hot.OpenedReply{Head: &common.Head{Retcode: 0},
 		Opened: opened}, nil
 }
@@ -616,6 +630,7 @@ func getSlides(db *sql.DB) []*hot.SlideInfo {
 }
 
 func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.HotListReply, error) {
+	util.PubRPCRequest(w, "hot", "GetHotList")
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	opening := getOpeningSales(db, 4)
 	var reddot int64
@@ -624,21 +639,26 @@ func (s *server) GetHotList(ctx context.Context, in *common.CommRequest) (*hot.H
 	}
 	slides := getSlides(db)
 	promotion := getPromotion(db)
+	util.PubRPCSuccRsp(w, "hot", "GetHotList")
 	return &hot.HotListReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Opening: opening, Slides: slides,
 		Promotion: &promotion, Reddot: reddot}, nil
 }
 
 func (s *server) GetMarquee(ctx context.Context, in *common.CommRequest) (*hot.MarqueeReply, error) {
+	util.PubRPCRequest(w, "hot", "GetMarquee")
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	marquee := getMarquee(db, marqueeInterval)
+	util.PubRPCSuccRsp(w, "hot", "GetMarquee")
 	return &hot.MarqueeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Marquee: marquee}, nil
 }
 
 func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.RunningReply, error) {
+	util.PubRPCRequest(w, "hot", "GetRunning")
 	log.Printf("GetLatest uid:%d seq:%d, num:%d", in.Head.Uid, in.Seq, in.Num)
 	running := getRunningSales(db, in.Head.Uid, in.Num, in.Seq)
+	util.PubRPCSuccRsp(w, "hot", "GetRunning")
 	return &hot.RunningReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Running: running}, nil
 }
@@ -672,8 +692,10 @@ func getLiveInfos(db *sql.DB, seq int64) []*hot.LiveInfo {
 }
 
 func (s *server) GetLive(ctx context.Context, in *common.CommRequest) (*hot.LiveReply, error) {
+	util.PubRPCRequest(w, "hot", "GetLive")
 	log.Printf("GetLive uid:%d seq:%d", in.Head.Uid, in.Seq)
 	infos := getLiveInfos(db, in.Seq)
+	util.PubRPCSuccRsp(w, "hot", "GetLive")
 	return &hot.LiveReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, List: infos}, nil
 }
 
@@ -773,6 +795,7 @@ func getRunningGoodsSid(db *sql.DB, gid int64) int64 {
 }
 
 func (s *server) GetDetail(ctx context.Context, in *hot.DetailRequest) (*hot.DetailReply, error) {
+	util.PubRPCRequest(w, "hot", "GetDetail")
 	log.Printf("GetLatest uid:%d bid:%d, gid:%d", in.Head.Uid, in.Bid, in.Gid)
 	bid := in.Bid
 	if in.Bid == 0 && in.Gid != 0 {
@@ -794,6 +817,7 @@ func (s *server) GetDetail(ctx context.Context, in *hot.DetailRequest) (*hot.Det
 	}
 	slides := getGoodsImages(db, bet.Gid)
 	join := getUserJoin(db, in.Head.Uid, in.Bid)
+	util.PubRPCSuccRsp(w, "hot", "GetDetail")
 	return &hot.DetailReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Bet:  &bet, Award: &award, Next: &next, Slides: slides, Mine: &join}, nil
@@ -805,6 +829,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	w = util.NewNsqProducer()
 	db, err = util.InitDB(true)
 	if err != nil {
 		log.Fatalf("failed to init db connection: %v", err)

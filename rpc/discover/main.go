@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/coreos/etcd/clientv3"
+	nsq "github.com/nsqio/go-nsq"
 
 	"Server/proto/common"
 	"Server/proto/discover"
@@ -26,6 +27,7 @@ const (
 type server struct{}
 
 var kv *redis.Client
+var w *nsq.Producer
 
 //Server server ip and port
 type Server struct {
@@ -137,7 +139,7 @@ func fetchServers(name string) []string {
 }
 
 func isEtcdTestUid(uid int64) bool {
-	if uid == 1 {
+	if uid%2 == 1 {
 		return true
 	}
 	return false
@@ -155,6 +157,7 @@ func convertServerName(name string) string {
 }
 
 func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*discover.ServerReply, error) {
+	util.PubRPCRequest(w, "discover", "Resolve")
 	log.Printf("resolve request uid:%d server:%s", in.Head.Uid, in.Sname)
 	var servers []string
 	if !isEtcdTestUid(in.Head.Uid) {
@@ -169,6 +172,7 @@ func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*disc
 			Head: &common.Head{Retcode: common.ErrCode_FETCH_SERVER}}, nil
 	}
 	host := servers[util.Randn(int32(len(servers)))]
+	util.PubRPCSuccRsp(w, "discover", "Resolve")
 	return &discover.ServerReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Host: host}, nil
 }
@@ -179,6 +183,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	srvMap = make(map[string][]string)
+	w = util.NewNsqProducer()
 
 	kv = util.InitRedis()
 	go util.ReportHandler(kv, util.DiscoverServerName, util.DiscoverServerPort)
