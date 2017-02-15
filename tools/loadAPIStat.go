@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	requestType  = 1
-	responseType = 2
-	statInterval = 180
+	requestType   = 1
+	responseType  = 2
+	statInterval  = 180
+	nanoPerSecond = 1000000000
 )
 
 var db *sql.DB
@@ -63,7 +64,7 @@ func calc(msg *nsq.Message, m *apiMonitor) {
 	} else if msg.Timestamp >= m.Start.Add(time.Second*statInterval).UnixNano() {
 		log.Printf("new msg to flash stat info :%d", msg.Timestamp)
 		flashStat(db, m)
-		m.Start = m.Start.Add(time.Second * statInterval)
+		m.Start = adjustStart(msg.Timestamp)
 	}
 	js, err := simplejson.NewJson(msg.Body)
 	if err != nil {
@@ -92,13 +93,30 @@ func calc(msg *nsq.Message, m *apiMonitor) {
 	return
 }
 
-func getStart() time.Time {
-	now := time.Now()
-	year, month, day := now.Date()
-	local := now.Location()
-	hour, min, _ := now.Clock()
+func getPrevTime(tt time.Time) time.Time {
+	year, month, day := tt.Date()
+	local := tt.Location()
+	hour, min, _ := tt.Clock()
 	min = (min / 3) * 3
 	return time.Date(year, month, day, hour, min, 0, 0, local)
+}
+
+func getNextTime(tt time.Time) time.Time {
+	year, month, day := tt.Date()
+	local := tt.Location()
+	hour, min, _ := tt.Clock()
+	min = (min/3 + 1) * 3
+	return time.Date(year, month, day, hour, min, 0, 0, local)
+}
+
+func getStart() time.Time {
+	now := time.Now()
+	return getPrevTime(now)
+}
+
+func adjustStart(ts int64) time.Time {
+	tm := time.Unix(ts/nanoPerSecond, ts%nanoPerSecond)
+	return getPrevTime(tm)
 }
 
 func main() {
