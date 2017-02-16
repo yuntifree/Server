@@ -13,7 +13,15 @@ import (
 
 func record(db *sql.DB, info *juhe.LiveInfo) {
 	ts := time.Now().UnixNano() / 1000000
-	_, err := db.Exec("INSERT INTO live(uid, avatar, nickname, live_id, img, p_time, location, watches, live, seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uid = ?, avatar = ?, nickname = ?, img = ?, p_time = ?, location = ?, watches = ?, live = ?, seq = ?", info.Uid, info.Avatar, info.Nickname, info.LiveId, info.Img, info.PTime, info.Location, info.Watches, info.Live, ts, info.Uid, info.Avatar, info.Nickname, info.Img, info.PTime, info.Location, info.Watches, info.Live, ts)
+	nickname := info.Nickname
+	if nickname == "" {
+		nickname = "主播"
+	}
+	location := info.Location
+	if location == "" {
+		location = "难道在火星？"
+	}
+	_, err := db.Exec("INSERT INTO live(uid, avatar, nickname, live_id, img, p_time, location, watches, live, seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uid = ?, avatar = ?, nickname = ?, img = ?, p_time = ?, location = ?, watches = ?, live = ?, seq = ?", info.Uid, info.Avatar, nickname, info.LiveId, info.Img, info.PTime, location, info.Watches, info.Live, ts, info.Uid, info.Avatar, nickname, info.Img, info.PTime, location, info.Watches, info.Live, ts)
 	if err != nil {
 		log.Printf("record info:%v failed:%v", info, err)
 	}
