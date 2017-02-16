@@ -157,15 +157,7 @@ func (s *server) SubmitCode(ctx context.Context, in *punch.CodeRequest) (*punch.
 			Head: &common.Head{Retcode: 0}, Flag: 0, Sid: sid}, nil
 	}
 
-	token := util.GenSalt()
-	privdata := util.GenSalt()
-	_, err = db.Exec("UPDATE user SET token = ?, private = ? WHERE uid = ?", token, privdata, err)
-	if err != nil {
-		log.Printf("SubmitCode update token failed:%v", err)
-		return &punch.LoginReply{
-			Head: &common.Head{Retcode: 1}}, nil
-	}
-	util.SetCachedToken(kv, uid, token)
+	token, _, _, err := util.RefreshTokenPrivdata(db, kv, uid, expiretime)
 	return &punch.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token}, nil
 }
