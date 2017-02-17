@@ -95,7 +95,6 @@ func getResponse(body string, stype uint) (*simplejson.Json, error) {
 		log.Printf("HTTPRequest failed:%v", err)
 		return nil, err
 	}
-	log.Printf("getResponse resp:%s", resp)
 	js, err := simplejson.NewJson([]byte(resp))
 	if err != nil {
 		log.Printf("parse response failed:%v", err)
@@ -108,7 +107,7 @@ func getResponse(body string, stype uint) (*simplejson.Json, error) {
 		return nil, err
 	}
 	if ret != "0" {
-		log.Printf("zte op failed retcode:%s resp:%s", ret, resp)
+		log.Printf("zte op failed body:%s retcode:%s resp:%s", body, ret, resp)
 		return js, errStatus
 	}
 	return js, nil
