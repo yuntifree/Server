@@ -13,6 +13,8 @@ const (
 	WxAppid = "wx0387308775179bfe"
 	//WxAppkey wx appkey
 	WxAppkey    = "829008d0ae26aa03522bc0dbc370d790"
+	WxDgAppid   = "wxbf43854270af39aa"
+	WxDgAppkey  = "3adcb7719d35c0fcf0dd9cc9d12a2565"
 	wxTokenURL  = "https://api.weixin.qq.com/sns/oauth2/access_token"
 	wxInfoURL   = "https://api.weixin.qq.com/sns/userinfo"
 	wxAuthURL   = "https://open.weixin.qq.com/connect/oauth2/authorize"
@@ -28,12 +30,12 @@ type WxInfo struct {
 
 //GenRedirectURL generate redirect url
 func GenRedirectURL(redirect string) string {
-	return fmt.Sprintf("%s?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=list#wechat_redirect", wxAuthURL, WxAppid, url.QueryEscape(redirect))
+	return fmt.Sprintf("%s?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=list#wechat_redirect", wxAuthURL, WxDgAppid, url.QueryEscape(redirect))
 }
 
 //GetCodeToken use code to get wx login info
 func GetCodeToken(code string) (wxi WxInfo, err error) {
-	url := wxTokenURL + "?appid=" + WxAppid + "&secret=" + WxAppkey + "&code=" + code + "&grant_type=authorization_code"
+	url := wxTokenURL + "?appid=" + WxDgAppid + "&secret=" + WxDgAppkey + "&code=" + code + "&grant_type=authorization_code"
 	log.Printf("url:%s\n", url)
 	res, err := HTTPRequest(url, "")
 	if err != nil {

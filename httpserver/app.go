@@ -1783,7 +1783,7 @@ func getJsapiSign(w http.ResponseWriter, r *http.Request) {
 	ori := fmt.Sprintf("jsapi_ticket=%s&noncestr=%s&timestamp=%d&url=%s", res.Ticket, noncestr, ts, url)
 	sign := util.Sha1(ori)
 	log.Printf("origin:%s sign:%s\n", ori, sign)
-	out := fmt.Sprintf("var wx_cfg={\"debug\":false, \"appId\":\"%s\",\"timestamp\":%d,\"nonceStr\":\"%s\",\"signature\":\"%s\",\"jsApiList\":[],\"jsapi_ticket\":\"%s\"};", util.WxAppid, ts, noncestr, sign, res.Ticket)
+	out := fmt.Sprintf("var wx_cfg={\"debug\":false, \"appId\":\"%s\",\"timestamp\":%d,\"nonceStr\":\"%s\",\"signature\":\"%s\",\"jsApiList\":[],\"jsapi_ticket\":\"%s\"};", util.WxDgAppid, ts, noncestr, sign, res.Ticket)
 	w.Write([]byte(out))
 	return
 }

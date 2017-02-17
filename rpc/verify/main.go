@@ -472,14 +472,14 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 	util.PubRPCRequest(w, "verify", "GetWxTicket")
 	var token, ticket string
 	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1",
-		util.WxAppid).Scan(&token, &ticket)
+		util.WxDgAppid).Scan(&token, &ticket)
 	if err == nil {
 		log.Printf("GetWxTicket select succ, token:%s ticket:%s\n", token, ticket)
 		return &verify.TicketReply{
 			Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
 			Token: token, Ticket: ticket}, nil
 	}
-	token, err = util.GetWxToken(util.WxAppid, util.WxAppkey)
+	token, err = util.GetWxToken(util.WxDgAppid, util.WxDgAppkey)
 	if err != nil {
 		log.Printf("GetWxToken failed:%v", err)
 		return &verify.TicketReply{
@@ -492,7 +492,7 @@ func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*ve
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 
-	updateTokenTicket(db, util.WxAppid, token, ticket)
+	updateTokenTicket(db, util.WxDgAppid, token, ticket)
 	util.PubRPCSuccRsp(w, "verify", "GetWxTicket")
 	return &verify.TicketReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
