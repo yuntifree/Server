@@ -37,6 +37,7 @@ const (
 	hotAmuseKey    = "hot:news:amuse"
 	hotJokeKey     = "hot:joke"
 	hotNewsCompKey = "hot:news:comp"
+	hotAllApsKey   = "hot:all:aps"
 	expireInterval = 30
 )
 const (

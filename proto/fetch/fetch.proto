@@ -8,6 +8,7 @@ service Fetch{
     rpc FetchReviewNews(common.CommRequest) returns (NewsReply) {}
     rpc FetchTags(common.CommRequest) returns (TagsReply) {}
     rpc FetchAps(ApRequest) returns (ApReply) {}
+    rpc FetchAllAps(common.CommRequest) returns (ApReply) {}
     rpc FetchUsers(common.CommRequest) returns (UserReply) {}
     rpc FetchApStat(common.CommRequest) returns (ApStatReply) {}
     rpc FetchTemplates(common.CommRequest) returns (TemplateReply) {}

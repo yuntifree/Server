@@ -297,12 +297,40 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 	return infos
 }
 
+func getAllAps(db *sql.DB) []*fetch.ApInfo {
+	var infos []*fetch.ApInfo
+	rows, err := db.Query("SELECT longitude, latitude, address FROM ap GROUP BY longitude, latitude")
+	if err != nil {
+		log.Printf("getAllAps query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.ApInfo
+		err := rows.Scan(&info.Longitude, &info.Latitude, &info.Address)
+		if err != nil {
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func (s *server) FetchAps(ctx context.Context, in *fetch.ApRequest) (*fetch.ApReply, error) {
 	util.PubRPCRequest(w, "fetch", "FetchAps")
 	log.Printf("request uid:%d, sid:%s longitude:%f latitude:%f", in.Head.Uid,
 		in.Head.Sid, in.Longitude, in.Latitude)
 	infos := getAps(db, in.Longitude, in.Latitude)
 	util.PubRPCSuccRsp(w, "fetch", "FetchAps")
+	return &fetch.ApReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
+}
+
+func (s *server) FetchAllAps(ctx context.Context, in *common.CommRequest) (*fetch.ApReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchAllAps")
+	infos := getAllAps(db)
+	util.PubRPCSuccRsp(w, "fetch", "FetchAllAps")
 	return &fetch.ApReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
 		Infos: infos}, nil

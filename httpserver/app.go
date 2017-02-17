@@ -1560,6 +1560,42 @@ func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getAllAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.init(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	response, err := getRspFromSSDB(hotAllApsKey)
+	if err == nil {
+		log.Printf("getRspFromSSDB succ key:%s\n", hotAllApsKey)
+		rspGzip(w, []byte(response))
+		return nil
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchAllAps",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "FetchAllAps")
+	res := resp.Interface().(*fetch.ApReply)
+	checkRPCCode(res.Head.Retcode, "FetchAllAps")
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{errInner, "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{errInner, "marshal json failed"}
+	}
+	rspGzip(w, body)
+	data := js.Get("data")
+	setSSDBCache(hotAllApsKey, data)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getAppAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return getAps(w, r, false)
 }
@@ -1865,6 +1901,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/auto_login", appHandler(autoLogin))
 	mux.Handle("/portal_login", appHandler(portalLogin))
 	mux.Handle("/get_nearby_aps", appHandler(getAppAps))
+	mux.Handle("/get_all_aps", appHandler(getAllAps))
 	mux.Handle("/report_wifi", appHandler(reportWifi))
 	mux.Handle("/report_click", appHandler(reportClick))
 	mux.Handle("/report_apmac", appHandler(reportApmac))
