@@ -594,8 +594,19 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	if !flag {
 		log.Printf("PortalLogin zte loginnopass failed, to queryonline phone:%s code:%s",
 			in.Info.Phone, in.Info.Code)
-		if !zte.QueryOnline(in.Info.Phone, stype) {
-			log.Printf("PortalLogin zte queryonline failed, phone:%s code:%s",
+		rflag := false
+		for i := 0; i < 2; i++ {
+			time.Sleep(100 * time.Millisecond)
+			log.Printf("PortalLogin retry loginnopass times:%d phone:%s code:%s",
+				i, in.Info.Phone, in.Info.Code)
+			rflag = zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+			if rflag {
+				break
+			}
+		}
+		if !rflag {
+			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
 				in.Info.Phone, in.Info.Code)
 			return &verify.PortalLoginReply{
 				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
@@ -674,14 +685,24 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 	}
 	if !zte.Loginnopass(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
 		in.Info.Acname, stype) {
-		log.Printf("WifiAccess zte loginnopass failed, to queryonline phone:%s",
-			phone)
-		if !zte.QueryOnline(phone, stype) {
-			log.Printf("WifiAccess zte queryonline failed, phone:%s",
-				phone)
+		log.Printf("WifiAccess zte loginnopass failed, to queryonline phone:%s code:%s",
+			in.Info.Phone, in.Info.Code)
+		rflag := false
+		for i := 0; i < 2; i++ {
+			time.Sleep(100 * time.Millisecond)
+			log.Printf("WifiAccess retry loginnopass times:%d phone:%s code:%s",
+				i, phone, in.Info.Code)
+			rflag = zte.Loginnopass(phone, in.Info.Userip,
+				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+			if rflag {
+				break
+			}
+		}
+		if !rflag {
+			log.Printf("WifiAccess zte loginnopass retry failed, phone:%s code:%s",
+				phone, in.Info.Code)
 			return &common.CommReply{
-				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN,
-					Uid: in.Head.Uid}}, nil
+				Head: &common.Head{Retcode: 1}}, nil
 		}
 	}
 	util.RefreshUserAp(db, in.Head.Uid, in.Info.Apmac)
@@ -752,11 +773,22 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	flag := zte.Loginnopass(phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("OneClickLogin zte loginnopass failed, to queryonline phone:%s",
-			phone)
-		if !zte.QueryOnline(phone, stype) {
-			log.Printf("OneClickLogin zte queryonline failed, phone:%s",
-				phone)
+		log.Printf("PortalLogin zte loginnopass failed, to queryonline phone:%s code:%s",
+			in.Info.Phone, in.Info.Code)
+		rflag := false
+		for i := 0; i < 2; i++ {
+			time.Sleep(100 * time.Millisecond)
+			log.Printf("PortalLogin retry loginnopass times:%d phone:%s code:%s",
+				i, in.Info.Phone, in.Info.Code)
+			rflag = zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+			if rflag {
+				break
+			}
+		}
+		if !rflag {
+			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
+				in.Info.Phone, in.Info.Code)
 			return &verify.PortalLoginReply{
 				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 		}
