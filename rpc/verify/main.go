@@ -589,28 +589,13 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 
 	}
 	log.Printf("PortalLogin info:%v", in.Info)
-	flag := zte.Loginnopass(in.Info.Phone, in.Info.Userip,
+	flag := zteLogin(in.Info.Phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte loginnopass failed, to queryonline phone:%s code:%s",
+		log.Printf("PortalLogin zteLogin retry failed, phone:%s code:%s",
 			in.Info.Phone, in.Info.Code)
-		rflag := false
-		for i := 0; i < 2; i++ {
-			time.Sleep(100 * time.Millisecond)
-			log.Printf("PortalLogin retry loginnopass times:%d phone:%s code:%s",
-				i, in.Info.Phone, in.Info.Code)
-			rflag = zte.Loginnopass(in.Info.Phone, in.Info.Userip,
-				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-			if rflag {
-				break
-			}
-		}
-		if !rflag {
-			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
-				in.Info.Phone, in.Info.Code)
-			return &verify.PortalLoginReply{
-				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
-		}
+		return &verify.PortalLoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 
 	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), ?, 2, NOW()) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?, aptime = NOW()",
@@ -683,27 +668,12 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN,
 				Uid: in.Head.Uid}}, nil
 	}
-	if !zte.Loginnopass(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
+	if !zteLogin(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
 		in.Info.Acname, stype) {
-		log.Printf("WifiAccess zte loginnopass failed, to queryonline phone:%s code:%s",
-			in.Info.Phone, in.Info.Code)
-		rflag := false
-		for i := 0; i < 2; i++ {
-			time.Sleep(100 * time.Millisecond)
-			log.Printf("WifiAccess retry loginnopass times:%d phone:%s code:%s",
-				i, phone, in.Info.Code)
-			rflag = zte.Loginnopass(phone, in.Info.Userip,
-				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-			if rflag {
-				break
-			}
-		}
-		if !rflag {
-			log.Printf("WifiAccess zte loginnopass retry failed, phone:%s code:%s",
-				phone, in.Info.Code)
-			return &common.CommReply{
-				Head: &common.Head{Retcode: 1}}, nil
-		}
+		log.Printf("WifiAccess zte loginnopass retry failed, phone:%s code:%s",
+			phone, in.Info.Code)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1}}, nil
 	}
 	util.RefreshUserAp(db, in.Head.Uid, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "WifiAccess")
@@ -750,6 +720,30 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
 }
 
+func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
+	flag := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
+	if !flag {
+		log.Printf("zteLogin loginnopass failed, to retry phone:%s stype:%d",
+			phone, stype)
+		rflag := false
+		for i := 0; i < 2; i++ {
+			time.Sleep(100 * time.Millisecond)
+			log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
+				i, phone, stype)
+			rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
+			if rflag {
+				return true
+			}
+		}
+		if !rflag {
+			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s stype:%d",
+				phone, stype)
+			return false
+		}
+	}
+	return true
+}
+
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
 	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
@@ -770,28 +764,13 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
-	flag := zte.Loginnopass(phone, in.Info.Userip,
+	flag := zteLogin(phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte loginnopass failed, to queryonline phone:%s code:%s",
+		log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
 			in.Info.Phone, in.Info.Code)
-		rflag := false
-		for i := 0; i < 2; i++ {
-			time.Sleep(100 * time.Millisecond)
-			log.Printf("PortalLogin retry loginnopass times:%d phone:%s code:%s",
-				i, in.Info.Phone, in.Info.Code)
-			rflag = zte.Loginnopass(in.Info.Phone, in.Info.Userip,
-				in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-			if rflag {
-				break
-			}
-		}
-		if !rflag {
-			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
-				in.Info.Phone, in.Info.Code)
-			return &verify.PortalLoginReply{
-				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
-		}
+		return &verify.PortalLoginReply{
+			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	dir := getPortalDir(db)
