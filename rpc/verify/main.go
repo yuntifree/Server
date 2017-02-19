@@ -570,7 +570,7 @@ func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
 }
 
 func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
-	_, err := db.Exec("INSERT INTO user_mac(mac, uid, phone, ctime, etime) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 4 HOUR)) ON DUPLICATE KEY UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 4 HOUR)",
+	_, err := db.Exec("INSERT INTO user_mac(mac, uid, phone, ctime, etime) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
 		mac, uid, phone, uid, phone)
 	if err != nil {
 		log.Printf("recordUserMac failed uid:%d mac:%s phone:%s err:%v",
