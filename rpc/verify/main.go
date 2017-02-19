@@ -729,7 +729,7 @@ func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 		phone, stype)
 	rflag := false
 	for i := 0; i < 2; i++ {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
 			i, phone, stype)
 		rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
@@ -767,8 +767,8 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	flag := zteLogin(phone, in.Info.Userip,
 		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 	if !flag {
-		log.Printf("PortalLogin zte loginnopass retry failed, phone:%s code:%s",
-			in.Info.Phone, in.Info.Code)
+		log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
+			phone)
 		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}

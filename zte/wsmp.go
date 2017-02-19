@@ -208,9 +208,22 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 	}
 
 	log.Printf("Loginnopass reqbody:%s", body)
-	_, err = getResponse(body, stype)
+	js, err := getResponse(body, stype)
 	if err != nil {
 		log.Printf("Loginnopass getResponse failed:%v", err)
+		if err == errStatus {
+			reason, err := js.Get("head").Get("reason").String()
+			if err != nil {
+				log.Printf("Loginnopass get reason failed:%v", err)
+				return false
+			}
+			if reason == "无线接入控制失败或限制接入" {
+				if QueryOnline(phone, stype) {
+					log.Printf("Loginnopass queryonline succ:%s", phone)
+					return true
+				}
+			}
+		}
 		return false
 	}
 
@@ -241,11 +254,11 @@ func Logout(phone, mac, userip, acip string, stype uint) bool {
 }
 
 func genQueryOnlineBody(phone string) (string, error) {
-	end := time.Now().Format(util.TimeFormat)
+	end := time.Now().Format("2006-01-02")
 	body := genBody(map[string]string{"custCode": phone,
 		"opervnocode": "ROOT_VNO", "status": "30A", "enddate": end,
-		"isbysubvno": "1", "pageno": "0", "pagesize": "10"})
-	return genBodyStr("logout", body)
+		"isbysubvno": "1", "pageno": "1", "pagesize": "10"})
+	return genBodyStr("qryonlineinfo", body)
 }
 
 //QueryOnline query phone online status
