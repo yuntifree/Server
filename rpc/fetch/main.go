@@ -299,7 +299,7 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 
 func getAllAps(db *sql.DB) []*fetch.ApInfo {
 	var infos []*fetch.ApInfo
-	rows, err := db.Query("SELECT longitude, latitude, address FROM ap GROUP BY longitude, latitude")
+	rows, err := db.Query("SELECT id, longitude, latitude, address FROM ap GROUP BY longitude, latitude")
 	if err != nil {
 		log.Printf("getAllAps query failed:%v", err)
 		return infos
@@ -307,7 +307,7 @@ func getAllAps(db *sql.DB) []*fetch.ApInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info fetch.ApInfo
-		err := rows.Scan(&info.Longitude, &info.Latitude, &info.Address)
+		err := rows.Scan(&info.Id, &info.Longitude, &info.Latitude, &info.Address)
 		if err != nil {
 			continue
 		}
