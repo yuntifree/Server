@@ -722,26 +722,26 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 
 func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 	flag := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
-	if !flag {
-		log.Printf("zteLogin loginnopass failed, to retry phone:%s stype:%d",
-			phone, stype)
-		rflag := false
-		for i := 0; i < 2; i++ {
-			time.Sleep(100 * time.Millisecond)
-			log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
-				i, phone, stype)
-			rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
-			if rflag {
-				return true
-			}
-		}
-		if !rflag {
-			log.Printf("PortalLogin zte loginnopass retry failed, phone:%s stype:%d",
-				phone, stype)
-			return false
+	if flag {
+		return true
+	}
+	log.Printf("zteLogin loginnopass failed, to retry phone:%s stype:%d",
+		phone, stype)
+	rflag := false
+	for i := 0; i < 2; i++ {
+		time.Sleep(100 * time.Millisecond)
+		log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
+			i, phone, stype)
+		rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
+		if rflag {
+			return true
 		}
 	}
-	return true
+	if !rflag {
+		log.Printf("PortalLogin zte loginnopass retry failed, phone:%s stype:%d",
+			phone, stype)
+	}
+	return rflag
 }
 
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
