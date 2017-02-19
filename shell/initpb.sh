@@ -1,5 +1,5 @@
 #!/bin/bash
-RPCLIST="discover fetch hot modify push verify"
+RPCLIST="discover fetch hot modify push verify punch"
 
 function gen_rpc()
 {
