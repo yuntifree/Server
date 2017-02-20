@@ -73,6 +73,7 @@ const (
 	errNoNewVersion
 	errHasPunch
 	errIllegalCode
+	errFrequencyLimit
 )
 
 var w *nsq.Producer
@@ -557,6 +558,8 @@ func checkRPCCode(retcode common.ErrCode, method string) {
 		panic(util.AppError{errHasPunch, "此地已经被别人打过卡"})
 	} else if retcode == common.ErrCode_ILLEGAL_CODE {
 		panic(util.AppError{errIllegalCode, "code已过期"})
+	} else if retcode == common.ErrCode_FREQUENCY_LIMIT {
+		panic(util.AppError{errFrequencyLimit, "请求太频繁"})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}

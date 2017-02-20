@@ -16,6 +16,7 @@ enum ErrCode{
     NO_NEW_VERSION = 10010;
     HAS_PUNCH = 10011;
     ILLEGAL_CODE = 10012;
+    FREQUENCY_LIMIT = 10013;
 }
 
 message Head {

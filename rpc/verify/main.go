@@ -503,11 +503,24 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 	if code == "" {
 		return
 	}
-	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE code = ?",
+	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE code = ?, mtime = NOW()",
 		phone, code, stype, code)
 	if err != nil {
 		log.Printf("recordZteCode query failed:%s %s %d %v", phone, code, stype, err)
 	}
+}
+
+func isExceedCodeFrequency(db *sql.DB, phone string, stype uint) bool {
+	var flag int
+	err := db.QueryRow("SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 1 MINUTE), 0, 1) FROM zte_code WHERE phone = ? AND type = ?", phone, stype).Scan(&flag)
+	if err != nil {
+		log.Printf("isExceedCodeFrequency query failed:%v", err)
+		return false
+	}
+	if flag > 0 {
+		return true
+	}
+	return false
 }
 
 func (s *server) GetCheckCode(ctx context.Context, in *verify.PortalLoginRequest) (*common.CommReply, error) {
@@ -515,6 +528,11 @@ func (s *server) GetCheckCode(ctx context.Context, in *verify.PortalLoginRequest
 	var stype uint
 	if in.Head.Term == util.WebTerm {
 		stype = getAcSys(db, in.Info.Acname)
+	}
+	if isExceedCodeFrequency(db, in.Info.Phone, stype) {
+		log.Printf("GetCheckCode isExceedCodeFrequency phone:%s", in.Info.Phone)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_FREQUENCY_LIMIT}}, nil
 	}
 	code, err := zte.Register(in.Info.Phone, true, stype)
 	if err != nil {
