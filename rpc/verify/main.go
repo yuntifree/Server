@@ -762,6 +762,13 @@ func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 	return rflag
 }
 
+func refreshActiveTime(db *sql.DB, uid int64) {
+	_, err := db.Exec("UPDATE user SET atime = NOW() WHERE uid = ?", uid)
+	if err != nil {
+		log.Printf("refreshActiveTime failed:%v", err)
+	}
+}
+
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
 	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
@@ -791,6 +798,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
+	refreshActiveTime(db, uid)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
