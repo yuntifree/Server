@@ -23,7 +23,7 @@ import (
 
 const (
 	baseurl    = "http://v.juhe.cn/toutiao/index"
-	appkey     = "1fe1ae10361f6ae1ffa0bc4a5d7a212f"
+	appkey     = "730e17291fa5e25bd40483f795af4a23"
 	dgurl      = "http://news.sun0769.com/dg/"
 	weatherurl = "https://api.thinkpage.cn/v3/weather/now.json?key=uixmdugjglekq1ng&location=dongguan&language=zh-Hans&unit=c"
 	jokeurl    = "http://japi.juhe.cn/joke/content/list.from"
