@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 
@@ -39,6 +40,28 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 	return &userinfo.InfoReply{
 		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: nickname,
 		Total: total, Save: save}, nil
+}
+
+func (s *server) ModInfo(ctx context.Context, in *userinfo.InfoRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "userinfo", "ModInfo")
+	query := "UPDATE user SET atime = NOW() "
+	if in.Headurl != "" {
+		query += ", headurl = '" + in.Headurl + "' "
+	}
+	if in.Nickname != "" {
+		query += ", nickname = '" + in.Nickname + "' "
+	}
+	query += fmt.Sprintf(" WHERE uid = %d", in.Head.Uid)
+	log.Printf("ModInfo query:%s", query)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("ModInfo query failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	util.PubRPCSuccRsp(w, "userinfo", "ModInfo")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
 }
 
 func main() {

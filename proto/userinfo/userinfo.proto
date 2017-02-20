@@ -6,6 +6,13 @@ package userinfo;
 
 service Userinfo{
     rpc GetInfo(common.CommRequest) returns (InfoReply) {}
+    rpc ModInfo(InfoRequest) returns (common.CommReply) {}
+}
+
+message InfoRequest {
+    common.Head head = 1;
+    string headurl = 2;
+    string nickname = 3;
 }
 
 message InfoReply {

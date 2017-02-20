@@ -1520,6 +1520,32 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func modUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	nickname := req.GetParamStringDef("nickname", "")
+	headurl := req.GetParamStringDef("headurl", "")
+
+	if headurl == "" && nickname == "" {
+		w.Write([]byte(`{"errno":0}`))
+		return nil
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.UserinfoServerType, uid, "ModInfo",
+		&userinfo.InfoRequest{
+			Head:    &common.Head{Sid: uuid, Uid: uid},
+			Headurl: headurl, Nickname: nickname})
+	checkRPCErr(rpcerr, "ModInfo")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "ModInfo")
+
+	w.Write([]byte(`{"errno":0}`))
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -1938,6 +1964,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/punch", appHandler(punchAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_user_info", appHandler(getUserInfo))
+	mux.Handle("/mod_user_info", appHandler(modUserInfo))
 	mux.Handle("/get_userinfo", appHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
