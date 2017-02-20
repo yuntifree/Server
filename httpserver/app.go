@@ -16,6 +16,7 @@ import (
 	"Server/proto/common"
 	"Server/proto/fetch"
 	"Server/proto/punch"
+	"Server/proto/userinfo"
 
 	"Server/proto/hot"
 
@@ -1068,24 +1069,6 @@ func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	return nil
 }
 
-func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckApp(r.Body, r.RequestURI)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchUserInfo",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCErr(rpcerr, "FetchUserInfo")
-	res := resp.Interface().(*fetch.UserInfoReply)
-	checkRPCCode(res.Head.Retcode, "FetchUserInfo")
-
-	body := genResponseBody(res, false)
-	w.Write(body)
-	reportSuccResp(r.RequestURI)
-	return nil
-}
-
 func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -1499,6 +1482,44 @@ func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getUserinfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchUserInfo",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "FetchUserInfo")
+	res := resp.Interface().(*fetch.UserInfoReply)
+	checkRPCCode(res.Head.Retcode, "FetchUserInfo")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
+func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	tuid := req.GetParamInt("tuid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.UserinfoServerType, uid, "GetInfo",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: tuid}})
+	checkRPCErr(rpcerr, "GetInfo")
+	res := resp.Interface().(*userinfo.InfoReply)
+	checkRPCCode(res.Head.Retcode, "GetInfo")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -1880,7 +1901,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_intro", appHandler(getGoodsIntro))
 	mux.Handle("/get_bet_history", appHandler(getBetHistory))
 	mux.Handle("/get_record", appHandler(getPurchaseRecord))
-	mux.Handle("/get_userinfo", appHandler(getUserInfo))
 	mux.Handle("/get_user_bet", appHandler(getUserBet))
 	mux.Handle("/get_user_award", appHandler(getUserBet))
 	mux.Handle("/get_address", appHandler(getAddress))
@@ -1917,6 +1937,8 @@ func NewAppServer() http.Handler {
 	mux.Handle("/services", appHandler(getService))
 	mux.Handle("/punch", appHandler(punchAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
+	mux.Handle("/get_user_info", appHandler(getUserInfo))
+	mux.Handle("/get_userinfo", appHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))
 	mux.Handle("/xcx_login", appHandler(xcxLogin))

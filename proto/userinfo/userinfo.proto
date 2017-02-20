@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package userinfo;
+
+service Userinfo{
+    rpc GetInfo(common.CommRequest) returns (InfoReply) {}
+}
+
+message InfoReply {
+    common.Head head = 1;
+    string headurl = 2;
+    string nickname = 3;
+    int64 total = 4;
+    int64 save = 5;
+}

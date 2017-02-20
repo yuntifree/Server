@@ -21,6 +21,7 @@ import (
 	"Server/proto/modify"
 	"Server/proto/punch"
 	"Server/proto/push"
+	"Server/proto/userinfo"
 	"Server/proto/verify"
 	"Server/util"
 
@@ -581,6 +582,8 @@ func genServerName(rtype int64) string {
 		return util.PushServerName
 	case util.PunchServerType:
 		return util.PunchServerName
+	case util.UserinfoServerType:
+		return util.UserinfoServerName
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
@@ -603,6 +606,8 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 		cli = push.NewPushClient(conn)
 	case util.PunchServerType:
 		cli = punch.NewPunchClient(conn)
+	case util.UserinfoServerType:
+		cli = userinfo.NewUserinfoClient(conn)
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
