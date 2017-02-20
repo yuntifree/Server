@@ -747,7 +747,7 @@ func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 		phone, stype)
 	rflag := false
 	for i := 0; i < 2; i++ {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
 			i, phone, stype)
 		rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
