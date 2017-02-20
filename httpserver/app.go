@@ -886,6 +886,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	if err == nil {
 		log.Printf("getRspFromSSDB succ key:%s\n", hotWeatherKey)
 		rspGzip(w, []byte(response))
+		reportSuccResp(r.RequestURI)
 		return nil
 	}
 
@@ -1294,6 +1295,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		if err == nil {
 			log.Printf("getRspFromSSDB succ key:%s\n", key)
 			rspGzip(w, []byte(resp))
+			reportSuccResp(r.RequestURI)
 			return nil
 		}
 		log.Printf("getRspFromSSDB failed key:%s err:%v\n", key, err)
@@ -1415,6 +1417,7 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	if err == nil {
 		log.Printf("getRspFromSSDB succ key:%s\n", hotServiceKey)
 		rspGzip(w, []byte(response))
+		reportSuccResp(r.RequestURI)
 		return nil
 	}
 
@@ -1568,6 +1571,7 @@ func getAllAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	if err == nil {
 		log.Printf("getRspFromSSDB succ key:%s\n", hotAllApsKey)
 		rspGzip(w, []byte(response))
+		reportSuccResp(r.RequestURI)
 		return nil
 	}
 
