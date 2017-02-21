@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package config;
+
+service Config{
+    rpc GetPortalMenu(common.CommRequest) returns (PortalMenuReply) {}
+}
+
+message PortalMenuInfo {
+    string icon = 1;
+    string text = 2;
+    string name = 3;
+    string routername = 4;
+    string url = 5;
+}
+
+message PortalMenuReply {
+    common.Head head = 1;
+    repeated PortalMenuInfo menulist = 2;
+    repeated PortalMenuInfo tablist = 3;
+}

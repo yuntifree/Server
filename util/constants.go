@@ -17,6 +17,8 @@ const (
 	PunchServerPort    = ":50058"
 	UserinfoServerName = "service:userinfo"
 	UserinfoServerPort = ":50059"
+	ConfigServerName   = "service:config"
+	ConfigServerPort   = ":50060"
 	MaxIdleConns       = 3
 	DebugHost          = "10.26.210.175"
 	APIHosts           = "10.27.178.90,10.27.178.90"
@@ -43,6 +45,7 @@ const (
 	PushServerType     = 6
 	PunchServerType    = 7
 	UserinfoServerType = 8
+	ConfigServerType   = 9
 	AndroidTerm        = 0
 	IosTerm            = 1
 	WebTerm            = 2

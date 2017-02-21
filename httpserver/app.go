@@ -14,6 +14,7 @@ import (
 	"Server/aliyun"
 	"Server/pay"
 	"Server/proto/common"
+	"Server/proto/config"
 	"Server/proto/fetch"
 	"Server/proto/punch"
 	"Server/proto/userinfo"
@@ -1539,6 +1540,25 @@ func getDefHead(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ConfigServerType, uid, "GetPortalMenu",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "GetPortalMenu")
+	res := resp.Interface().(*config.PortalMenuReply)
+	checkRPCCode(res.Head.Retcode, "GetPortalMenu")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func modUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -1985,6 +2005,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_user_info", appHandler(getUserInfo))
 	mux.Handle("/mod_user_info", appHandler(modUserInfo))
 	mux.Handle("/get_def_head", appHandler(getDefHead))
+	mux.Handle("/get_portal_menu", appHandler(getPortalMenu))
 	mux.Handle("/get_userinfo", appHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", appHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", appHandler(submitXcxCode))

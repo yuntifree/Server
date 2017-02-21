@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 
 	"Server/proto/common"
+	"Server/proto/config"
 	"Server/proto/discover"
 	"Server/proto/fetch"
 	"Server/proto/hot"
@@ -584,6 +585,8 @@ func genServerName(rtype int64) string {
 		return util.PunchServerName
 	case util.UserinfoServerType:
 		return util.UserinfoServerName
+	case util.ConfigServerType:
+		return util.ConfigServerName
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
@@ -608,6 +611,8 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 		cli = punch.NewPunchClient(conn)
 	case util.UserinfoServerType:
 		cli = userinfo.NewUserinfoClient(conn)
+	case util.ConfigServerType:
+		cli = config.NewConfigClient(conn)
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}

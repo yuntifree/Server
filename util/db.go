@@ -23,6 +23,7 @@ const (
 	ActivityWhiteType
 	FlashAdDbgType
 	LiveDbgType
+	PortalMenuDbgType
 )
 
 //UserInfo user base information

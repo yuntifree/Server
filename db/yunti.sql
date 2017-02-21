@@ -367,6 +367,7 @@ CREATE TABLE IF NOT EXISTS white_list
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     -- 0: flash_ad 1:banner 2:activity 3:flash_ad dbg 4:live dbg
+    -- 5: portal_menu dbg
     type    int unsigned NOT NULL,
     uid     int unsigned NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
