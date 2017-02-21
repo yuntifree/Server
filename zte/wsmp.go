@@ -217,11 +217,13 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 				log.Printf("Loginnopass get reason failed:%v", err)
 				return false
 			}
+			log.Printf("reason:%s", reason)
 			if reason == "无线接入控制失败或限制接入" {
 				if QueryOnline(phone, stype) {
 					log.Printf("Loginnopass queryonline succ:%s", phone)
 					return true
 				}
+				log.Printf("Loginnopass QueryOnline failed phone:%s", phone)
 			}
 		}
 		return false
@@ -275,6 +277,7 @@ func QueryOnline(phone string, stype uint) bool {
 		return false
 	}
 
+	log.Printf("QueryOnline req:%s resp:%v", body, res)
 	rspbody, err := res.Get("body").Array()
 	if err != nil {
 		log.Printf("QueryOnline get body failed:%v", err)
