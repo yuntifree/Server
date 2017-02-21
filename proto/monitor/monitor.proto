@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package monitor;
+
+service Monitor{
+    rpc GetApi(common.CommRequest) returns (ApiReply) {}
+}
+
+message ApiInfo {
+    int64 id = 1;
+    string name = 2;
+    string desc = 3;
+}
+
+message ApiReply {
+    common.Head head = 1;
+    repeated ApiInfo infos = 2;
+}

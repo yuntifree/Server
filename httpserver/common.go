@@ -20,6 +20,7 @@ import (
 	"Server/proto/fetch"
 	"Server/proto/hot"
 	"Server/proto/modify"
+	"Server/proto/monitor"
 	"Server/proto/punch"
 	"Server/proto/push"
 	"Server/proto/userinfo"
@@ -587,6 +588,8 @@ func genServerName(rtype int64) string {
 		return util.UserinfoServerName
 	case util.ConfigServerType:
 		return util.ConfigServerName
+	case util.MonitorServerType:
+		return util.MonitorServerName
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}
@@ -613,6 +616,8 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 		cli = userinfo.NewUserinfoClient(conn)
 	case util.ConfigServerType:
 		cli = config.NewConfigClient(conn)
+	case util.MonitorServerType:
+		cli = monitor.NewMonitorClient(conn)
 	default:
 		panic(util.AppError{errInvalidParam, "illegal server type"})
 	}

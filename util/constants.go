@@ -19,6 +19,8 @@ const (
 	UserinfoServerPort = ":50059"
 	ConfigServerName   = "service:config"
 	ConfigServerPort   = ":50060"
+	MonitorServerName  = "service:monitor"
+	MonitorServerPort  = ":50061"
 	MaxIdleConns       = 3
 	DebugHost          = "10.26.210.175"
 	APIHosts           = "10.27.178.90,10.27.178.90"
@@ -46,6 +48,7 @@ const (
 	PunchServerType    = 7
 	UserinfoServerType = 8
 	ConfigServerType   = 9
+	MonitorServerType  = 10
 	AndroidTerm        = 0
 	IosTerm            = 1
 	WebTerm            = 2

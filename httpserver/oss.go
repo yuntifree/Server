@@ -11,6 +11,7 @@ import (
 	"Server/proto/common"
 	"Server/proto/fetch"
 	"Server/proto/modify"
+	"Server/proto/monitor"
 	"Server/proto/push"
 	"Server/proto/verify"
 	"Server/util"
@@ -277,6 +278,23 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCErr(rpcerr, "FetchAdBan")
 	res := resp.Interface().(*fetch.AdBanReply)
 	checkRPCCode(res.Head.Retcode, "FetchAdBan")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func getApi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.MonitorServerType, uid, "GetApi",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "GetApi")
+	res := resp.Interface().(*monitor.ApiReply)
+	checkRPCCode(res.Head.Retcode, "GetApi")
 
 	body := genResponseBody(res, false)
 	w.Write(body)
@@ -889,6 +907,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_users", appHandler(getUsers))
 	mux.Handle("/get_templates", appHandler(getTemplates))
 	mux.Handle("/get_conf", appHandler(getOssConf))
+	mux.Handle("/get_api", appHandler(getApi))
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))
