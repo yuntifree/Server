@@ -520,3 +520,17 @@ CREATE TABLE IF NOT EXISTS live
     UNIQUE KEY(live_id),
     KEY(seq)
 ) ENGINE = InnoDB;
+
+-- 默认头像
+CREATE TABLE IF NOT EXISTS default_head
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- sex 0:female 1:male
+    sex     tinyint unsigned NOT NULL DEFAULT 0,
+    headurl varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    description varchar(128) NOT NULL,
+    age     varchar(128) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;

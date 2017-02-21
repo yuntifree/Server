@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	saveRate = 0.1 / (1024.0 * 1024.0)
+	femaleType = 0
+	maleType   = 1
+	saveRate   = 0.1 / (1024.0 * 1024.0)
 )
 
 type server struct{}
@@ -40,6 +42,37 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 	return &userinfo.InfoReply{
 		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: nickname,
 		Total: total, Save: save}, nil
+}
+
+func getDefHead(db *sql.DB, stype int64) []*userinfo.HeadInfo {
+	var infos []*userinfo.HeadInfo
+	rows, err := db.Query("SELECT headurl, description, age FROM default_head WHERE deleted = 0 AND sex = ?", stype)
+	if err != nil {
+		log.Printf("getDefHead query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info userinfo.HeadInfo
+		err := rows.Scan(&info.Headurl, &info.Desc, &info.Age)
+		if err != nil {
+			log.Printf("getDefHead scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetDefHead(ctx context.Context, in *common.CommRequest) (*userinfo.HeadReply, error) {
+	util.PubRPCRequest(w, "userinfo", "GetDefHead")
+	male := getDefHead(db, maleType)
+	female := getDefHead(db, femaleType)
+	util.PubRPCSuccRsp(w, "userinfo", "GetDefHead")
+	return &userinfo.HeadReply{
+		Head: &common.Head{Retcode: 0}, Male: male,
+		Female: female}, nil
 }
 
 func (s *server) ModInfo(ctx context.Context, in *userinfo.InfoRequest) (*common.CommReply, error) {
