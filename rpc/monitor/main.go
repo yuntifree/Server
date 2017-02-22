@@ -85,6 +85,13 @@ func getApiStat(db *sql.DB, name string, num int64) *monitor.ApiStat {
 		info.Ctime = start.Add(time.Duration(idx*3*60) * time.Second).Format(util.TimeFormat)
 		infos[idx] = &info
 	}
+	for i := int64(1); i <= num; i++ {
+		if infos[i] == nil {
+			var info monitor.ApiStatInfo
+			info.Ctime = start.Add(time.Duration(i*3*60) * time.Second).Format(util.TimeFormat)
+			infos[i] = &info
+		}
+	}
 	stat.Records = infos[1:]
 	return &stat
 }
