@@ -6,6 +6,7 @@ package config;
 
 service Config{
     rpc GetPortalMenu(common.CommRequest) returns (PortalMenuReply) {}
+    rpc FetchPortalMenu(common.CommRequest) returns (MenuReply) {}
 }
 
 message PortalMenuInfo {
@@ -14,10 +15,19 @@ message PortalMenuInfo {
     string name = 3;
     string routername = 4;
     string url = 5;
+    int64 id = 6;
+    int64 priority = 7;
+    int64 dbg = 8;
+    int64 deleted = 9;
 }
 
 message PortalMenuReply {
     common.Head head = 1;
     repeated PortalMenuInfo menulist = 2;
     repeated PortalMenuInfo tablist = 3;
+}
+
+message MenuReply {
+    common.Head head = 1;
+    repeated PortalMenuInfo infos = 2;
 }

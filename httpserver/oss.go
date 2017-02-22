@@ -9,6 +9,7 @@ import (
 
 	"Server/aliyun"
 	"Server/proto/common"
+	"Server/proto/config"
 	"Server/proto/fetch"
 	"Server/proto/modify"
 	"Server/proto/monitor"
@@ -295,6 +296,24 @@ func getApi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	checkRPCErr(rpcerr, "GetApi")
 	res := resp.Interface().(*monitor.ApiReply)
 	checkRPCCode(res.Head.Retcode, "GetApi")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func fetchPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	stype := req.GetParamInt("type")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ConfigServerType, uid, "FetchPortalMenu",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Type: stype})
+	checkRPCErr(rpcerr, "FetchPortalMenu")
+	res := resp.Interface().(*config.MenuReply)
+	checkRPCCode(res.Head.Retcode, "FetchPortalMenu")
 
 	body := genResponseBody(res, false)
 	w.Write(body)
@@ -937,6 +956,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_conf", appHandler(getOssConf))
 	mux.Handle("/get_api", appHandler(getApi))
 	mux.Handle("/get_batch_api_stat", appHandler(getBatchApiStat))
+	mux.Handle("/get_portal_menu", appHandler(fetchPortalMenu))
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))

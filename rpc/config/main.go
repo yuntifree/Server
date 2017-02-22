@@ -67,6 +67,36 @@ func (s *server) GetPortalMenu(ctx context.Context, in *common.CommRequest) (*co
 		Tablist: tablist}, nil
 }
 
+func fetchPortalMenu(db *sql.DB, stype int64) []*config.PortalMenuInfo {
+	var infos []*config.PortalMenuInfo
+	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ?", stype)
+	if err != nil {
+		log.Printf("fetchPortalMenu query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info config.PortalMenuInfo
+		err := rows.Scan(&info.Id, &info.Icon, &info.Text, &info.Name, &info.Routername,
+			&info.Url, &info.Priority, &info.Dbg, &info.Deleted)
+		if err != nil {
+			log.Printf("fetchPortalMenu scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchPortalMenu(ctx context.Context, in *common.CommRequest) (*config.MenuReply, error) {
+	util.PubRPCRequest(w, "config", "FetchPortalMenu")
+	infos := fetchPortalMenu(db, in.Type)
+	util.PubRPCSuccRsp(w, "config", "FetchPortalMenu")
+	return &config.MenuReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ConfigServerPort)
 	if err != nil {
