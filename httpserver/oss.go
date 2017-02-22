@@ -301,6 +301,34 @@ func getApi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getBatchApiStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+
+	var names []string
+	arr, err := req.Post.Get("data").Get("names").Array()
+	if err == nil {
+		for i := 0; i < len(arr); i++ {
+			name, _ := req.Post.Get("data").Get("names").GetIndex(i).String()
+			names = append(names, name)
+		}
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.MonitorServerType, uid, "GetBatchApiStat",
+		&monitor.BatchApiStatRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Names: names, Num: num})
+	checkRPCErr(rpcerr, "GetBatchApiStat")
+	res := resp.Interface().(*monitor.BatchApiStatReply)
+	checkRPCCode(res.Head.Retcode, "GetBatchApiStat")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body, r.RequestURI)
@@ -908,6 +936,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_templates", appHandler(getTemplates))
 	mux.Handle("/get_conf", appHandler(getOssConf))
 	mux.Handle("/get_api", appHandler(getApi))
+	mux.Handle("/get_batch_api_stat", appHandler(getBatchApiStat))
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))

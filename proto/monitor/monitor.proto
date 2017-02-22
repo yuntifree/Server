@@ -6,6 +6,7 @@ package monitor;
 
 service Monitor{
     rpc GetApi(common.CommRequest) returns (ApiReply) {}
+    rpc GetBatchApiStat(BatchApiStatRequest) returns (BatchApiStatReply) {}
 }
 
 message ApiInfo {
@@ -17,4 +18,26 @@ message ApiInfo {
 message ApiReply {
     common.Head head = 1;
     repeated ApiInfo infos = 2;
+}
+
+message BatchApiStatRequest {
+    common.Head head = 1;
+    repeated string names = 2;
+    int64 num = 3;
+}
+
+message ApiStatInfo {
+    int64 req = 1;
+    int64 succrsp = 2;
+    string ctime = 3;
+}
+
+message ApiStat {
+    string name = 1;
+    repeated ApiStatInfo records = 2;
+}
+
+message BatchApiStatReply {
+    common.Head head = 1;
+    repeated ApiStat infos = 2;
 }

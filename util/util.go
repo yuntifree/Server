@@ -84,23 +84,6 @@ func GetInnerIP() string {
 	return ""
 }
 
-//GetNextCqssc return next cqssc time
-func GetNextCqssc(tt time.Time) time.Time {
-	year, month, day := tt.Date()
-	local := tt.Location()
-	hour, min, _ := tt.Clock()
-	if hour >= 10 && hour < 22 {
-		min = (min/10 + 1) * 10
-	} else if hour >= 22 && hour < 2 {
-		min = (min/5 + 1) * 5
-	} else {
-		hour = 10
-		min = 0
-	}
-
-	return time.Date(year, month, day, hour, min, 0, 0, local)
-}
-
 //IsIllegalPhone check phone format 11-number begin with 1
 func IsIllegalPhone(phone string) bool {
 	flag, err := regexp.MatchString(`^1\d{10}$`, phone)
