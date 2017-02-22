@@ -97,6 +97,37 @@ func (s *server) FetchPortalMenu(ctx context.Context, in *common.CommRequest) (*
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
 }
 
+func (s *server) ModPortalMenu(ctx context.Context, in *config.MenuRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "ModPortalMenu")
+	query := fmt.Sprintf("UPDATE portal_menu SET mtime = NOW(), dbg = %d, deleted = %d ",
+		in.Info.Dbg, in.Info.Deleted)
+	if in.Info.Icon != "" {
+		query += ", icon = '" + in.Info.Icon + "' "
+	}
+	if in.Info.Text != "" {
+		query += ", text = '" + in.Info.Text + "' "
+	}
+	if in.Info.Name != "" {
+		query += ", name = '" + in.Info.Name + "' "
+	}
+	if in.Info.Url != "" {
+		query += ", url = '" + in.Info.Url + "' "
+	}
+	if in.Info.Priority != 0 {
+		query += fmt.Sprintf(", priority = %d", in.Info.Priority)
+	}
+	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Printf("ModPortalMenu query failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "ModPortalMenu")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ConfigServerPort)
 	if err != nil {
