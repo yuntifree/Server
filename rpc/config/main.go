@@ -116,6 +116,9 @@ func (s *server) ModPortalMenu(ctx context.Context, in *config.MenuRequest) (*co
 	if in.Info.Priority != 0 {
 		query += fmt.Sprintf(", priority = %d", in.Info.Priority)
 	}
+	if in.Info.Routername != "" {
+		query += ", routername = '" + in.Info.Routername + "' "
+	}
 	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
 	_, err := db.Exec(query)
 	if err != nil {
