@@ -8,6 +8,7 @@ service Config{
     rpc GetPortalMenu(common.CommRequest) returns (PortalMenuReply) {}
     rpc FetchPortalMenu(common.CommRequest) returns (MenuReply) {}
     rpc ModPortalMenu(MenuRequest) returns (common.CommReply) {}
+    rpc AddPortalMenu(MenuRequest) returns (common.CommReply) {}
 }
 
 message PortalMenuInfo {
@@ -20,6 +21,7 @@ message PortalMenuInfo {
     int64 priority = 7;
     int64 dbg = 8;
     int64 deleted = 9;
+    int64 type = 10;
 }
 
 message PortalMenuReply {

@@ -30,7 +30,7 @@ var kv *redis.Client
 var w *nsq.Producer
 
 func getPortalMenu(db *sql.DB, stype int64, flag bool) []*config.PortalMenuInfo {
-	query := fmt.Sprintf("SELECT icon, text, name, routername, url FROM portal_menu WHERE type = %d ", stype)
+	query := fmt.Sprintf("SELECT icon, text, name, routername, url FROM portal_menu WHERE type = %d AND deleted = 0 ", stype)
 	if !flag {
 		query += " AND dbg = 0 "
 	}
@@ -69,7 +69,7 @@ func (s *server) GetPortalMenu(ctx context.Context, in *common.CommRequest) (*co
 
 func fetchPortalMenu(db *sql.DB, stype int64) []*config.PortalMenuInfo {
 	var infos []*config.PortalMenuInfo
-	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ?", stype)
+	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ? ORDER BY priority DESC", stype)
 	if err != nil {
 		log.Printf("fetchPortalMenu query failed:%v", err)
 		return infos
@@ -95,6 +95,27 @@ func (s *server) FetchPortalMenu(ctx context.Context, in *common.CommRequest) (*
 	util.PubRPCSuccRsp(w, "config", "FetchPortalMenu")
 	return &config.MenuReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
+}
+
+func (s *server) AddPortalMenu(ctx context.Context, in *config.MenuRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "AddPortalMenu")
+	res, err := db.Exec("INSERT INTO portal_menu(type, icon, text, name, routername, url, priority, dbg, deleted, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+		in.Info.Type, in.Info.Icon, in.Info.Text, in.Info.Name, in.Info.Routername,
+		in.Info.Url, in.Info.Priority, in.Info.Dbg, in.Info.Deleted)
+	if err != nil {
+		log.Printf("AddPortalMenu query failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("AddPortalMenu get id failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "AddPortalMenu")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
 
 func (s *server) ModPortalMenu(ctx context.Context, in *config.MenuRequest) (*common.CommReply, error) {

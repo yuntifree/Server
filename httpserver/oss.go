@@ -348,6 +348,35 @@ func modPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func addPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckOss(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	stype := req.GetParamIntDef("type", 0)
+	icon := req.GetParamStringDef("icon", "")
+	text := req.GetParamStringDef("text", "")
+	name := req.GetParamStringDef("name", "")
+	routername := req.GetParamStringDef("routername", "")
+	url := req.GetParamStringDef("url", "")
+	priority := req.GetParamIntDef("priority", 0)
+	dbg := req.GetParamIntDef("dbg", 0)
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ConfigServerType, uid, "AddPortalMenu",
+		&config.MenuRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &config.PortalMenuInfo{Type: stype, Icon: icon, Text: text,
+				Name: name, Routername: routername, Url: url, Priority: priority,
+				Dbg: dbg, Deleted: deleted}})
+	checkRPCErr(rpcerr, "AddPortalMenu")
+	res := resp.Interface().(*common.CommReply)
+	checkRPCCode(res.Head.Retcode, "AddPortalMenu")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getBatchApiStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckOss(r.Body, r.RequestURI)
@@ -986,6 +1015,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_batch_api_stat", appHandler(getBatchApiStat))
 	mux.Handle("/get_portal_menu", appHandler(fetchPortalMenu))
 	mux.Handle("/mod_portal_menu", appHandler(modPortalMenu))
+	mux.Handle("/add_portal_menu", appHandler(addPortalMenu))
 	mux.Handle("/get_adban", appHandler(getAdBan))
 	mux.Handle("/add_adban", appHandler(addAdBan))
 	mux.Handle("/del_adban", appHandler(delAdBan))
