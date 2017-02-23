@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"Server/proto/common"
@@ -142,6 +143,16 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	return infos
 }
 
+func cleanContent(content string) string {
+	str := content
+	if content[0] == '.' {
+		str = content[1:]
+	}
+	str = strings.Replace(str, "&nbsp;", "", -1)
+	str = strings.TrimSpace(str)
+	return str
+}
+
 func getJokes(db *sql.DB, seq, num int64) []*hot.JokeInfo {
 	var infos []*hot.JokeInfo
 	query := "SELECT id, content, heart, bad FROM joke WHERE dst = '' "
@@ -159,11 +170,13 @@ func getJokes(db *sql.DB, seq, num int64) []*hot.JokeInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info hot.JokeInfo
-		err := rows.Scan(&info.Id, &info.Content, &info.Heart, &info.Bad)
+		var content string
+		err := rows.Scan(&info.Id, &content, &info.Heart, &info.Bad)
 		if err != nil {
 			log.Printf("getJokes scan failed:%v", err)
 			continue
 		}
+		info.Content = cleanContent(content)
 		info.Seq = info.Id
 		infos = append(infos, &info)
 	}
