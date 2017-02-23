@@ -375,6 +375,7 @@ message FeedbackInfo {
     string phone = 2;
     string content = 3;
     string ctime = 4;
+    int64 term = 5;
 }
 message FeedbackReply {
     common.Head head = 1;

@@ -1413,7 +1413,7 @@ func (s *server) FetchWhiteList(ctx context.Context, in *common.CommRequest) (*f
 
 func getFeedback(db *sql.DB, seq, num int64) []*fetch.FeedbackInfo {
 	var infos []*fetch.FeedbackInfo
-	rows, err := db.Query("SELECT u.uid, u.username, u.phone, f.content, f.ctime FROM feedback f, user u WHERE f.uid = u.uid ORDER BY f.id DESC LIMIT ?, ?", seq, num)
+	rows, err := db.Query("SELECT u.uid, u.username, u.phone, f.content, f.ctime, u.term FROM feedback f, user u WHERE f.uid = u.uid ORDER BY f.id DESC LIMIT ?, ?", seq, num)
 	if err != nil {
 		log.Printf("getFeedback query failed:%v", err)
 		return infos
@@ -1423,7 +1423,8 @@ func getFeedback(db *sql.DB, seq, num int64) []*fetch.FeedbackInfo {
 	for rows.Next() {
 		var info fetch.FeedbackInfo
 		var phone string
-		err := rows.Scan(&info.Uid, &info.Phone, &phone, &info.Content, &info.Ctime)
+		err := rows.Scan(&info.Uid, &info.Phone, &phone, &info.Content, &info.Ctime,
+			&info.Term)
 		if err != nil {
 			log.Printf("getFeedback scan failed:%v", err)
 			continue
