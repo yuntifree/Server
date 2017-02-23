@@ -1552,6 +1552,25 @@ func getUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getRandNick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.UserinfoServerType, uid, "GenRandNick",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	checkRPCErr(rpcerr, "GenRandNick")
+	res := resp.Interface().(*userinfo.NickReply)
+	checkRPCCode(res.Head.Retcode, "GenRandNick")
+
+	body := genResponseBody(res, false)
+	w.Write(body)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getDefHead(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -2035,6 +2054,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/punch", appHandler(punchAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_user_info", appHandler(getUserInfo))
+	mux.Handle("/get_rand_nick", appHandler(getRandNick))
 	mux.Handle("/mod_user_info", appHandler(modUserInfo))
 	mux.Handle("/get_def_head", appHandler(getDefHead))
 	mux.Handle("/get_portal_menu", appHandler(getPortalMenu))

@@ -535,3 +535,25 @@ CREATE TABLE IF NOT EXISTS default_head
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS nickname
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- type 0:wuxia 
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    name    varchar(64) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS adj_prefix
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    --type 0:normal
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    name    varchar(64) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type)
+) ENGINE = InnoDB;

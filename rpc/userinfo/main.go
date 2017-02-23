@@ -75,6 +75,46 @@ func (s *server) GetDefHead(ctx context.Context, in *common.CommRequest) (*useri
 		Female: female}, nil
 }
 
+func getTotalNick(db *sql.DB) int {
+	total := 10
+	err := db.QueryRow("SELECT COUNT(id) FROM nickname").Scan(&total)
+	if err != nil {
+		log.Printf("getTotalNick failed:%v", err)
+	}
+	return total
+}
+
+func getRandNick(db *sql.DB, uid int64) []string {
+	var names []string
+	total := getTotalNick(db)
+	idx := util.Randn(int32(total - 10))
+	rows, err := db.Query("SELECT name FROM nickname WHERE id > ? ORDER BY id LIMIT 10",
+		idx)
+	if err != nil {
+		log.Printf("getRandNick failed:%v", err)
+		return names
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var nick string
+		err := rows.Scan(&nick)
+		if err != nil {
+			log.Printf("getRandNick scan failed:%v", err)
+			continue
+		}
+		names = append(names, nick)
+	}
+	return names
+}
+
+func (s *server) GenRandNick(ctx context.Context, in *common.CommRequest) (*userinfo.NickReply, error) {
+	util.PubRPCRequest(w, "userinfo", "GetRandNick")
+	nicks := getRandNick(db, in.Head.Uid)
+	util.PubRPCSuccRsp(w, "userinfo", "GetRandNick")
+	return &userinfo.NickReply{
+		Head: &common.Head{Retcode: 0}, Nicknames: nicks}, nil
+}
+
 func (s *server) ModInfo(ctx context.Context, in *userinfo.InfoRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "userinfo", "ModInfo")
 	query := "UPDATE user SET atime = NOW() "
