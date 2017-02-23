@@ -34,6 +34,7 @@ const (
 	downloadType
 	tabSwitchType
 	portalServiceType
+	jokeBadType
 )
 
 type server struct{}
@@ -176,6 +177,8 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 			}
 			_, err = db.Exec("INSERT INTO click_stat(type, name, ctime, total) VALUES (?,?,NOW(),1) ON DUPLICATE KEY UPDATE total = total + 1",
 				in.Type, name)
+		case jokeBadType:
+			_, err = db.Exec("UPDATE joke SET bad = bad + 1 WHERE id = ?", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 
