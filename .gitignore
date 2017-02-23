@@ -2,3 +2,4 @@
 /proto/*/*.go
 /tools/*.log
 /tools/*.csv
+/tools/*.txt
