@@ -949,6 +949,37 @@ func getLiveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getJokes(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.HotServerType, uid, "GetJoke",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}, Seq: seq})
+	checkRPCErr(rpcerr, "GetJoke")
+	res := resp.Interface().(*hot.JokeReply)
+	checkRPCCode(res.Head.Retcode, "GetJoke")
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{errInner, "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+	if len(res.Infos) >= util.MaxListSize {
+		js.SetPath([]string{"data", "hasmore"}, 1)
+	}
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{errInner, "marshal json failed"}
+	}
+	rspGzip(w, body)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -1953,6 +1984,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/hot", appHandler(getHot))
 	mux.Handle("/get_weather_news", appHandler(getWeatherNews))
 	mux.Handle("/get_live_info", appHandler(getLiveInfo))
+	mux.Handle("/get_jokes", appHandler(getJokes))
 	mux.Handle("/get_conf", appHandler(getKvConf))
 	mux.Handle("/get_menu", appHandler(getMenu))
 	mux.Handle("/get_front_info", appHandler(getFrontInfo))

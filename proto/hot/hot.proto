@@ -14,6 +14,7 @@ service Hot {
     rpc GetHotList(common.CommRequest) returns (HotListReply) {}
     rpc GetDetail(DetailRequest) returns (DetailReply) {}
     rpc GetLive(common.CommRequest) returns (LiveReply) {}
+    rpc GetJoke(common.CommRequest) returns (JokeReply) {}
 }
 
 message HotsInfo {
@@ -174,4 +175,17 @@ message LiveInfo {
 message LiveReply {
     common.Head head = 1;
     repeated LiveInfo list = 2;
+}
+
+message JokeInfo {
+    int64 id = 1;
+    int64 seq = 2;
+    int64 heart = 3;
+    int64 bad = 4;
+    string content = 5;
+}
+
+message JokeReply {
+    common.Head head = 1;
+    repeated JokeInfo infos = 2;
 }

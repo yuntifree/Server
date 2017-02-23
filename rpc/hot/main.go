@@ -23,7 +23,7 @@ const (
 	saveRate        = 0.1 / (1024.0 * 1024.0)
 	marqueeInterval = 30
 	weatherDst      = "http://www.dg121.com/mobile"
-	jokeTime        = 1483027200 // 2016-12-30
+	jokeTime        = 1487779200 // 2017-02-23
 	hourSeconds     = 3600
 )
 
@@ -142,11 +142,11 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 	return infos
 }
 
-func getJokes(db *sql.DB, seq, num int64) []*hot.HotsInfo {
-	var infos []*hot.HotsInfo
-	query := "SELECT id, content, dst, heart FROM joke "
+func getJokes(db *sql.DB, seq, num int64) []*hot.JokeInfo {
+	var infos []*hot.JokeInfo
+	query := "SELECT id, content, heart, bad FROM joke WHERE dst = '' "
 	if seq != 0 {
-		query += fmt.Sprintf(" WHERE id < %d", seq)
+		query += fmt.Sprintf(" AND id < %d", seq)
 	}
 	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
 
@@ -158,8 +158,8 @@ func getJokes(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 
 	defer rows.Close()
 	for rows.Next() {
-		var info hot.HotsInfo
-		err := rows.Scan(&info.Id, &info.Content, &info.Image, &info.Heart)
+		var info hot.JokeInfo
+		err := rows.Scan(&info.Id, &info.Content, &info.Heart, &info.Bad)
 		if err != nil {
 			log.Printf("getJokes scan failed:%v", err)
 			continue
@@ -212,12 +212,6 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		infos = getNews(db, in.Seq, util.MaxListSize, 10)
 	} else if in.Type == typeAmuse {
 		infos = getNews(db, in.Seq, util.MaxListSize, 4)
-	} else if in.Type == typeJoke {
-		seq := in.Seq
-		if in.Seq == 0 {
-			seq = calcJokeSeq()
-		}
-		infos = getJokes(db, seq, util.MaxListSize)
 	}
 	util.PubRPCSuccRsp(w, "hot", "GetHots")
 	return &hot.HotsReply{
@@ -697,6 +691,18 @@ func (s *server) GetLive(ctx context.Context, in *common.CommRequest) (*hot.Live
 	infos := getLiveInfos(db, in.Seq)
 	util.PubRPCSuccRsp(w, "hot", "GetLive")
 	return &hot.LiveReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, List: infos}, nil
+}
+
+func (s *server) GetJoke(ctx context.Context, in *common.CommRequest) (*hot.JokeReply, error) {
+	util.PubRPCRequest(w, "hot", "GetJoke")
+	log.Printf("GetJoke uid:%d seq:%d", in.Head.Uid, in.Seq)
+	seq := in.Seq
+	if in.Seq == 0 {
+		seq = calcJokeSeq()
+	}
+	infos := getJokes(db, seq, util.MaxListSize)
+	util.PubRPCSuccRsp(w, "hot", "GetJoke")
+	return &hot.JokeReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
 }
 
 func getAwardDetail(db *sql.DB, sid, uid, awardcode int64) common.AwardInfo {
