@@ -1428,17 +1428,20 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
 	uid := req.GetParamInt("uid")
-	response, err := getRspFromSSDB(hotServiceKey)
-	if err == nil {
-		log.Printf("getRspFromSSDB succ key:%s\n", hotServiceKey)
-		rspGzip(w, []byte(response))
-		reportSuccResp(r.RequestURI)
-		return nil
+	term := req.GetParamInt("term")
+	if term != util.WxTerm {
+		response, err := getRspFromSSDB(hotServiceKey)
+		if err == nil {
+			log.Printf("getRspFromSSDB succ key:%s\n", hotServiceKey)
+			rspGzip(w, []byte(response))
+			reportSuccResp(r.RequestURI)
+			return nil
+		}
 	}
 
 	uuid := util.GenUUID()
 	resp, rpcerr := callRPC(util.HotServerType, uid, "GetServices",
-		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid}})
+		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid, Term: term}})
 	checkRPCErr(rpcerr, "GetServices")
 	res := resp.Interface().(*hot.ServiceReply)
 	checkRPCCode(res.Head.Retcode, "GetServices")
@@ -1453,8 +1456,10 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		return &util.AppError{errInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
-	data := js.Get("data")
-	setSSDBCache(hotServiceKey, data)
+	if term != util.WxTerm {
+		data := js.Get("data")
+		setSSDBCache(hotServiceKey, data)
+	}
 	reportSuccResp(r.RequestURI)
 	return nil
 }

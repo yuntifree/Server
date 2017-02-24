@@ -245,7 +245,7 @@ func getCategoryTitleIcon(category int) (string, string) {
 	}
 }
 
-func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
+func getService(db *sql.DB, term int64) ([]*hot.ServiceCategory, error) {
 	var infos []*hot.ServiceCategory
 	rows, err := db.Query("SELECT title, dst, category, sid, icon FROM service WHERE category != 0 AND deleted = 0 AND dst != '' ORDER BY category")
 	if err != nil {
@@ -274,6 +274,9 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 			}
 			category = cate
 		}
+		if info.Title == "公交查询" && term == util.WxTerm {
+			continue
+		}
 		srvs = append(srvs, &info)
 	}
 
@@ -289,7 +292,7 @@ func getService(db *sql.DB) ([]*hot.ServiceCategory, error) {
 
 func (s *server) GetServices(ctx context.Context, in *common.CommRequest) (*hot.ServiceReply, error) {
 	util.PubRPCRequest(w, "hot", "GetServices")
-	categories, err := getService(db)
+	categories, err := getService(db, in.Head.Term)
 	if err != nil {
 		log.Printf("getServie failed:%v", err)
 		return &hot.ServiceReply{Head: &common.Head{Retcode: 1}}, err
