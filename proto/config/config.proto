@@ -9,6 +9,7 @@ service Config{
     rpc FetchPortalMenu(common.CommRequest) returns (MenuReply) {}
     rpc ModPortalMenu(MenuRequest) returns (common.CommReply) {}
     rpc AddPortalMenu(MenuRequest) returns (common.CommReply) {}
+    rpc GetDiscovery(common.CommRequest) returns (DiscoveryReply) {}
 }
 
 message PortalMenuInfo {
@@ -38,4 +39,31 @@ message MenuReply {
 message MenuRequest {
     common.Head head = 1;
     PortalMenuInfo info = 2;
+}
+
+message MediaInfo {
+    string img = 1;
+    string dst = 2;
+    string title = 3;
+}
+
+message ServiceInfo {
+    string title = 1;
+    string dst = 2;
+    int64 sid = 3;
+    string icon = 4;
+}
+
+message ServiceCategory {
+    string title = 1;
+    string icon = 2;
+    repeated ServiceInfo items = 3;
+}
+
+message DiscoveryReply {
+    common.Head head = 1;
+    repeated MediaInfo banners = 2;
+    repeated MediaInfo urbanservices = 3;
+    repeated MediaInfo recommends = 4;
+    repeated ServiceCategory services = 5;
 }

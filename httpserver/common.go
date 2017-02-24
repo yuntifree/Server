@@ -32,16 +32,17 @@ import (
 )
 
 const (
-	hotNewsKey     = "hot:news"
-	hotVideoKey    = "hot:video"
-	hotWeatherKey  = "hot:weather"
-	hotServiceKey  = "hot:service"
-	hotDgNewsKey   = "hot:news:dg"
-	hotAmuseKey    = "hot:news:amuse"
-	hotJokeKey     = "hot:joke"
-	hotNewsCompKey = "hot:news:comp"
-	hotAllApsKey   = "hot:all:aps"
-	expireInterval = 30
+	hotNewsKey         = "hot:news"
+	hotVideoKey        = "hot:video"
+	hotWeatherKey      = "hot:weather"
+	hotServiceKey      = "hot:service"
+	hotDgNewsKey       = "hot:news:dg"
+	hotAmuseKey        = "hot:news:amuse"
+	hotJokeKey         = "hot:joke"
+	hotNewsCompKey     = "hot:news:comp"
+	hotAllApsKey       = "hot:all:aps"
+	configDiscoveryKey = "config:discovery"
+	expireInterval     = 30
 )
 const (
 	hotNewsType = iota

@@ -67,6 +67,142 @@ func (s *server) GetPortalMenu(ctx context.Context, in *common.CommRequest) (*co
 		Tablist: tablist}, nil
 }
 
+func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	query := "SELECT img, dst FROM banner WHERE deleted = 0 AND type = 0"
+	if flag {
+		query += " AND (online = 1 OR dbg = 1) "
+	} else {
+		query += " AND online = 1 "
+	}
+	query += " ORDER BY priority DESC LIMIT 20"
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("select banner info failed:%v", err)
+		return infos
+	}
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst)
+		if err != nil {
+			log.Printf("scan failed:%v", err)
+			continue
+		}
+
+		infos = append(infos, &info)
+
+	}
+	return infos
+}
+
+func getUrbanServices(db *sql.DB, term int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT title, img, dst FROM urban_service WHERE type = ?", term)
+	if err != nil {
+		log.Printf("getUrbanServices query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Title, &info.Img, &info.Dst)
+		if err != nil {
+			log.Printf("getUrbanServices scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getRecommends(db *sql.DB) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT img, dst FROM recommend WHERE deleted = 0 ORDER BY priority DESC")
+	if err != nil {
+		log.Printf("getRecommends query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst)
+		if err != nil {
+			log.Printf("getRecommends scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getCategoryTitleIcon(category int) (string, string) {
+	switch category {
+	default:
+		return "智慧政务", "http://file.yunxingzh.com/ico_government_xxxh.png"
+	case 2:
+		return "交通出行", "http://file.yunxingzh.com/ico_traffic_xxxh.png"
+	case 3:
+		return "医疗服务", "http://file.yunxingzh.com/ico_medical_xxxh.png"
+	case 4:
+		return "网上充值", "http://file.yunxingzh.com/ico_recharge.png"
+	}
+}
+
+func getServices(db *sql.DB) []*config.ServiceCategory {
+	var infos []*config.ServiceCategory
+	rows, err := db.Query("SELECT title, dst, category, sid, icon FROM service WHERE category != 0 AND deleted = 0 AND dst != '' ORDER BY category")
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	category := 0
+	var srvs []*config.ServiceInfo
+	for rows.Next() {
+		var info config.ServiceInfo
+		var cate int
+		err := rows.Scan(&info.Title, &info.Dst, &cate, &info.Sid, &info.Icon)
+		if err != nil {
+			continue
+		}
+
+		if cate != category {
+			if len(srvs) > 0 {
+				var cateinfo config.ServiceCategory
+				cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
+				cateinfo.Items = srvs[:]
+				infos = append(infos, &cateinfo)
+				srvs = srvs[len(srvs):]
+			}
+			category = cate
+		}
+		srvs = append(srvs, &info)
+	}
+
+	if len(srvs) > 0 {
+		var cateinfo config.ServiceCategory
+		cateinfo.Title, cateinfo.Icon = getCategoryTitleIcon(category)
+		cateinfo.Items = srvs[:]
+		infos = append(infos, &cateinfo)
+	}
+
+	return infos
+}
+
+func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
+	util.PubRPCRequest(w, "config", "GetDiscovery")
+	banners := getBanners(db, false)
+	urbanservices := getUrbanServices(db, in.Head.Term)
+	recommends := getRecommends(db)
+	services := getServices(db)
+	util.PubRPCSuccRsp(w, "config", "GetDiscovery")
+	return &config.DiscoveryReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
+		Urbanservices: urbanservices, Recommends: recommends,
+		Services: services}, nil
+}
+
 func fetchPortalMenu(db *sql.DB, stype int64) []*config.PortalMenuInfo {
 	var infos []*config.PortalMenuInfo
 	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ? ORDER BY priority DESC", stype)

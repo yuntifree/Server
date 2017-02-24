@@ -1459,6 +1459,45 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req request
+	req.initCheckApp(r.Body, r.RequestURI)
+	uid := req.GetParamInt("uid")
+	term := req.GetParamIntDef("term", 0)
+	response, err := getRspFromSSDB(configDiscoveryKey)
+	if err == nil {
+		log.Printf("getRspFromSSDB succ key:%s\n", configDiscoveryKey)
+		rspGzip(w, []byte(response))
+		reportSuccResp(r.RequestURI)
+		return nil
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := callRPC(util.ConfigServerType, uid, "GetDiscovery",
+		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid, Term: term}})
+	checkRPCErr(rpcerr, "GetDiscovery")
+	res := resp.Interface().(*config.DiscoveryReply)
+	checkRPCCode(res.Head.Retcode, "GetDiscovery")
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{errInner, "init json failed"}
+	}
+	js.SetPath([]string{"data", "services"}, res.Services)
+	js.SetPath([]string{"data", "banners"}, res.Banners)
+	js.SetPath([]string{"data", "recommends"}, res.Recommends)
+	js.SetPath([]string{"data", "urbanservices"}, res.Urbanservices)
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{errInner, "marshal json failed"}
+	}
+	rspGzip(w, body)
+	data := js.Get("data")
+	setSSDBCache(configDiscoveryKey, data)
+	reportSuccResp(r.RequestURI)
+	return nil
+}
+
 func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req request
 	req.initCheckApp(r.Body, r.RequestURI)
@@ -2051,6 +2090,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/apply_image_upload", appHandler(applyImageUpload))
 	mux.Handle("/pingpp_pay", appHandler(pingppPay))
 	mux.Handle("/services", appHandler(getService))
+	mux.Handle("/get_discovery", appHandler(getDiscovery))
 	mux.Handle("/punch", appHandler(punchAp))
 	mux.Handle("/get_my_punch", appHandler(getMyPunch))
 	mux.Handle("/get_user_info", appHandler(getUserInfo))
