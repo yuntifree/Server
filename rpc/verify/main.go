@@ -280,8 +280,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	}
 	log.Printf("uid:%d\n", uid)
 
+	var headurl, nickname string
 	if uid == 0 {
-		err = db.QueryRow("SELECT uid FROM user WHERE username = ?", in.Username).Scan(&uid)
+		err = db.QueryRow("SELECT uid, headurl, nickname FROM user WHERE username = ?", in.Username).Scan(&uid, &headurl, &nickname)
 		if err != nil {
 			log.Printf("get user id failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -306,7 +307,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	util.PubRPCSuccRsp(w, "verify", "Register")
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expire,
-		Expiretime: strTime}, nil
+		Expiretime: strTime, Headurl: headurl, Nickname: nickname}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {

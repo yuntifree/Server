@@ -89,6 +89,8 @@ message RegisterReply {
     string privdata = 3;
     int64 expire = 4;
     string expiretime = 5;
+    string headurl = 6;
+    string nickname = 7;
 }
 
 message LogoutRequest {
