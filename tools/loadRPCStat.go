@@ -148,7 +148,6 @@ func main() {
 	monitor.Start = getStart()
 	logChan := make(chan *nsq.Message, 100)
 	q.AddHandler(nsq.HandlerFunc(func(m *nsq.Message) error {
-		log.Printf("msg:%s", string(m.Body))
 		logChan <- m
 		return nil
 	}))
