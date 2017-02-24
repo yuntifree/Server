@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -21,7 +22,12 @@ func record(db *sql.DB, info *juhe.LiveInfo) {
 	if location == "" {
 		location = "难道在火星？"
 	}
-	_, err := db.Exec("INSERT INTO live(uid, avatar, nickname, live_id, img, p_time, location, watches, live, seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uid = ?, avatar = ?, nickname = ?, img = ?, p_time = ?, location = ?, watches = ?, live = ?, seq = ?", info.Uid, info.Avatar, nickname, info.LiveId, info.Img, info.PTime, location, info.Watches, info.Live, ts, info.Uid, info.Avatar, nickname, info.Img, info.PTime, location, info.Watches, info.Live, ts)
+	rate := 0.0
+	if strings.Contains(location, "广东") {
+		rate = 0.1
+	}
+	priority := info.Watches + int64(float64(info.Watches)*rate)
+	_, err := db.Exec("INSERT INTO live(uid, avatar, nickname, live_id, img, p_time, location, watches, live, seq, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uid = ?, avatar = ?, nickname = ?, img = ?, p_time = ?, location = ?, watches = ?, live = ?, seq = ?, priority = ?", info.Uid, info.Avatar, nickname, info.LiveId, info.Img, info.PTime, location, info.Watches, info.Live, ts, priority, info.Uid, info.Avatar, nickname, info.Img, info.PTime, location, info.Watches, info.Live, ts, priority)
 	if err != nil {
 		log.Printf("record info:%v failed:%v", info, err)
 	}

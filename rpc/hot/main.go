@@ -672,11 +672,11 @@ func (s *server) GetRunning(ctx context.Context, in *common.CommRequest) (*hot.R
 
 func getLiveInfos(db *sql.DB, seq int64) []*hot.LiveInfo {
 	var infos []*hot.LiveInfo
-	query := "SELECT uid, avatar, nickname, live_id, img, p_time, location, watches, live FROM live WHERE seq > (UNIX_TIMESTAMP(NOW())-180)*1000 "
+	query := "SELECT uid, avatar, nickname, live_id, img, p_time, location, watches, live, priority FROM live WHERE seq > (UNIX_TIMESTAMP(NOW())-180)*1000 "
 	if seq != 0 {
-		query += fmt.Sprintf(" AND watches < %d ", seq)
+		query += fmt.Sprintf(" AND priority < %d ", seq)
 	}
-	query += fmt.Sprintf(" ORDER BY watches DESC LIMIT %d", util.MaxListSize)
+	query += fmt.Sprintf(" ORDER BY priority DESC LIMIT %d", util.MaxListSize)
 	log.Printf("getLiveInfos query:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -687,12 +687,12 @@ func getLiveInfos(db *sql.DB, seq int64) []*hot.LiveInfo {
 	for rows.Next() {
 		var info hot.LiveInfo
 		err := rows.Scan(&info.Uid, &info.Avatar, &info.Nickname, &info.LiveId,
-			&info.Img, &info.PTime, &info.Location, &info.Watches, &info.Live)
+			&info.Img, &info.PTime, &info.Location, &info.Watches, &info.Live,
+			&info.Seq)
 		if err != nil {
 			log.Printf("getLiveInfos scan failed:%v", err)
 			continue
 		}
-		info.Seq = info.Watches
 		infos = append(infos, &info)
 	}
 	return infos
