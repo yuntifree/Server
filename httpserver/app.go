@@ -1943,13 +1943,10 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	} else {
 		path = r.RequestURI
 	}
-	lpos := strings.LastIndex(path, "/")
 	prefix := portalDst
-	if lpos != -1 {
-		prefix = path[0 : lpos+1]
-	}
 	dir := getPortalDir()
 	dst := prefix + dir + postfix
+	log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
