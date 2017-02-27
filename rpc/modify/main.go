@@ -35,6 +35,9 @@ const (
 	tabSwitchType
 	portalServiceType
 	jokeBadType
+	bannerClickType
+	recommendClickType
+	urbanServiceClickType
 )
 
 type server struct{}
@@ -179,6 +182,12 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 				in.Type, name)
 		case jokeBadType:
 			_, err = db.Exec("UPDATE joke SET bad = bad + 1 WHERE id = ?", in.Id)
+		case bannerClickType:
+			_, err = db.Exec("UPDATE banner SET click = click + 1 WHERE id = ?", in.Id)
+		case recommendClickType:
+			_, err = db.Exec("UPDATE recommend SET click = click + 1 WHERE id = ?", in.Id)
+		case urbanServiceClickType:
+			_, err = db.Exec("UPDATE urban_service SET click = click + 1 WHERE id = ?", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 

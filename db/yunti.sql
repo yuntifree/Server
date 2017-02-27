@@ -253,6 +253,7 @@ CREATE TABLE IF NOT EXISTS banner (
     priority    int unsigned NOT NULL DEFAULT 0,
     online  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    click   int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     etime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id),

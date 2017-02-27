@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS urban_service
     dst     varchar(128) NOT NULL,
     priority    int unsigned NOT NULL DEFAULT 0,
     deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    click       int unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(type)
 ) ENGINE = InnoDB;
@@ -39,8 +41,10 @@ CREATE TABLE IF NOT EXISTS recommend
     type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(128) NOT NULL,
     dst     varchar(128) NOT NULL,
+    click   int unsigned NOT NULL DEFAULT 0,
     priority    int unsigned NOT NULL DEFAULT 0,
     deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(type)
 ) ENGINE = InnoDB;
