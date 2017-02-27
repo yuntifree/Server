@@ -191,14 +191,16 @@ func getJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
 	return def
 }
 
-func getFormInt(v url.Values, key string) int64 {
+func getFormInt(v url.Values, key, callback string) int64 {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	val, err := strconv.ParseInt(vals[0], 10, 64)
 	if err != nil {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	return val
 }
@@ -215,14 +217,16 @@ func getFormIntDef(v url.Values, key string, def int64) int64 {
 	return val
 }
 
-func getFormFloat(v url.Values, key string) float64 {
+func getFormFloat(v url.Values, key, callback string) float64 {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	val, err := strconv.ParseFloat(vals[0], 64)
 	if err != nil {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	return val
 }
@@ -239,14 +243,16 @@ func getFormFloatDef(v url.Values, key string, def float64) float64 {
 	return val
 }
 
-func getFormBool(v url.Values, key string) bool {
+func getFormBool(v url.Values, key, callback string) bool {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	val, err := strconv.ParseBool(vals[0])
 	if err != nil {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	return val
 }
@@ -263,10 +269,11 @@ func getFormBoolDef(v url.Values, key string, def bool) bool {
 	return val
 }
 
-func getFormString(v url.Values, key string) string {
+func getFormString(v url.Values, key, callback string) string {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key),
+			Callback: callback})
 	}
 	return vals[0]
 }
@@ -287,11 +294,10 @@ type Request struct {
 	Callback string
 }
 
-//WriteRsp support for callback
-func (r *Request) WriteRsp(w http.ResponseWriter, body []byte) {
-	if r.debug {
+func writeRsp(w http.ResponseWriter, body []byte, callback string) {
+	if callback != "" {
 		var buf bytes.Buffer
-		buf.Write([]byte(r.Callback))
+		buf.Write([]byte(callback))
 		buf.Write([]byte("("))
 		buf.Write(body)
 		buf.Write([]byte(")"))
@@ -300,6 +306,11 @@ func (r *Request) WriteRsp(w http.ResponseWriter, body []byte) {
 	}
 	w.Write(body)
 	return
+}
+
+//WriteRsp support for callback
+func (r *Request) WriteRsp(w http.ResponseWriter, body []byte) {
+	writeRsp(w, body, r.Callback)
 }
 
 //Init init request
@@ -311,12 +322,12 @@ func (r *Request) Init(req *http.Request) {
 		req.ParseForm()
 		r.Form = req.Form
 		r.debug = true
-		r.Callback = getFormString(r.Form, "callback")
+		r.Callback = getFormString(r.Form, "callback", "")
 		return
 	}
 	if err != nil {
 		log.Printf("parse reqbody failed:%v", err)
-		panic(util.AppError{ErrInvalidParam, "invalid param"})
+		panic(util.AppError{ErrInvalidParam, "invalid param", r.Callback})
 	}
 }
 
@@ -334,7 +345,7 @@ func (r *Request) InitCheck(req *http.Request, back bool) {
 	flag := checkToken(uid, token, ctype)
 	if !flag {
 		log.Printf("checkToken failed, uid:%d token:%s\n", uid, token)
-		panic(util.AppError{ErrToken, "token验证失败"})
+		panic(util.AppError{ErrToken, "token验证失败", r.Callback})
 	}
 }
 
@@ -350,7 +361,7 @@ func (r *Request) InitCheckOss(req *http.Request) {
 
 func (r *Request) GetParamInt(key string) int64 {
 	if r.debug {
-		return getFormInt(r.Form, key)
+		return getFormInt(r.Form, key, r.Callback)
 	}
 	return getJSONInt(r.Post, key)
 }
@@ -364,7 +375,7 @@ func (r *Request) GetParamIntDef(key string, def int64) int64 {
 
 func (r *Request) GetParamBool(key string) bool {
 	if r.debug {
-		return getFormBool(r.Form, key)
+		return getFormBool(r.Form, key, r.Callback)
 	}
 	return getJSONBool(r.Post, key)
 }
@@ -378,7 +389,7 @@ func (r *Request) GetParamBoolDef(key string, def bool) bool {
 
 func (r *Request) GetParamString(key string) string {
 	if r.debug {
-		return getFormString(r.Form, key)
+		return getFormString(r.Form, key, r.Callback)
 	}
 	return getJSONString(r.Post, key)
 }
@@ -391,7 +402,7 @@ func (r *Request) GetParamStringDef(key string, def string) string {
 
 func (r *Request) GetParamFloat(key string) float64 {
 	if r.debug {
-		return getFormFloat(r.Form, key)
+		return getFormFloat(r.Form, key, r.Callback)
 	}
 	return getJSONFloat(r.Post, key)
 }
@@ -407,11 +418,12 @@ func extractError(r interface{}) *util.AppError {
 		return &k
 	}
 	log.Printf("unexpected panic:%v", r)
-	return &util.AppError{ErrPanic, r.(error).Error()}
+	return &util.AppError{ErrPanic, r.(error).Error(), ""}
 }
 
 func handleError(w http.ResponseWriter, e *util.AppError) {
-	log.Printf("error code:%d msg:%s", e.Code, e.Msg)
+	log.Printf("error code:%d msg:%s callback:%s", e.Code, e.Msg,
+		e.Callback)
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
 	js.Set("errno", e.Code)
@@ -426,10 +438,10 @@ func handleError(w http.ResponseWriter, e *util.AppError) {
 	body, err := js.MarshalJSON()
 	if err != nil {
 		log.Printf("MarshalJSON failed: %v", err)
-		w.Write([]byte(`{"errno":2,"desc":"invalid param"}`))
+		writeRsp(w, []byte(`{"errno":2,"desc":"invalid param"}`), e.Callback)
 		return
 	}
-	w.Write(body)
+	writeRsp(w, body, e.Callback)
 }
 
 type AppHandler func(http.ResponseWriter, *http.Request) *util.AppError
@@ -494,7 +506,7 @@ func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	address := GetNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{ErrInner, err.Error()}
+		return &util.AppError{ErrInner, err.Error(), req.Callback}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -503,16 +515,16 @@ func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		&fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid},
 			Longitude: longitude, Latitude: latitude})
 	if err != nil {
-		return &util.AppError{ErrInner, err.Error()}
+		return &util.AppError{ErrInner, err.Error(), req.Callback}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{ErrInner, "服务器又傲娇了"}
+		return &util.AppError{ErrInner, "服务器又傲娇了", req.Callback}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{ErrInner, "init json failed"}
+		return &util.AppError{ErrInner, "init json failed", req.Callback}
 	}
 	infos := make([]interface{}, len(res.Infos))
 	for i := 0; i < len(res.Infos); i++ {
@@ -527,7 +539,7 @@ func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{ErrInner, "marshal json failed"}
+		return &util.AppError{ErrInner, "marshal json failed", req.Callback}
 	}
 	RspGzip(w, body)
 	ReportSuccResp(r.RequestURI)
@@ -546,13 +558,18 @@ func getDiscoverAddress() string {
 	return "localhost" + util.DiscoverServerPort
 }
 
-//GetNameServer get server from name service
+//GetNameServer
 func GetNameServer(uid int64, name string) string {
+	return GetNameServerCallback(uid, name, "")
+}
+
+//GetNameServerCallback get server from name service with callback
+func GetNameServerCallback(uid int64, name, callback string) string {
 	address := getDiscoverAddress()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect %s: %v", address, err)
-		panic(util.AppError{ErrInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error(), callback})
 	}
 	defer conn.Close()
 	c := discover.NewDiscoverClient(conn)
@@ -566,13 +583,13 @@ func GetNameServer(uid int64, name string) string {
 		&discover.ServerRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Sname: name})
 	if err != nil {
 		log.Printf("Resolve failed %s: %v", name, err)
-		panic(util.AppError{ErrInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error(), callback})
 	}
 
 	if res.Head.Retcode != 0 {
 		log.Printf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)
 		panic(util.AppError{ErrInner,
-			fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)})
+			fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode), callback})
 	}
 
 	return res.Host
@@ -612,11 +629,15 @@ func AddImages(uid int64, names []string) error {
 	return nil
 }
 
-//GenResponseBody generate response body
 func GenResponseBody(res interface{}, flag bool) []byte {
+	return GenResponseBodyCallback(res, "", flag)
+}
+
+//GenResponseBodyCallback generate response body with callback
+func GenResponseBodyCallback(res interface{}, callback string, flag bool) []byte {
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		panic(util.AppError{ErrInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error(), callback})
 	}
 	val := reflect.ValueOf(res).Elem()
 	for i := 0; i < val.NumField(); i++ {
@@ -638,7 +659,7 @@ func GenResponseBody(res interface{}, flag bool) []byte {
 	}
 	data, err := js.MarshalJSON()
 	if err != nil {
-		panic(util.AppError{ErrInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error(), callback})
 	}
 
 	return data
@@ -646,41 +667,52 @@ func GenResponseBody(res interface{}, flag bool) []byte {
 
 //CheckRPCErr check rpc response error
 func CheckRPCErr(err reflect.Value, method string) {
+	CheckRPCErrCallback(err, method, "")
+	return
+}
+
+func CheckRPCErrCallback(err reflect.Value, method, callback string) {
 	if err.Interface() != nil {
 		log.Printf("RPC %s failed:%v", method, err)
-		panic(util.AppError{ErrInner, "grpc failed " + method})
+		panic(util.AppError{ErrInner, "grpc failed " + method, callback})
 	}
 }
 
 //CheckRPCCode check rpc response code
 func CheckRPCCode(retcode common.ErrCode, method string) {
+	CheckRPCCodeCallback(retcode, method, "")
+	return
+}
+
+//CheckRPCCodeCallback check rpc response code with callback
+func CheckRPCCodeCallback(retcode common.ErrCode, method, callback string) {
 	if retcode != 0 {
 		log.Printf("%s failed retcode:%d", method, retcode)
 	}
 	if retcode == common.ErrCode_INVALID_TOKEN {
-		panic(util.AppError{ErrToken, "token验证失败"})
+		panic(util.AppError{ErrToken, "token验证失败", callback})
 	} else if retcode == common.ErrCode_USED_PHONE {
-		panic(util.AppError{ErrUsedPhone, "该账号已注册，请直接登录"})
+		panic(util.AppError{ErrUsedPhone, "该账号已注册，请直接登录", callback})
 	} else if retcode == common.ErrCode_CHECK_CODE {
-		panic(util.AppError{ErrCode, "验证码错误"})
+		panic(util.AppError{ErrCode, "验证码错误", callback})
 	} else if retcode == common.ErrCode_ZTE_LOGIN {
-		panic(util.AppError{ErrZteLogin, "登录失败"})
+		panic(util.AppError{ErrZteLogin, "登录失败", callback})
 	} else if retcode == common.ErrCode_ZTE_REMOVE {
-		panic(util.AppError{ErrZteRemove, "删除中兴账号失败"})
+		panic(util.AppError{ErrZteRemove, "删除中兴账号失败", callback})
 	} else if retcode == common.ErrCode_NO_NEW_VERSION {
-		panic(util.AppError{ErrNoNewVersion, "当前已是最新版本"})
+		panic(util.AppError{ErrNoNewVersion, "当前已是最新版本", callback})
 	} else if retcode == common.ErrCode_HAS_PUNCH {
-		panic(util.AppError{ErrHasPunch, "此地已经被别人打过卡"})
+		panic(util.AppError{ErrHasPunch, "此地已经被别人打过卡", callback})
 	} else if retcode == common.ErrCode_ILLEGAL_CODE {
-		panic(util.AppError{ErrIllegalCode, "code已过期"})
+		panic(util.AppError{ErrIllegalCode, "code已过期", callback})
 	} else if retcode == common.ErrCode_FREQUENCY_LIMIT {
-		panic(util.AppError{ErrFrequencyLimit, "请求太频繁"})
+		panic(util.AppError{ErrFrequencyLimit, "请求太频繁", callback})
 	} else if retcode != 0 {
-		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
+		panic(util.AppError{int(retcode), "服务器又傲娇了~", callback})
 	}
 }
 
-func genServerName(rtype int64) string {
+func genServerName(rtype int64, callback string) string {
 	switch rtype {
 	case util.DiscoverServerType:
 		return util.DiscoverServerName
@@ -703,11 +735,11 @@ func genServerName(rtype int64) string {
 	case util.MonitorServerType:
 		return util.MonitorServerName
 	default:
-		panic(util.AppError{ErrInvalidParam, "illegal server type"})
+		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}
 }
 
-func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
+func genClient(rtype int64, conn *grpc.ClientConn, callback string) interface{} {
 	var cli interface{}
 	switch rtype {
 	case util.DiscoverServerType:
@@ -731,22 +763,27 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 	case util.MonitorServerType:
 		cli = monitor.NewMonitorClient(conn)
 	default:
-		panic(util.AppError{ErrInvalidParam, "illegal server type"})
+		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}
 	return cli
 }
 
 //CallRPC call rpc method
 func CallRPC(rtype, uid int64, method string, request interface{}) (reflect.Value, reflect.Value) {
+	return CallRPCCallback(rtype, uid, method, "", request)
+}
+
+//CallRPC call rpc method with callback
+func CallRPCCallback(rtype, uid int64, method, callback string, request interface{}) (reflect.Value, reflect.Value) {
 	var resp reflect.Value
-	serverName := genServerName(rtype)
-	address := GetNameServer(uid, serverName)
+	serverName := genServerName(rtype, callback)
+	address := GetNameServerCallback(uid, serverName, callback)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return resp, reflect.ValueOf(err)
 	}
 	defer conn.Close()
-	cli := genClient(rtype, conn)
+	cli := genClient(rtype, conn, callback)
 	ctx := context.Background()
 
 	inputs := make([]reflect.Value, 2)

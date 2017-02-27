@@ -2,8 +2,9 @@ package util
 
 //AppError for app error handler
 type AppError struct {
-	Code int
-	Msg  string
+	Code     int
+	Msg      string
+	Callback string
 }
 
 //Error return error message

@@ -59,7 +59,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{httpserver.ErrInner, "invalid param", ""}
 	}
 	role := strconv.Itoa(int(res.Role))
 	initRoleConf()
@@ -69,7 +69,7 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{httpserver.ErrInner, "marshal json failed", ""}
 	}
 
 	w.Write(body)
@@ -423,13 +423,13 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{httpserver.ErrInner, "invalid param", ""}
 	}
 	js.SetPath([]string{"data", "tid"}, res.Id)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{httpserver.ErrInner, "marshal json failed", ""}
 	}
 	w.Write(body)
 	return nil
@@ -652,7 +652,7 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	tags, err := req.Post.Get("data").Get("tags").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{2, err.Error()}
+		return &util.AppError{httpserver.ErrInvalidParam, err.Error(), ""}
 	}
 
 	var cts []string
@@ -706,7 +706,7 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	tags, err := req.Post.Get("data").Get("ids").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{2, err.Error()}
+		return &util.AppError{httpserver.ErrInvalidParam, err.Error(), ""}
 	}
 
 	var cts []int64
@@ -735,7 +735,7 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	keys, err := req.Post.Get("data").Get("keys").Array()
 	if err != nil {
 		log.Printf("get tags failed:%v", err)
-		return &util.AppError{2, err.Error()}
+		return &util.AppError{httpserver.ErrInvalidParam, err.Error(), ""}
 	}
 
 	var names []string
@@ -970,7 +970,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	formats, err := req.Post.Get("data").Get("formats").Array()
 	if err != nil {
 		log.Printf("get format failed:%v", err)
-		return &util.AppError{2, err.Error()}
+		return &util.AppError{httpserver.ErrInvalidParam, err.Error(), ""}
 	}
 
 	var names []string
@@ -981,12 +981,12 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	}
 	err = httpserver.AddImages(uid, names)
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{httpserver.ErrInner, err.Error(), ""}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{httpserver.ErrInner, "invalid param", ""}
 	}
 	data, _ := simplejson.NewJson([]byte(`{}`))
 	aliyun.FillPolicyResp(data)
@@ -996,7 +996,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{httpserver.ErrInner, "marshal json failed", ""}
 	}
 	w.Write(body)
 	return nil

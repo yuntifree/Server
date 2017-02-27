@@ -112,12 +112,13 @@ func getPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getPhoneCode illegal phone:%s", phone)
-		return &util.AppError{httpserver.ErrIllegalPhone, "请输入正确的手机号"}
+		return &util.AppError{Code: httpserver.ErrIllegalPhone,
+			Msg: "请输入正确的手机号"}
 	}
 
 	flag, err := getCode(phone, ctype)
 	if err != nil || !flag {
-		return &util.AppError{httpserver.ErrCode, "获取验证码失败"}
+		return &util.AppError{Code: httpserver.ErrCode, Msg: "获取验证码失败"}
 	}
 	w.Write([]byte(`{"errno":0}`))
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -133,16 +134,19 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getCheckCode illegal phone:%s", phone)
-		return &util.AppError{httpserver.ErrIllegalPhone, "请输入正确的手机号"}
+		return &util.AppError{Code: httpserver.ErrIllegalPhone,
+			Msg: "请输入正确的手机号", Callback: req.Callback}
 	}
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "GetCheckCode",
+	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
+		0, "GetCheckCode", req.Callback,
 		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid, Term: term},
 			Info: &verify.PortalInfo{Phone: phone, Acname: acname}})
-	httpserver.CheckRPCErr(rpcerr, "GetPhoneCode")
+	httpserver.CheckRPCErrCallback(rpcerr, "GetPhoneCode", req.Callback)
 	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetPhoneCode")
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "GetPhoneCode",
+		req.Callback)
 
 	req.WriteRsp(w, []byte(`{"errno":0}`))
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -223,7 +227,8 @@ func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{httpserver.ErrInvalidParam, "illegal zipcode"}
+		return &util.AppError{Code: httpserver.ErrInvalidParam,
+			Msg: "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -258,7 +263,8 @@ func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	text := req.GetParamString("text")
 	images, err := req.Post.Get("data").Get("images").Array()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInvalidParam, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInvalidParam,
+			Msg: err.Error()}
 	}
 	var imgs []string
 	for i := 0; i < len(images); i++ {
@@ -337,12 +343,12 @@ func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 	}
 	js.Set("data", res.Info)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "marshal json failed"}
 	}
 
 	w.Write(body)
@@ -359,7 +365,7 @@ func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	city := req.GetParamInt("city")
 	zone := req.GetParamInt("zone")
 	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{httpserver.ErrInvalidParam, "illegal zipcode"}
+		return &util.AppError{Code: httpserver.ErrInvalidParam, Msg: "illegal zipcode"}
 	}
 	zip := req.GetParamInt("zip")
 	detail := req.GetParamString("detail")
@@ -412,16 +418,16 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	var names = []string{fname}
 	err := httpserver.AddImages(uid, names)
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 	}
 	data, err := simplejson.NewJson([]byte(`{}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 	}
 	aliyun.FillCallbackInfo(data)
 	data.Set("name", fname)
@@ -429,7 +435,8 @@ func applyImageUpload(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -577,15 +584,17 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	log.Printf("checkLogin usermac:%s", usermac)
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "CheckLogin",
+	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
+		0, "CheckLogin", req.Callback,
 		&verify.AccessRequest{
 			Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{Usermac: usermac, Acname: acname}})
-	httpserver.CheckRPCErr(rpcerr, "FetchLatestVersion")
+	httpserver.CheckRPCErrCallback(rpcerr, "FetchLatestVersion", req.Callback)
 	res := resp.Interface().(*verify.CheckReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchLatestVersion")
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "FetchLatestVersion",
+		req.Callback)
 
-	body := httpserver.GenResponseBody(res, false)
+	body := httpserver.GenResponseBodyCallback(res, req.Callback, false)
 	req.WriteRsp(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
@@ -626,7 +635,8 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	if res.Info != nil && res.Info.Img != "" {
 		js.Set("data", res.Info)
@@ -634,7 +644,8 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -676,7 +687,8 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "opened"}, res.Opened)
 	if len(res.Opened) >= int(num) {
@@ -685,7 +697,8 @@ func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -709,7 +722,8 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "running"}, res.Running)
 	if len(res.Running) >= int(num) {
@@ -718,7 +732,7 @@ func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -769,11 +783,12 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	latitude := req.GetParamFloat("latitude")
 	ssids, err := req.Post.Get("data").Get("ssids").Array()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, err.Error()}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 	}
 	var ids []string
 	if len(ssids) == 0 {
-		return &util.AppError{httpserver.ErrInvalidParam, "illegal param:empty ssids"}
+		return &util.AppError{Code: httpserver.ErrInvalidParam,
+			Msg: "illegal param:empty ssids"}
 	}
 	for i := 0; i < len(ssids); i++ {
 		ssid := ssids[i].(string)
@@ -858,7 +873,8 @@ func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	gid := req.GetParamIntDef("gid", 0)
 	bid := req.GetParamIntDef("bid", 0)
 	if gid == 0 && bid == 0 {
-		return &util.AppError{httpserver.ErrInvalidParam, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInvalidParam,
+			Msg: "invalid param"}
 	}
 
 	uuid := util.GenUUID()
@@ -891,13 +907,13 @@ func getImageToken(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "invalid param"}
 	}
 	js.Set("data", res.Credential)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -925,7 +941,7 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "news"}, res.News)
 	js.SetPath([]string{"data", "weather"}, res.Weather)
@@ -933,7 +949,8 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	data := js.Get("data")
@@ -957,7 +974,8 @@ func getLiveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "list"}, res.List)
 	if len(res.List) >= util.MaxListSize {
@@ -966,7 +984,8 @@ func getLiveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -988,7 +1007,8 @@ func getJokes(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize {
@@ -997,7 +1017,8 @@ func getJokes(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -1039,13 +1060,15 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.Set("data", res.Activity)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -1068,13 +1091,14 @@ func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "invalid param"}
 	}
 	js.Set("data", res.Info)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -1149,7 +1173,8 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize {
@@ -1158,7 +1183,8 @@ func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -1350,7 +1376,8 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 	if len(res.Infos) >= util.MaxListSize ||
@@ -1360,7 +1387,8 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	if seq == 0 {
@@ -1408,16 +1436,17 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		phone, code, acname, acip, userip, usermac)
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "PortalLogin",
+	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
+		0, "PortalLogin", req.Callback,
 		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip,
 				Phone: phone, Code: code}})
-	httpserver.CheckRPCErr(rpcerr, "PortalLogin")
+	httpserver.CheckRPCErrCallback(rpcerr, "PortalLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "PortalLogin")
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "PortalLogin", req.Callback)
 
-	body := httpserver.GenResponseBody(res, true)
+	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
 	req.WriteRsp(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
@@ -1434,15 +1463,17 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		acname, acip, userip, usermac)
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "OneClickLogin",
+	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
+		0, "OneClickLogin", req.Callback,
 		&verify.AccessRequest{Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip}})
-	httpserver.CheckRPCErr(rpcerr, "OneClickLogin")
+	httpserver.CheckRPCErrCallback(rpcerr, "OneClickLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "OneClickLogin")
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "OneClickLogin",
+		req.Callback)
 
-	body := httpserver.GenResponseBody(res, true)
+	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
 	req.WriteRsp(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
@@ -1472,12 +1503,14 @@ func getService(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "init json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "init json failed"}
 	}
 	js.SetPath([]string{"data", "services"}, res.Services)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	if term != util.WxTerm {
@@ -1510,7 +1543,8 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "init json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "init json failed"}
 	}
 	js.SetPath([]string{"data", "services"}, res.Services)
 	js.SetPath([]string{"data", "banners"}, res.Banners)
@@ -1518,7 +1552,8 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	js.SetPath([]string{"data", "urbanservices"}, res.Urbanservices)
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	data := js.Get("data")
@@ -1789,13 +1824,15 @@ func getAllAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "invalid param"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
 	}
 	js.SetPath([]string{"data", "infos"}, res.Infos)
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{httpserver.ErrInner, "marshal json failed"}
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
 	data := js.Get("data")
