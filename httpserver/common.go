@@ -300,7 +300,7 @@ func getFormStringDef(v url.Values, key string, def string) string {
 	return vals[0]
 }
 
-type request struct {
+type Request struct {
 	Post     *simplejson.Json
 	Form     url.Values
 	debug    bool
@@ -308,7 +308,7 @@ type request struct {
 }
 
 //WriteRsp support for callback
-func (r *request) WriteRsp(w http.ResponseWriter, body []byte) {
+func (r *Request) WriteRsp(w http.ResponseWriter, body []byte) {
 	if r.debug {
 		var buf bytes.Buffer
 		buf.Write([]byte(r.Callback))
@@ -322,7 +322,8 @@ func (r *request) WriteRsp(w http.ResponseWriter, body []byte) {
 	return
 }
 
-func (r *request) init(req *http.Request) {
+//Init init request
+func (r *Request) Init(req *http.Request) {
 	reportRequest(req.RequestURI)
 	var err error
 	r.Post, err = simplejson.NewFromReader(req.Body)
@@ -339,8 +340,9 @@ func (r *request) init(req *http.Request) {
 	}
 }
 
-func (r *request) initCheck(req *http.Request, back bool) {
-	r.init(req)
+//InitCheck init request and check token
+func (r *Request) InitCheck(req *http.Request, back bool) {
+	r.Init(req)
 	uid := r.GetParamInt("uid")
 	token := r.GetParamString("token")
 
@@ -356,62 +358,64 @@ func (r *request) initCheck(req *http.Request, back bool) {
 	}
 }
 
-func (r *request) initCheckApp(req *http.Request) {
-	r.initCheck(req, false)
+//InitCheckApp init request and check token for app
+func (r *Request) InitCheckApp(req *http.Request) {
+	r.InitCheck(req, false)
 }
 
-func (r *request) initCheckOss(req *http.Request) {
-	r.initCheck(req, true)
+//InitCheckOss init request and check token for oss
+func (r *Request) InitCheckOss(req *http.Request) {
+	r.InitCheck(req, true)
 }
 
-func (r *request) GetParamInt(key string) int64 {
+func (r *Request) GetParamInt(key string) int64 {
 	if r.debug {
 		return getFormInt(r.Form, key)
 	}
 	return getJSONInt(r.Post, key)
 }
 
-func (r *request) GetParamIntDef(key string, def int64) int64 {
+func (r *Request) GetParamIntDef(key string, def int64) int64 {
 	if r.debug {
 		return getFormIntDef(r.Form, key, def)
 	}
 	return getJSONIntDef(r.Post, key, def)
 }
 
-func (r *request) GetParamBool(key string) bool {
+func (r *Request) GetParamBool(key string) bool {
 	if r.debug {
 		return getFormBool(r.Form, key)
 	}
 	return getJSONBool(r.Post, key)
 }
 
-func (r *request) GetParamBoolDef(key string, def bool) bool {
+func (r *Request) GetParamBoolDef(key string, def bool) bool {
 	if r.debug {
 		return getFormBoolDef(r.Form, key, def)
 	}
 	return getJSONBoolDef(r.Post, key, def)
 }
 
-func (r *request) GetParamString(key string) string {
+func (r *Request) GetParamString(key string) string {
 	if r.debug {
 		return getFormString(r.Form, key)
 	}
 	return getJSONString(r.Post, key)
 }
-func (r *request) GetParamStringDef(key string, def string) string {
+func (r *Request) GetParamStringDef(key string, def string) string {
 	if r.debug {
 		return getFormStringDef(r.Form, key, def)
 	}
 	return getJSONStringDef(r.Post, key, def)
 }
 
-func (r *request) GetParamFloat(key string) float64 {
+func (r *Request) GetParamFloat(key string) float64 {
 	if r.debug {
 		return getFormFloat(r.Form, key)
 	}
 	return getJSONFloat(r.Post, key)
 }
-func (r *request) GetParamFloatDef(key string, def float64) float64 {
+func (r *Request) GetParamFloatDef(key string, def float64) float64 {
 	if r.debug {
 		return getFormFloatDef(r.Form, key, def)
 	}
@@ -496,11 +500,11 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		}
 	}()
 
-	var req request
+	var req Request
 	if back {
-		req.initCheckOss(r)
+		req.InitCheckOss(r)
 	} else {
-		req.initCheckApp(r)
+		req.InitCheckApp(r)
 	}
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
@@ -781,11 +785,11 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 }
 
 func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
-	var req request
+	var req Request
 	if back {
-		req.initCheckOss(r)
+		req.InitCheckOss(r)
 	} else {
-		req.initCheckApp(r)
+		req.InitCheckApp(r)
 	}
 	uid := req.GetParamInt("uid")
 

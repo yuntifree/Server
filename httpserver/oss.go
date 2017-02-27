@@ -43,8 +43,8 @@ func genReqNum(num int64) int64 {
 }
 
 func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.init(r)
+	var req Request
+	req.Init(r)
 	username := req.GetParamString("username")
 	password := req.GetParamString("password")
 
@@ -76,8 +76,8 @@ func backLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -100,8 +100,8 @@ func getReviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -121,8 +121,8 @@ func getTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -142,8 +142,8 @@ func getUsers(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	reject := req.GetParamInt("reject")
@@ -167,8 +167,8 @@ func reviewVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	reject := req.GetParamInt("reject")
@@ -201,8 +201,8 @@ func reviewNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -222,8 +222,8 @@ func getApStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -244,8 +244,8 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getTemplates(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -269,8 +269,8 @@ func getOssConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -286,8 +286,8 @@ func getAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getApi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
@@ -303,8 +303,8 @@ func getApi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func fetchPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	stype := req.GetParamInt("type")
 
@@ -321,8 +321,8 @@ func fetchPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppEr
 }
 
 func modPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	icon := req.GetParamStringDef("icon", "")
@@ -349,8 +349,8 @@ func modPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func addPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	stype := req.GetParamIntDef("type", 0)
 	icon := req.GetParamStringDef("icon", "")
@@ -378,8 +378,8 @@ func addPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func getBatchApiStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 
@@ -406,8 +406,8 @@ func getBatchApiStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppEr
 }
 
 func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	title := req.GetParamString("title")
 	content := req.GetParamString("content")
@@ -435,8 +435,8 @@ func addTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	img := req.GetParamString("img")
 	dst := req.GetParamString("dst")
@@ -461,8 +461,8 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	key := req.GetParamString("key")
 	val := req.GetParamString("val")
@@ -481,8 +481,8 @@ func addConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamInt("term")
 	version := req.GetParamInt("version")
@@ -502,8 +502,8 @@ func addAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 
 	var ids []int64
@@ -529,8 +529,8 @@ func delAdBan(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
@@ -550,8 +550,8 @@ func getWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	wtype := req.GetParamInt("type")
 	var ids []int64
@@ -577,8 +577,8 @@ func addWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func addPortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	ptype := req.GetParamInt("type")
 	desc := req.GetParamStringDef("description", "")
@@ -599,8 +599,8 @@ func addPortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func onlinePortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 
@@ -618,8 +618,8 @@ func onlinePortalDir(w http.ResponseWriter, r *http.Request) (apperr *util.AppEr
 }
 
 func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	wtype := req.GetParamInt("type")
 	var ids []int64
@@ -645,8 +645,8 @@ func delWhiteList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 }
 
 func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	tags, err := req.Post.Get("data").Get("tags").Array()
 	if err != nil {
@@ -675,8 +675,8 @@ func addTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	desc := req.GetParamString("desc")
 	content := req.GetParamString("content")
@@ -699,8 +699,8 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	tags, err := req.Post.Get("data").Get("ids").Array()
 	if err != nil {
@@ -728,8 +728,8 @@ func delTags(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	keys, err := req.Post.Get("data").Get("keys").Array()
 	if err != nil {
@@ -757,8 +757,8 @@ func delConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func delZteAccount(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	phone := req.GetParamString("phone")
 
@@ -776,8 +776,8 @@ func delZteAccount(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 }
 
 func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	title := req.GetParamStringDef("title", "")
@@ -797,8 +797,8 @@ func modTemplate(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func modBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	img := req.GetParamStringDef("img", "")
@@ -827,8 +827,8 @@ func getOssAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 }
 
 func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -850,8 +850,8 @@ func getBanners(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 }
 
 func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -871,8 +871,8 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 }
 
 func getPortalDirList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -893,8 +893,8 @@ func getPortalDirList(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 }
 
 func getChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
@@ -914,8 +914,8 @@ func getChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 }
 
 func addChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	channel := req.GetParamString("channel")
 	cname := req.GetParamString("cname")
@@ -938,8 +938,8 @@ func addChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 }
 
 func modChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
 	channel := req.GetParamStringDef("channel", "")
@@ -963,8 +963,8 @@ func modChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 }
 
 func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req request
-	req.initCheckOss(r)
+	var req Request
+	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	formats, err := req.Post.Get("data").Get("formats").Array()
 	if err != nil {
