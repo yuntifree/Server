@@ -57,12 +57,12 @@ const (
 )
 
 const (
-	errOk = iota
-	errMissParam
-	errInvalidParam
-	errDatabase
-	errInner
-	errPanic
+	ErrOk = iota
+	ErrMissParam
+	ErrInvalidParam
+	ErrDatabase
+	ErrInner
+	ErrPanic
 )
 const (
 	errToken = iota + 101
@@ -132,7 +132,7 @@ func getJSONString(js *simplejson.Json, key string) string {
 	if val, err := js.Get("data").Get(key).String(); err == nil {
 		return val
 	}
-	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 }
 
 func getJSONStringDef(js *simplejson.Json, key, def string) string {
@@ -154,7 +154,7 @@ func getJSONInt(js *simplejson.Json, key string) int64 {
 	if val, err := js.Get("data").Get(key).Int64(); err == nil {
 		return val
 	}
-	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 }
 
 func getJSONIntDef(js *simplejson.Json, key string, def int64) int64 {
@@ -176,7 +176,7 @@ func getJSONBool(js *simplejson.Json, key string) bool {
 	if val, err := js.Get("data").Get(key).Bool(); err == nil {
 		return val
 	}
-	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 }
 
 func getJSONBoolDef(js *simplejson.Json, key string, def bool) bool {
@@ -198,7 +198,7 @@ func getJSONFloat(js *simplejson.Json, key string) float64 {
 	if val, err := js.Get("data").Get(key).Float64(); err == nil {
 		return val
 	}
-	panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 }
 
 func getJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
@@ -215,11 +215,11 @@ func getJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
 func getFormInt(v url.Values, key string) int64 {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	val, err := strconv.ParseInt(vals[0], 10, 64)
 	if err != nil {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	return val
 }
@@ -239,11 +239,11 @@ func getFormIntDef(v url.Values, key string, def int64) int64 {
 func getFormFloat(v url.Values, key string) float64 {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	val, err := strconv.ParseFloat(vals[0], 64)
 	if err != nil {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	return val
 }
@@ -263,11 +263,11 @@ func getFormFloatDef(v url.Values, key string, def float64) float64 {
 func getFormBool(v url.Values, key string) bool {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	val, err := strconv.ParseBool(vals[0])
 	if err != nil {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	return val
 }
@@ -287,7 +287,7 @@ func getFormBoolDef(v url.Values, key string, def bool) bool {
 func getFormString(v url.Values, key string) string {
 	vals := v[key]
 	if len(vals) == 0 {
-		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+		panic(util.AppError{Code: ErrMissParam, Msg: genParamErr(key)})
 	}
 	return vals[0]
 }
@@ -300,6 +300,7 @@ func getFormStringDef(v url.Values, key string, def string) string {
 	return vals[0]
 }
 
+//Request request infos
 type Request struct {
 	Post     *simplejson.Json
 	Form     url.Values
@@ -336,7 +337,7 @@ func (r *Request) Init(req *http.Request) {
 	}
 	if err != nil {
 		log.Printf("parse reqbody failed:%v", err)
-		panic(util.AppError{errInvalidParam, "invalid param"})
+		panic(util.AppError{ErrInvalidParam, "invalid param"})
 	}
 }
 
@@ -427,7 +428,7 @@ func extractError(r interface{}) *util.AppError {
 		return &k
 	}
 	log.Printf("unexpected panic:%v", r)
-	return &util.AppError{errPanic, r.(error).Error()}
+	return &util.AppError{ErrPanic, r.(error).Error()}
 }
 
 func handleError(w http.ResponseWriter, e *util.AppError) {
@@ -435,7 +436,7 @@ func handleError(w http.ResponseWriter, e *util.AppError) {
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
 	js.Set("errno", e.Code)
-	if e.Code == errInvalidParam || e.Code == errMissParam {
+	if e.Code == ErrInvalidParam || e.Code == ErrMissParam {
 		js.Set("errno", errToken)
 		js.Set("desc", "服务器又傲娇了~")
 	} else if e.Code < errToken {
@@ -452,9 +453,9 @@ func handleError(w http.ResponseWriter, e *util.AppError) {
 	w.Write(body)
 }
 
-type appHandler func(http.ResponseWriter, *http.Request) *util.AppError
+type AppHandler func(http.ResponseWriter, *http.Request) *util.AppError
 
-func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (fn AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r := recover(); r != nil {
 			apperr := extractError(r)
@@ -493,7 +494,8 @@ func checkToken(uid int64, token string, ctype int64) bool {
 	return true
 }
 
-func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
+//GetAps get ap infos
+func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
 	defer func() {
 		if r := recover(); r != nil {
 			apperr = extractError(r)
@@ -513,7 +515,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	address := getNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return &util.AppError{errInner, err.Error()}
+		return &util.AppError{ErrInner, err.Error()}
 	}
 	defer conn.Close()
 	c := fetch.NewFetchClient(conn)
@@ -522,16 +524,16 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 		&fetch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid},
 			Longitude: longitude, Latitude: latitude})
 	if err != nil {
-		return &util.AppError{errInner, err.Error()}
+		return &util.AppError{ErrInner, err.Error()}
 	}
 
 	if res.Head.Retcode != 0 {
-		return &util.AppError{errInner, "服务器又傲娇了"}
+		return &util.AppError{ErrInner, "服务器又傲娇了"}
 	}
 
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		return &util.AppError{errInner, "init json failed"}
+		return &util.AppError{ErrInner, "init json failed"}
 	}
 	infos := make([]interface{}, len(res.Infos))
 	for i := 0; i < len(res.Infos); i++ {
@@ -546,7 +548,7 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 
 	body, err := js.MarshalJSON()
 	if err != nil {
-		return &util.AppError{errInner, "marshal json failed"}
+		return &util.AppError{ErrInner, "marshal json failed"}
 	}
 	rspGzip(w, body)
 	reportSuccResp(r.RequestURI)
@@ -570,7 +572,7 @@ func getNameServer(uid int64, name string) string {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect %s: %v", address, err)
-		panic(util.AppError{errInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error()})
 	}
 	defer conn.Close()
 	c := discover.NewDiscoverClient(conn)
@@ -584,12 +586,12 @@ func getNameServer(uid int64, name string) string {
 		&discover.ServerRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Sname: name})
 	if err != nil {
 		log.Printf("Resolve failed %s: %v", name, err)
-		panic(util.AppError{errInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error()})
 	}
 
 	if res.Head.Retcode != 0 {
 		log.Printf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)
-		panic(util.AppError{errInner,
+		panic(util.AppError{ErrInner,
 			fmt.Sprintf("Resolve failed  name:%s errcode:%d\n", name, res.Head.Retcode)})
 	}
 
@@ -606,7 +608,8 @@ func rspGzip(w http.ResponseWriter, body []byte) {
 	w.Write(buf.Bytes())
 }
 
-func addImages(uid int64, names []string) error {
+//AddImages add images
+func AddImages(uid int64, names []string) error {
 	address := getNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -628,10 +631,11 @@ func addImages(uid int64, names []string) error {
 	return nil
 }
 
-func genResponseBody(res interface{}, flag bool) []byte {
+//GenResponseBody generate response body
+func GenResponseBody(res interface{}, flag bool) []byte {
 	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
 	if err != nil {
-		panic(util.AppError{errInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error()})
 	}
 	val := reflect.ValueOf(res).Elem()
 	for i := 0; i < val.NumField(); i++ {
@@ -653,32 +657,22 @@ func genResponseBody(res interface{}, flag bool) []byte {
 	}
 	data, err := js.MarshalJSON()
 	if err != nil {
-		panic(util.AppError{errInner, err.Error()})
+		panic(util.AppError{ErrInner, err.Error()})
 	}
 
 	return data
 }
 
-func checkRPCRsp(err error, retcode common.ErrCode, method string) {
-	if err != nil {
-		log.Printf("RPC %s failed:%v", method, err)
-		panic(util.AppError{errInner, err.Error()})
-	}
-
-	if retcode != 0 {
-		log.Printf("%s failed retcode:%d", method, retcode)
-		panic(util.AppError{int(retcode), "登录失败"})
-	}
-}
-
-func checkRPCErr(err reflect.Value, method string) {
+//CheckRPCErr check rpc response error
+func CheckRPCErr(err reflect.Value, method string) {
 	if err.Interface() != nil {
 		log.Printf("RPC %s failed:%v", method, err)
-		panic(util.AppError{errInner, "grpc failed " + method})
+		panic(util.AppError{ErrInner, "grpc failed " + method})
 	}
 }
 
-func checkRPCCode(retcode common.ErrCode, method string) {
+//CheckRPCCode check rpc response code
+func CheckRPCCode(retcode common.ErrCode, method string) {
 	if retcode != 0 {
 		log.Printf("%s failed retcode:%d", method, retcode)
 	}
@@ -728,7 +722,7 @@ func genServerName(rtype int64) string {
 	case util.MonitorServerType:
 		return util.MonitorServerName
 	default:
-		panic(util.AppError{errInvalidParam, "illegal server type"})
+		panic(util.AppError{ErrInvalidParam, "illegal server type"})
 	}
 }
 
@@ -756,12 +750,13 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 	case util.MonitorServerType:
 		cli = monitor.NewMonitorClient(conn)
 	default:
-		panic(util.AppError{errInvalidParam, "illegal server type"})
+		panic(util.AppError{ErrInvalidParam, "illegal server type"})
 	}
 	return cli
 }
 
-func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Value, reflect.Value) {
+//CallRPC call rpc method
+func CallRPC(rtype, uid int64, method string, request interface{}) (reflect.Value, reflect.Value) {
 	var resp reflect.Value
 	serverName := genServerName(rtype)
 	address := getNameServer(uid, serverName)
@@ -784,7 +779,8 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 	return arr[0], arr[1]
 }
 
-func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
+//GetConf get config
+func GetConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
 	var req Request
 	if back {
 		req.InitCheckOss(r)
@@ -794,13 +790,13 @@ func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.Ap
 	uid := req.GetParamInt("uid")
 
 	uuid := util.GenUUID()
-	resp, rpcerr := callRPC(util.FetchServerType, uid, "FetchConf",
+	resp, rpcerr := CallRPC(util.FetchServerType, uid, "FetchConf",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	checkRPCErr(rpcerr, "FetchConf")
+	CheckRPCErr(rpcerr, "FetchConf")
 	res := resp.Interface().(*fetch.ConfReply)
-	checkRPCCode(res.Head.Retcode, "FetchConf")
+	CheckRPCCode(res.Head.Retcode, "FetchConf")
 
-	body := genResponseBody(res, false)
+	body := GenResponseBody(res, false)
 	w.Write(body)
 	return nil
 }
