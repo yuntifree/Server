@@ -301,9 +301,25 @@ func getFormStringDef(v url.Values, key string, def string) string {
 }
 
 type request struct {
-	Post  *simplejson.Json
-	Form  url.Values
-	debug bool
+	Post     *simplejson.Json
+	Form     url.Values
+	debug    bool
+	Callback string
+}
+
+//WriteRsp support for callback
+func (r *request) WriteRsp(w http.ResponseWriter, body []byte) {
+	if r.debug {
+		var buf bytes.Buffer
+		buf.Write([]byte(r.Callback))
+		buf.Write([]byte("("))
+		buf.Write(body)
+		buf.Write([]byte(")"))
+		w.Write(buf.Bytes())
+		return
+	}
+	w.Write(body)
+	return
 }
 
 func (r *request) init(req *http.Request) {
@@ -314,6 +330,7 @@ func (r *request) init(req *http.Request) {
 		req.ParseForm()
 		r.Form = req.Form
 		r.debug = true
+		r.Callback = getFormString(r.Form, "callback")
 		return
 	}
 	if err != nil {
@@ -323,20 +340,7 @@ func (r *request) init(req *http.Request) {
 }
 
 func (r *request) initCheck(req *http.Request, back bool) {
-	reportRequest(req.RequestURI)
-	var err error
-	r.Post, err = simplejson.NewFromReader(req.Body)
-	if err == io.EOF {
-		req.ParseForm()
-		r.Form = req.Form
-		r.debug = true
-		return
-	}
-	if err != nil {
-		log.Printf("parse reqbody failed:%v", err)
-		panic(util.AppError{errInvalidParam, "invalid param"})
-	}
-
+	r.init(req)
 	uid := r.GetParamInt("uid")
 	token := r.GetParamString("token")
 

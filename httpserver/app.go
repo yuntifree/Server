@@ -120,7 +120,7 @@ func getCheckCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	res := resp.Interface().(*common.CommReply)
 	checkRPCCode(res.Head.Retcode, "GetPhoneCode")
 
-	w.Write([]byte(`{"errno":0}`))
+	req.WriteRsp(w, []byte(`{"errno":0}`))
 	reportSuccResp(r.RequestURI)
 	return nil
 }
@@ -562,7 +562,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	checkRPCCode(res.Head.Retcode, "FetchLatestVersion")
 
 	body := genResponseBody(res, false)
-	w.Write(body)
+	req.WriteRsp(w, body)
 	reportSuccResp(r.RequestURI)
 	return nil
 }
@@ -1394,7 +1394,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	checkRPCCode(res.Head.Retcode, "PortalLogin")
 
 	body := genResponseBody(res, true)
-	w.Write(body)
+	req.WriteRsp(w, body)
 	reportSuccResp(r.RequestURI)
 	return nil
 }
@@ -1419,7 +1419,7 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	checkRPCCode(res.Head.Retcode, "OneClickLogin")
 
 	body := genResponseBody(res, true)
-	w.Write(body)
+	req.WriteRsp(w, body)
 	reportSuccResp(r.RequestURI)
 	return nil
 }
