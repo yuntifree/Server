@@ -34,29 +34,6 @@ import (
 )
 
 const (
-	hotNewsKey         = "hot:news"
-	hotVideoKey        = "hot:video"
-	hotWeatherKey      = "hot:weather"
-	hotServiceKey      = "hot:service"
-	hotDgNewsKey       = "hot:news:dg"
-	hotAmuseKey        = "hot:news:amuse"
-	hotJokeKey         = "hot:joke"
-	hotNewsCompKey     = "hot:news:comp"
-	hotAllApsKey       = "hot:all:aps"
-	configDiscoveryKey = "config:discovery"
-	expireInterval     = 30
-)
-const (
-	hotNewsType = iota
-	hotVideoType
-	hotAppType
-	hotGameType
-	hotDgType
-	hotAmuseType
-	hotJokeType
-)
-
-const (
 	ErrOk = iota
 	ErrMissParam
 	ErrInvalidParam
@@ -65,21 +42,21 @@ const (
 	ErrPanic
 )
 const (
-	errToken = iota + 101
-	errCode
-	errGetCode
-	errUsedPhone
-	errWxMpLogin
-	errUnionID
-	errWxTicket
-	errNotFound
-	errIllegalPhone
-	errZteLogin
-	errZteRemove
-	errNoNewVersion
-	errHasPunch
-	errIllegalCode
-	errFrequencyLimit
+	ErrToken = iota + 101
+	ErrCode
+	ErrGetCode
+	ErrUsedPhone
+	ErrWxMpLogin
+	ErrUnionID
+	ErrWxTicket
+	ErrNotFound
+	ErrIllegalPhone
+	ErrZteLogin
+	ErrZteRemove
+	ErrNoNewVersion
+	ErrHasPunch
+	ErrIllegalCode
+	ErrFrequencyLimit
 )
 
 var w *nsq.Producer
@@ -102,7 +79,8 @@ func extractAPIName(uri string) string {
 	return method
 }
 
-func reportRequest(uri string) {
+//ReportRequest report request
+func ReportRequest(uri string) {
 	method := extractAPIName(uri)
 	err := util.PubRequest(w, method)
 	if err != nil {
@@ -111,7 +89,8 @@ func reportRequest(uri string) {
 	return
 }
 
-func reportSuccResp(uri string) {
+//ReportSuccResp report success response
+func ReportSuccResp(uri string) {
 	method := extractAPIName(uri)
 	err := util.PubResponse(w, method, 0)
 	if err != nil {
@@ -325,7 +304,7 @@ func (r *Request) WriteRsp(w http.ResponseWriter, body []byte) {
 
 //Init init request
 func (r *Request) Init(req *http.Request) {
-	reportRequest(req.RequestURI)
+	ReportRequest(req.RequestURI)
 	var err error
 	r.Post, err = simplejson.NewFromReader(req.Body)
 	if err == io.EOF {
@@ -355,7 +334,7 @@ func (r *Request) InitCheck(req *http.Request, back bool) {
 	flag := checkToken(uid, token, ctype)
 	if !flag {
 		log.Printf("checkToken failed, uid:%d token:%s\n", uid, token)
-		panic(util.AppError{errToken, "token验证失败"})
+		panic(util.AppError{ErrToken, "token验证失败"})
 	}
 }
 
@@ -437,9 +416,9 @@ func handleError(w http.ResponseWriter, e *util.AppError) {
 	js, _ := simplejson.NewJson([]byte(`{}`))
 	js.Set("errno", e.Code)
 	if e.Code == ErrInvalidParam || e.Code == ErrMissParam {
-		js.Set("errno", errToken)
+		js.Set("errno", ErrToken)
 		js.Set("desc", "服务器又傲娇了~")
-	} else if e.Code < errToken {
+	} else if e.Code < ErrToken {
 		js.Set("desc", "服务器又傲娇了~")
 	} else {
 		js.Set("desc", e.Msg)
@@ -468,7 +447,7 @@ func (fn AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkToken(uid int64, token string, ctype int64) bool {
-	address := getNameServer(uid, util.VerifyServerName)
+	address := GetNameServer(uid, util.VerifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Printf("did not connect: %v", err)
@@ -512,7 +491,7 @@ func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	longitude := req.GetParamFloat("longitude")
 	latitude := req.GetParamFloat("latitude")
 
-	address := getNameServer(uid, util.FetchServerName)
+	address := GetNameServer(uid, util.FetchServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return &util.AppError{ErrInner, err.Error()}
@@ -550,8 +529,8 @@ func GetAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 	if err != nil {
 		return &util.AppError{ErrInner, "marshal json failed"}
 	}
-	rspGzip(w, body)
-	reportSuccResp(r.RequestURI)
+	RspGzip(w, body)
+	ReportSuccResp(r.RequestURI)
 	return nil
 }
 
@@ -567,7 +546,8 @@ func getDiscoverAddress() string {
 	return "localhost" + util.DiscoverServerPort
 }
 
-func getNameServer(uid int64, name string) string {
+//GetNameServer get server from name service
+func GetNameServer(uid int64, name string) string {
 	address := getDiscoverAddress()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -598,7 +578,8 @@ func getNameServer(uid int64, name string) string {
 	return res.Host
 }
 
-func rspGzip(w http.ResponseWriter, body []byte) {
+//RspGzip response with gzip
+func RspGzip(w http.ResponseWriter, body []byte) {
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Content-Type", "application/json")
 	var buf bytes.Buffer
@@ -610,7 +591,7 @@ func rspGzip(w http.ResponseWriter, body []byte) {
 
 //AddImages add images
 func AddImages(uid int64, names []string) error {
-	address := getNameServer(uid, util.ModifyServerName)
+	address := GetNameServer(uid, util.ModifyServerName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -677,23 +658,23 @@ func CheckRPCCode(retcode common.ErrCode, method string) {
 		log.Printf("%s failed retcode:%d", method, retcode)
 	}
 	if retcode == common.ErrCode_INVALID_TOKEN {
-		panic(util.AppError{errToken, "token验证失败"})
+		panic(util.AppError{ErrToken, "token验证失败"})
 	} else if retcode == common.ErrCode_USED_PHONE {
-		panic(util.AppError{errUsedPhone, "该账号已注册，请直接登录"})
+		panic(util.AppError{ErrUsedPhone, "该账号已注册，请直接登录"})
 	} else if retcode == common.ErrCode_CHECK_CODE {
-		panic(util.AppError{errCode, "验证码错误"})
+		panic(util.AppError{ErrCode, "验证码错误"})
 	} else if retcode == common.ErrCode_ZTE_LOGIN {
-		panic(util.AppError{errZteLogin, "登录失败"})
+		panic(util.AppError{ErrZteLogin, "登录失败"})
 	} else if retcode == common.ErrCode_ZTE_REMOVE {
-		panic(util.AppError{errZteRemove, "删除中兴账号失败"})
+		panic(util.AppError{ErrZteRemove, "删除中兴账号失败"})
 	} else if retcode == common.ErrCode_NO_NEW_VERSION {
-		panic(util.AppError{errNoNewVersion, "当前已是最新版本"})
+		panic(util.AppError{ErrNoNewVersion, "当前已是最新版本"})
 	} else if retcode == common.ErrCode_HAS_PUNCH {
-		panic(util.AppError{errHasPunch, "此地已经被别人打过卡"})
+		panic(util.AppError{ErrHasPunch, "此地已经被别人打过卡"})
 	} else if retcode == common.ErrCode_ILLEGAL_CODE {
-		panic(util.AppError{errIllegalCode, "code已过期"})
+		panic(util.AppError{ErrIllegalCode, "code已过期"})
 	} else if retcode == common.ErrCode_FREQUENCY_LIMIT {
-		panic(util.AppError{errFrequencyLimit, "请求太频繁"})
+		panic(util.AppError{ErrFrequencyLimit, "请求太频繁"})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~"})
 	}
@@ -759,7 +740,7 @@ func genClient(rtype int64, conn *grpc.ClientConn) interface{} {
 func CallRPC(rtype, uid int64, method string, request interface{}) (reflect.Value, reflect.Value) {
 	var resp reflect.Value
 	serverName := genServerName(rtype)
-	address := getNameServer(uid, serverName)
+	address := GetNameServer(uid, serverName)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return resp, reflect.ValueOf(err)

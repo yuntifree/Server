@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"Server/httpserver"
-
 	"github.com/facebookgo/grace/gracehttp"
 )
 
@@ -23,7 +21,7 @@ func main() {
 	}
 	config := &tls.Config{Certificates: []tls.Certificate{cer}}
 	gracehttp.Serve(
-		&http.Server{Addr: ":80", Handler: httpserver.NewAppServer()},
-		&http.Server{Addr: ":443", Handler: httpserver.NewAppServer(), TLSConfig: config},
+		&http.Server{Addr: ":80", Handler: NewAppServer()},
+		&http.Server{Addr: ":443", Handler: NewAppServer(), TLSConfig: config},
 	)
 }
