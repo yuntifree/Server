@@ -69,7 +69,7 @@ func (s *server) GetPortalMenu(ctx context.Context, in *common.CommRequest) (*co
 
 func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	query := "SELECT img, dst FROM banner WHERE deleted = 0 AND type = 0"
+	query := "SELECT img, dst, id FROM banner WHERE deleted = 0 AND type = 0"
 	if flag {
 		query += " AND (online = 1 OR dbg = 1) "
 	} else {
@@ -83,7 +83,7 @@ func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
 	}
 	for rows.Next() {
 		var info config.MediaInfo
-		err := rows.Scan(&info.Img, &info.Dst)
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id)
 		if err != nil {
 			log.Printf("scan failed:%v", err)
 			continue
@@ -97,7 +97,7 @@ func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
 
 func getUrbanServices(db *sql.DB, term int64) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	rows, err := db.Query("SELECT title, img, dst FROM urban_service WHERE type = ?", term)
+	rows, err := db.Query("SELECT title, img, dst, id FROM urban_service WHERE type = ?", term)
 	if err != nil {
 		log.Printf("getUrbanServices query failed:%v", err)
 		return infos
@@ -105,7 +105,7 @@ func getUrbanServices(db *sql.DB, term int64) []*config.MediaInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.MediaInfo
-		err := rows.Scan(&info.Title, &info.Img, &info.Dst)
+		err := rows.Scan(&info.Title, &info.Img, &info.Dst, &info.Id)
 		if err != nil {
 			log.Printf("getUrbanServices scan failed:%v", err)
 			continue
@@ -117,7 +117,7 @@ func getUrbanServices(db *sql.DB, term int64) []*config.MediaInfo {
 
 func getRecommends(db *sql.DB) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	rows, err := db.Query("SELECT img, dst FROM recommend WHERE deleted = 0 ORDER BY priority DESC")
+	rows, err := db.Query("SELECT img, dst, id FROM recommend WHERE deleted = 0 ORDER BY priority DESC")
 	if err != nil {
 		log.Printf("getRecommends query failed:%v", err)
 		return infos
@@ -125,7 +125,7 @@ func getRecommends(db *sql.DB) []*config.MediaInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.MediaInfo
-		err := rows.Scan(&info.Img, &info.Dst)
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id)
 		if err != nil {
 			log.Printf("getRecommends scan failed:%v", err)
 			continue

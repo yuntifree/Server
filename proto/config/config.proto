@@ -45,6 +45,7 @@ message MediaInfo {
     string img = 1;
     string dst = 2;
     string title = 3;
+    int64 id = 4;
 }
 
 message ServiceInfo {
