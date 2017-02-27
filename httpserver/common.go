@@ -9,7 +9,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -210,31 +212,133 @@ func getJSONFloatDef(js *simplejson.Json, key string, def float64) float64 {
 	return def
 }
 
+func getFormInt(v url.Values, key string) int64 {
+	vals := v[key]
+	if len(vals) == 0 {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	val, err := strconv.ParseInt(vals[0], 10, 64)
+	if err != nil {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	return val
+}
+
+func getFormIntDef(v url.Values, key string, def int64) int64 {
+	vals := v[key]
+	if len(vals) == 0 {
+		return def
+	}
+	val, err := strconv.ParseInt(vals[0], 10, 64)
+	if err != nil {
+		return def
+	}
+	return val
+}
+
+func getFormFloat(v url.Values, key string) float64 {
+	vals := v[key]
+	if len(vals) == 0 {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	val, err := strconv.ParseFloat(vals[0], 64)
+	if err != nil {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	return val
+}
+
+func getFormFloatDef(v url.Values, key string, def float64) float64 {
+	vals := v[key]
+	if len(vals) == 0 {
+		return def
+	}
+	val, err := strconv.ParseFloat(vals[0], 64)
+	if err != nil {
+		return def
+	}
+	return val
+}
+
+func getFormBool(v url.Values, key string) bool {
+	vals := v[key]
+	if len(vals) == 0 {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	val, err := strconv.ParseBool(vals[0])
+	if err != nil {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	return val
+}
+
+func getFormBoolDef(v url.Values, key string, def bool) bool {
+	vals := v[key]
+	if len(vals) == 0 {
+		return def
+	}
+	val, err := strconv.ParseBool(vals[0])
+	if err != nil {
+		return def
+	}
+	return val
+}
+
+func getFormString(v url.Values, key string) string {
+	vals := v[key]
+	if len(vals) == 0 {
+		panic(util.AppError{Code: errMissParam, Msg: genParamErr(key)})
+	}
+	return vals[0]
+}
+
+func getFormStringDef(v url.Values, key string, def string) string {
+	vals := v[key]
+	if len(vals) == 0 {
+		return def
+	}
+	return vals[0]
+}
+
 type request struct {
-	Post *simplejson.Json
+	Post  *simplejson.Json
+	Form  url.Values
+	debug bool
 }
 
-func (r *request) init(body io.ReadCloser, uri string) {
-	reportRequest(uri)
+func (r *request) init(req *http.Request) {
+	reportRequest(req.RequestURI)
 	var err error
-	r.Post, err = simplejson.NewFromReader(body)
+	r.Post, err = simplejson.NewFromReader(req.Body)
+	if err == io.EOF {
+		req.ParseForm()
+		r.Form = req.Form
+		r.debug = true
+		return
+	}
 	if err != nil {
 		log.Printf("parse reqbody failed:%v", err)
 		panic(util.AppError{errInvalidParam, "invalid param"})
 	}
 }
 
-func (r *request) initCheck(body io.ReadCloser, uri string, back bool) {
-	reportRequest(uri)
+func (r *request) initCheck(req *http.Request, back bool) {
+	reportRequest(req.RequestURI)
 	var err error
-	r.Post, err = simplejson.NewFromReader(body)
+	r.Post, err = simplejson.NewFromReader(req.Body)
+	if err == io.EOF {
+		req.ParseForm()
+		r.Form = req.Form
+		r.debug = true
+		return
+	}
 	if err != nil {
 		log.Printf("parse reqbody failed:%v", err)
 		panic(util.AppError{errInvalidParam, "invalid param"})
 	}
 
-	uid := getJSONInt(r.Post, "uid")
-	token := getJSONString(r.Post, "token")
+	uid := r.GetParamInt("uid")
+	token := r.GetParamString("token")
 
 	var ctype int64
 	if back {
@@ -248,41 +352,65 @@ func (r *request) initCheck(body io.ReadCloser, uri string, back bool) {
 	}
 }
 
-func (r *request) initCheckApp(body io.ReadCloser, uri string) {
-	r.initCheck(body, uri, false)
+func (r *request) initCheckApp(req *http.Request) {
+	r.initCheck(req, false)
 }
 
-func (r *request) initCheckOss(body io.ReadCloser, uri string) {
-	r.initCheck(body, uri, true)
+func (r *request) initCheckOss(req *http.Request) {
+	r.initCheck(req, true)
 }
 
 func (r *request) GetParamInt(key string) int64 {
+	if r.debug {
+		return getFormInt(r.Form, key)
+	}
 	return getJSONInt(r.Post, key)
 }
 
 func (r *request) GetParamIntDef(key string, def int64) int64 {
+	if r.debug {
+		return getFormIntDef(r.Form, key, def)
+	}
 	return getJSONIntDef(r.Post, key, def)
 }
 
 func (r *request) GetParamBool(key string) bool {
+	if r.debug {
+		return getFormBool(r.Form, key)
+	}
 	return getJSONBool(r.Post, key)
 }
 
 func (r *request) GetParamBoolDef(key string, def bool) bool {
+	if r.debug {
+		return getFormBoolDef(r.Form, key, def)
+	}
 	return getJSONBoolDef(r.Post, key, def)
 }
 
 func (r *request) GetParamString(key string) string {
+	if r.debug {
+		return getFormString(r.Form, key)
+	}
 	return getJSONString(r.Post, key)
 }
 func (r *request) GetParamStringDef(key string, def string) string {
+	if r.debug {
+		return getFormStringDef(r.Form, key, def)
+	}
 	return getJSONStringDef(r.Post, key, def)
 }
 
 func (r *request) GetParamFloat(key string) float64 {
+	if r.debug {
+		return getFormFloat(r.Form, key)
+	}
 	return getJSONFloat(r.Post, key)
 }
 func (r *request) GetParamFloatDef(key string, def float64) float64 {
+	if r.debug {
+		return getFormFloatDef(r.Form, key, def)
+	}
 	return getJSONFloatDef(r.Post, key, def)
 }
 
@@ -366,9 +494,9 @@ func getAps(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.App
 
 	var req request
 	if back {
-		req.initCheckOss(r.Body, r.RequestURI)
+		req.initCheckOss(r)
 	} else {
-		req.initCheckApp(r.Body, r.RequestURI)
+		req.initCheckApp(r)
 	}
 	uid := req.GetParamInt("uid")
 	longitude := req.GetParamFloat("longitude")
@@ -651,9 +779,9 @@ func callRPC(rtype, uid int64, method string, request interface{}) (reflect.Valu
 func getConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.AppError) {
 	var req request
 	if back {
-		req.initCheckOss(r.Body, r.RequestURI)
+		req.initCheckOss(r)
 	} else {
-		req.initCheckApp(r.Body, r.RequestURI)
+		req.initCheckApp(r)
 	}
 	uid := req.GetParamInt("uid")
 
