@@ -10,6 +10,7 @@ service Config{
     rpc ModPortalMenu(MenuRequest) returns (common.CommReply) {}
     rpc AddPortalMenu(MenuRequest) returns (common.CommReply) {}
     rpc GetDiscovery(common.CommRequest) returns (DiscoveryReply) {}
+    rpc GetPortalConf(common.CommRequest) returns (PortalConfReply) {}
 }
 
 message PortalMenuInfo {
@@ -46,6 +47,12 @@ message MediaInfo {
     string dst = 2;
     string title = 3;
     int64 id = 4;
+    int64 type = 5;
+}
+
+message PortalService {
+    string name = 1;
+    repeated MediaInfo items = 2;
 }
 
 message ServiceInfo {
@@ -67,4 +74,12 @@ message DiscoveryReply {
     repeated MediaInfo urbanservices = 3;
     repeated MediaInfo recommends = 4;
     repeated ServiceCategory services = 5;
+}
+
+message PortalConfReply {
+    common.Head head = 1;
+    repeated MediaInfo banners = 2;
+    repeated MediaInfo urbanservices = 3;
+    repeated MediaInfo hospitalintros = 4;
+    repeated PortalService services = 5;
 }

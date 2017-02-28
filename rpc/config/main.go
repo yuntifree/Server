@@ -19,8 +19,11 @@ import (
 )
 
 const (
-	menuType = 0
-	tabType  = 1
+	menuType        = 0
+	tabType         = 1
+	newsNum         = 10
+	hospitalIntro   = 0
+	hospitalService = 1
 )
 
 type server struct{}
@@ -65,6 +68,115 @@ func (s *server) GetPortalMenu(ctx context.Context, in *common.CommRequest) (*co
 	return &config.PortalMenuReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Menulist: menulist,
 		Tablist: tablist}, nil
+}
+
+func getOnlineService(db *sql.DB) []*config.PortalService {
+	var infos []*config.PortalService
+	var info config.PortalService
+	info.Name = "上网服务"
+	var items []*config.MediaInfo
+	rows, err := db.Query("SELECT id, img, dst, title FROM online_service WHERE deleted = 0 ORDER BY priority DESC")
+	if err != nil {
+		log.Printf("getOnlineService query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var item config.MediaInfo
+		err := rows.Scan(&item.Id, &item.Img, &item.Dst, &item.Title)
+		if err != nil {
+			log.Printf("getOnlineService scan failed:%v", err)
+			continue
+		}
+		item.Type = 15
+		items = append(items, &item)
+	}
+	if len(items) > 0 {
+		info.Items = items
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getHospitalInfos(db *sql.DB, hid, stype int64) []*config.MediaInfo {
+	var items []*config.MediaInfo
+	rows, err := db.Query("SELECT id, img, dst, title FROM hospital_info WHERE deleted = 0 AND hid = ? AND type = ? ORDER BY priority DESC", hid, stype)
+	if err != nil {
+		log.Printf("getHospitalInfos query failed:%v", err)
+		return items
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var item config.MediaInfo
+		err := rows.Scan(&item.Id, &item.Img, &item.Dst, &item.Title)
+		if err != nil {
+			log.Printf("getHospitalInfos scan failed:%v", err)
+			continue
+		}
+		item.Type = 13 + stype
+		items = append(items, &item)
+	}
+	return items
+}
+
+func getHospitalService(db *sql.DB, stype int64) []*config.PortalService {
+	var infos []*config.PortalService
+	var info config.PortalService
+	info.Name = "患者服务"
+	info.Items = getHospitalInfos(db, stype, hospitalService)
+	if len(info.Items) > 0 {
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getHospitalIntro(db *sql.DB, hid int64) []*config.MediaInfo {
+	return getHospitalInfos(db, hid, hospitalIntro)
+}
+
+func getPortalService(db *sql.DB, stype int64) []*config.PortalService {
+	if stype == 0 {
+		return getOnlineService(db)
+	}
+	online := getOnlineService(db)
+	hospital := getHospitalService(db, stype)
+	infos := append(online, hospital...)
+	return infos
+}
+
+func getHospital(db *sql.DB, hid int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	var info config.MediaInfo
+	err := db.QueryRow("SELECT img, title FROM hospital WHERE id = ?", hid).Scan(&info.Img, &info.Title)
+	if err != nil {
+		log.Printf("getHospital query failed:%v", err)
+		return infos
+	}
+	infos = append(infos, &info)
+	return infos
+}
+
+func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
+	util.PubRPCRequest(w, "config", "GetPortalConf")
+	log.Printf("GetPortalConf uid:%d type:%d", in.Head.Uid, in.Type)
+	if in.Type == 0 {
+		banners := getBanners(db, false)
+		urbanservices := getUrbanServices(db, in.Head.Term)
+		services := getPortalService(db, in.Type)
+		util.PubRPCSuccRsp(w, "config", "GetPortalMenu")
+		return &config.PortalConfReply{
+			Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
+			Urbanservices: urbanservices, Services: services}, nil
+	}
+	banners := getHospital(db, in.Type)
+	hospitalintros := getHospitalIntro(db, in.Type)
+	services := getPortalService(db, in.Type)
+	util.PubRPCSuccRsp(w, "config", "GetPortalConf")
+	return &config.PortalConfReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
+		Hospitalintros: hospitalintros, Services: services}, nil
 }
 
 func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {

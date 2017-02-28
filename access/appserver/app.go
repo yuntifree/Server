@@ -1712,6 +1712,38 @@ func getPortalMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func getPortalConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetPortalConf",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetPortalConf")
+	res := resp.Interface().(*config.PortalConfReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetPortalConf")
+
+	hotresp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetHots",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid, Term: term,
+				Version: version}, Seq: 0, Num: 10})
+	httpserver.CheckRPCErr(rpcerr, "GetHots")
+	hots := hotresp.Interface().(*hot.HotsReply)
+	httpserver.CheckRPCCode(hots.Head.Retcode, "GetHots")
+
+	var resps []interface{}
+	resps = append(resps, res)
+	resps = append(resps, hots)
+	body := httpserver.MergeResponseBody(resps)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func modUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -2161,6 +2193,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/mod_user_info", httpserver.AppHandler(modUserInfo))
 	mux.Handle("/get_def_head", httpserver.AppHandler(getDefHead))
 	mux.Handle("/get_portal_menu", httpserver.AppHandler(getPortalMenu))
+	mux.Handle("/get_portal_conf", httpserver.AppHandler(getPortalConf))
 	mux.Handle("/get_userinfo", httpserver.AppHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", httpserver.AppHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))

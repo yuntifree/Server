@@ -629,8 +629,37 @@ func AddImages(uid int64, names []string) error {
 	return nil
 }
 
+//GenResponseBody generate response body
 func GenResponseBody(res interface{}, flag bool) []byte {
 	return GenResponseBodyCallback(res, "", flag)
+}
+
+//MergeResponseBody merge multiple rpc response
+func MergeResponseBody(responses []interface{}) []byte {
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		panic(util.AppError{ErrInner, err.Error(), ""})
+	}
+
+	for _, res := range responses {
+		val := reflect.ValueOf(res).Elem()
+		for i := 0; i < val.NumField(); i++ {
+			valueField := val.Field(i)
+			typeField := val.Type().Field(i)
+			if typeField.Name == "Head" {
+				continue
+			} else {
+				js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
+					valueField.Interface())
+			}
+		}
+	}
+	data, err := js.MarshalJSON()
+	if err != nil {
+		panic(util.AppError{ErrInner, err.Error(), ""})
+	}
+
+	return data
 }
 
 //GenResponseBodyCallback generate response body with callback
