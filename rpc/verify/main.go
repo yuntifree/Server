@@ -773,9 +773,9 @@ func refreshActiveTime(db *sql.DB, uid int64) {
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
 	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
-	var phone, token string
-	err := db.QueryRow("SELECT m.phone, u.uid, u.token FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
-		Scan(&phone, &uid, &token)
+	var phone string
+	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
+		Scan(&phone, &uid)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
 		return &verify.PortalLoginReply{
@@ -800,6 +800,11 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	refreshActiveTime(db, uid)
+	token, _, _, err := util.RefreshTokenPrivdata(db, kv, uid, expiretime)
+	if err != nil {
+		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
+		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
