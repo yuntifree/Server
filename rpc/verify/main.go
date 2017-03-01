@@ -598,6 +598,7 @@ func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 }
 
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
+	log.Printf("PortalLogin request:%v", in)
 	util.PubRPCRequest(w, "verify", "PortalLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	if !checkZteCode(db, in.Info.Phone, in.Info.Code, stype) {
@@ -640,6 +641,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
+	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Live: live}, nil
@@ -771,6 +773,7 @@ func refreshActiveTime(db *sql.DB, uid int64) {
 }
 
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
+	log.Printf("OneClickLogin request:%v", in)
 	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
 	var phone string
@@ -808,6 +811,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
+	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Live: live}, nil

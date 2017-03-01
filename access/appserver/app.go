@@ -1449,6 +1449,8 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
 	req.WriteRsp(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
+	log.Printf("portalLogin succ phone:%s code:%s acname:%s acip:%s userip:%s usermac:%s res:%v",
+		phone, code, acname, acip, userip, usermac, res)
 	return nil
 }
 
@@ -1476,6 +1478,8 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
 	req.WriteRsp(w, body)
 	httpserver.ReportSuccResp(r.RequestURI)
+	log.Printf("oneClickLogin succ acname:%s acip:%s userip:%s usermac:%s res:%v",
+		acname, acip, userip, usermac, res)
 	return nil
 }
 
