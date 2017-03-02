@@ -299,7 +299,7 @@ func getAps(db *sql.DB, longitude, latitude float64) []*fetch.ApInfo {
 
 func getAllAps(db *sql.DB) []*fetch.ApInfo {
 	var infos []*fetch.ApInfo
-	rows, err := db.Query("SELECT id, longitude, latitude, unit FROM ap_info GROUP BY longitude, latitude")
+	rows, err := db.Query("SELECT id, longitude, latitude, unit FROM ap_info WHERE deleted = 0 GROUP BY longitude, latitude")
 	if err != nil {
 		log.Printf("getAllAps query failed:%v", err)
 		return infos
