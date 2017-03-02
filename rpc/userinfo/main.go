@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -39,8 +40,12 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 	}
 	save = int64(float64(save) * saveRate)
 	util.PubRPCSuccRsp(w, "userinfo", "GetInfo")
+	nick, err := base64.StdEncoding.DecodeString(nickname)
+	if err != nil {
+		log.Printf("GetInfo decode nick failed:%v", err)
+	}
 	return &userinfo.InfoReply{
-		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: nickname,
+		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: string(nick),
 		Total: total, Save: save}, nil
 }
 
@@ -122,7 +127,7 @@ func (s *server) ModInfo(ctx context.Context, in *userinfo.InfoRequest) (*common
 		query += ", headurl = '" + in.Headurl + "' "
 	}
 	if in.Nickname != "" {
-		query += ", nickname = '" + in.Nickname + "' "
+		query += ", nickname = '" + base64.StdEncoding.EncodeToString([]byte(in.Nickname)) + "' "
 	}
 	query += fmt.Sprintf(" WHERE uid = %d", in.Head.Uid)
 	log.Printf("ModInfo query:%s", query)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"errors"
 	"log"
 	"net"
@@ -305,9 +306,13 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format(util.TimeFormat)
 	util.PubRPCSuccRsp(w, "verify", "Register")
+	nick, err := base64.StdEncoding.DecodeString(nickname)
+	if err != nil {
+		log.Printf("decode nickname failed:%v", err)
+	}
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expire,
-		Expiretime: strTime, Headurl: headurl, Nickname: nickname}, nil
+		Expiretime: strTime, Headurl: headurl, Nickname: string(nick)}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {
