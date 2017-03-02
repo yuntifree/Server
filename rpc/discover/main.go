@@ -104,7 +104,6 @@ func watcher(cli *clientv3.Client) {
 	rch := cli.Watch(context.Background(), "service", clientv3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
-			log.Printf("%s %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
 			service := extractService(string(ev.Kv.Key))
 			if service == "" {
 				continue
@@ -128,7 +127,6 @@ func fetchServers(name string) []string {
 
 	var servers []string
 	for i, key := range vals {
-		log.Printf("%d:%s", i, key)
 		servers = append(servers, key)
 		if i >= 10 {
 			break
@@ -155,7 +153,6 @@ func convertServerName(name string) string {
 
 func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*discover.ServerReply, error) {
 	util.PubRPCRequest(w, "discover", "Resolve")
-	log.Printf("resolve request uid:%d server:%s", in.Head.Uid, in.Sname)
 	var servers []string
 	if !isEtcdTestUid(in.Head.Uid) {
 		servers = fetchServers(in.Sname)
