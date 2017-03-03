@@ -80,21 +80,21 @@ func (s *server) GetDefHead(ctx context.Context, in *common.CommRequest) (*useri
 		Female: female}, nil
 }
 
-func getTotalNick(db *sql.DB) int {
-	total := 10
-	err := db.QueryRow("SELECT COUNT(id) FROM nickname").Scan(&total)
+func getNickMinMax(db *sql.DB) (int, int) {
+	min, max := 10, 20
+	err := db.QueryRow("SELECT MIN(id), MAX(id) FROM nickname").Scan(&min, &max)
 	if err != nil {
 		log.Printf("getTotalNick failed:%v", err)
 	}
-	return total
+	return min, max
 }
 
 func getRandNick(db *sql.DB, uid int64) []string {
 	var names []string
-	total := getTotalNick(db)
-	idx := util.Randn(int32(total - 10))
+	min, max := getNickMinMax(db)
+	idx := util.Randn(int32(max - min))
 	rows, err := db.Query("SELECT name FROM nickname WHERE id > ? ORDER BY id LIMIT 10",
-		idx)
+		idx+int32(min))
 	if err != nil {
 		log.Printf("getRandNick failed:%v", err)
 		return names
