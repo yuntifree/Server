@@ -38,10 +38,13 @@ func main() {
 		arr := strings.Split(line, " ")
 		log.Printf("arr len:%d", len(arr))
 		for i := 0; i < len(arr); i++ {
-			log.Printf("name:%s", arr[i])
-			_, err = db.Exec("INSERT INTO nickname(name, ctime) VALUES (?, NOW())", arr[i])
+			name := strings.TrimSpace(arr[i])
+			if len(name) <= 2 {
+				continue
+			}
+			_, err = db.Exec("INSERT INTO nickname(name, ctime) VALUES (?, NOW())", name)
 			if err != nil {
-				log.Printf("insert nickname failed:%s %v", arr[i], err)
+				log.Printf("insert nickname failed:%s %v", name, err)
 			}
 		}
 	}
