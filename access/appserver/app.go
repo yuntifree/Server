@@ -1720,8 +1720,6 @@ func getPortalConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
-	term := req.GetParamInt("term")
-	version := req.GetParamInt("version")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetPortalConf",
@@ -1731,18 +1729,7 @@ func getPortalConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	res := resp.Interface().(*config.PortalConfReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetPortalConf")
 
-	hotresp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetHots",
-		&common.CommRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid, Term: term,
-				Version: version}, Seq: 0, Num: 10})
-	httpserver.CheckRPCErr(rpcerr, "GetHots")
-	hots := hotresp.Interface().(*hot.HotsReply)
-	httpserver.CheckRPCCode(hots.Head.Retcode, "GetHots")
-
-	var resps []interface{}
-	resps = append(resps, res)
-	resps = append(resps, hots)
-	body := httpserver.MergeResponseBody(resps)
+	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
