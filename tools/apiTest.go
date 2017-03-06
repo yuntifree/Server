@@ -23,6 +23,12 @@ func main() {
 	}
 	defer f.Close()
 
+	ofs, err := os.OpenFile("apiTest.log", os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		panic(err)
+	}
+	defer ofs.Close()
+
 	js, err := simplejson.NewFromReader(f)
 	if err != nil {
 		panic(err)
@@ -51,6 +57,9 @@ func main() {
 			log.Printf("Test Failed:%s %v", name, err)
 			continue
 		}
+		ofs.WriteString(name + "\n")
+		ofs.WriteString(string(body) + "\n")
+		ofs.WriteString(resp + "\n")
 		rs, err := simplejson.NewJson([]byte(resp))
 		if err != nil {
 			log.Printf("parse response failed:%s %v", name, err)
