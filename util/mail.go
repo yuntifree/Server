@@ -7,7 +7,7 @@ import (
 
 const (
 	mailAddress = "dingrong@yunxingzh.com"
-	mailPasswd  = "Yunti2016"
+	mailPasswd  = "RyDc926ala"
 	smtpAddress = "smtp.yunxingzh.com"
 )
 
