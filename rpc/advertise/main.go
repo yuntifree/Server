@@ -30,7 +30,7 @@ type Customer struct {
 	Phone   string `gorm:"size:16"`
 	Address string `gorm:"size:255"`
 	Remark  string `gorm:"size:255"`
-	deleted int
+	Deleted int64
 	Ctime   time.Time
 	Atime   string
 	Etime   string
@@ -52,6 +52,23 @@ func (s *server) AddCustomer(ctx context.Context, in *advertise.CustomerRequest)
 	util.PubRPCSuccRsp(w, "advertise", "AddCustomer")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}, Id: id}, nil
+}
+
+func modCustomer(db *gorm.DB, info *advertise.CustomerInfo) {
+	customer := Customer{ID: info.Id, Name: info.Name, Contact: info.Contact,
+		Phone: info.Phone, Address: info.Address,
+		Remark: info.Remark,
+		Atime:  info.Atime, Etime: info.Etime, Deleted: info.Deleted,
+	}
+	db.Save(&customer)
+}
+
+func (s *server) ModCustomer(ctx context.Context, in *advertise.CustomerRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModCustomer")
+	modCustomer(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "ModCustomer")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
 }
 
 func main() {

@@ -686,7 +686,7 @@ func addCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	address := req.GetParamString("address")
 	atime := req.GetParamString("atime")
 	etime := req.GetParamString("etime")
-	remark := req.GetParamString("remark")
+	remark := req.GetParamStringDef("remark", "")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddCustomer",
@@ -701,6 +701,36 @@ func addCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
+	return nil
+}
+
+func modCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	name := req.GetParamString("name")
+	contact := req.GetParamString("contact")
+	phone := req.GetParamString("phone")
+	address := req.GetParamString("address")
+	atime := req.GetParamString("atime")
+	etime := req.GetParamString("etime")
+	remark := req.GetParamStringDef("remark", "")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModCustomer",
+		&advertise.CustomerRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.CustomerInfo{Id: id, Name: name, Contact: contact,
+				Phone: phone, Address: address,
+				Atime: atime, Etime: etime, Remark: remark,
+				Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModCustomer")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModCustomer")
+
+	w.Write([]byte(`{"errno":0}`))
 	return nil
 }
 
@@ -1059,6 +1089,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/set_conf", httpserver.AppHandler(addConf))
 	mux.Handle("/add_tags", httpserver.AppHandler(addTags))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
+	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/send_mipush", httpserver.AppHandler(sendMipush))
 	mux.Handle("/del_tags", httpserver.AppHandler(delTags))
 	mux.Handle("/del_conf", httpserver.AppHandler(delConf))

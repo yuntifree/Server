@@ -6,6 +6,7 @@ package advertise;
 
 service Advertise{
     rpc AddCustomer(CustomerRequest) returns (common.CommReply) {}
+    rpc ModCustomer(CustomerRequest) returns (common.CommReply) {}
 }
 
 message CustomerInfo {
@@ -17,6 +18,7 @@ message CustomerInfo {
     string atime = 6;
     string etime = 7;
     string remark = 8;
+    int64 deleted = 9;
 }
 
 message CustomerRequest{
