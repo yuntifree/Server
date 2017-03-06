@@ -16,6 +16,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"Server/proto/advertise"
 	"Server/proto/common"
 	"Server/proto/config"
 	"Server/proto/discover"
@@ -763,6 +764,8 @@ func genServerName(rtype int64, callback string) string {
 		return util.ConfigServerName
 	case util.MonitorServerType:
 		return util.MonitorServerName
+	case util.AdvertiseServerType:
+		return util.AdvertiseServerName
 	default:
 		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}
@@ -791,6 +794,8 @@ func genClient(rtype int64, conn *grpc.ClientConn, callback string) interface{} 
 		cli = config.NewConfigClient(conn)
 	case util.MonitorServerType:
 		cli = monitor.NewMonitorClient(conn)
+	case util.AdvertiseServerType:
+		cli = advertise.NewAdvertiseClient(conn)
 	default:
 		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}

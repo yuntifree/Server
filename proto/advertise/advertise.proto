@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package advertise;
+
+service Advertise{
+    rpc AddCustomer(CustomerRequest) returns (common.CommReply) {}
+}
+
+message CustomerInfo {
+    int64 id = 1;
+    string name = 2;
+    string contact = 3;
+    string phone = 4;
+    string address = 5;
+    string atime = 6;
+    string etime = 7;
+    string remark = 8;
+}
+
+message CustomerRequest{
+    common.Head head = 1;
+    CustomerInfo info = 2;
+}

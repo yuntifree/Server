@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/gorm"
+
 	redis "gopkg.in/redis.v5"
 )
 
@@ -101,6 +103,11 @@ func InitDB(readonly bool) (*sql.DB, error) {
 func InitMonitorDB() (*sql.DB, error) {
 	dsn := genMonitorDsn()
 	return sql.Open("mysql", dsn)
+}
+
+//InitOrm connect to rds use gorm
+func InitOrm() (*gorm.DB, error) {
+	return gorm.Open("mysql", "access:^yunti9df3b01c$@tcp(rm-wz9sb2613092ki9xn.mysql.rds.aliyuncs.com:3306)/yunxing?charset=utf8")
 }
 
 //GetUserInfo select user info
