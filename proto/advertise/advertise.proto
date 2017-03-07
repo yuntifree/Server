@@ -8,10 +8,11 @@ service Advertise{
     rpc AddCustomer(CustomerRequest) returns (common.CommReply) {}
     rpc ModCustomer(CustomerRequest) returns (common.CommReply) {}
     rpc FetchCustomer(common.CommRequest) returns (CustomerReply) {}
+    rpc AddAdvertise(AdvertiseRequest) returns (common.CommReply) {}
 }
 
 message CustomerInfo {
-    int64 id = 1;
+    int64 ID = 1;
     string name = 2;
     string contact = 3;
     string phone = 4;
@@ -31,4 +32,21 @@ message CustomerReply {
     common.Head head = 1;
     repeated CustomerInfo infos = 2;
     int64 total = 3;
+}
+
+message AdvertiseInfo{
+    int64 ID = 1;
+    string name = 2;
+    string version = 3;
+    int64 adid = 4;
+    int64 areaid = 5;
+    string abstract = 6;
+    string img = 7;
+    string content = 8;
+    int64  tsid = 9;
+}
+
+message AdvertiseRequest {
+    common.Head head = 1;
+    AdvertiseInfo info = 2;
 }

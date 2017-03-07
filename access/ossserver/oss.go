@@ -705,6 +705,34 @@ func addCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+	version := req.GetParamString("version")
+	adid := req.GetParamInt("adid")
+	areaid := req.GetParamInt("areaid")
+	tsid := req.GetParamInt("tsid")
+	abstract := req.GetParamString("abstract")
+	content := req.GetParamString("content")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddAdvertise",
+		&advertise.AdvertiseRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.AdvertiseInfo{Name: name, Version: version,
+				Adid: adid, Areaid: areaid, Tsid: tsid, Abstract: abstract,
+				Content: content}})
+	httpserver.CheckRPCErr(rpcerr, "AddAdvertise")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddAdvertise")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -746,7 +774,7 @@ func modCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModCustomer",
 		&advertise.CustomerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &advertise.CustomerInfo{Id: id, Name: name, Contact: contact,
+			Info: &advertise.CustomerInfo{ID: id, Name: name, Contact: contact,
 				Phone: phone, Address: address,
 				Atime: atime, Etime: etime, Remark: remark,
 				Deleted: deleted}})
@@ -1112,6 +1140,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_banner", httpserver.AppHandler(addBanner))
 	mux.Handle("/set_conf", httpserver.AppHandler(addConf))
 	mux.Handle("/add_tags", httpserver.AppHandler(addTags))
+	mux.Handle("/add_advertise", httpserver.AppHandler(addAdvertise))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))

@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -22,26 +21,34 @@ type server struct{}
 var db *gorm.DB
 var w *nsq.Producer
 
-//Customer for customer info
-type Customer struct {
-	ID      int64  `gorm:"primary_key"`
-	Name    string `gorm:"size:255"`
-	Contact string `gorm:"size:255"`
-	Phone   string `gorm:"size:16"`
-	Address string `gorm:"size:255"`
-	Remark  string `gorm:"size:255"`
-	Deleted int64
-	Ctime   time.Time
-	Atime   string
-	Etime   string
+type locCustomer advertise.CustomerInfo
+
+func (c locCustomer) TableName() string {
+	return "customer"
+}
+
+type locAdvertise advertise.AdvertiseInfo
+
+func (ad locAdvertise) TableName() string {
+	return "advertise"
+}
+
+func addAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) int64 {
+	ad := locAdvertise(*info)
+	db.Create(&ad)
+	return ad.ID
+}
+
+func (s *server) AddAdvertise(ctx context.Context, in *advertise.AdvertiseRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "AddAdvertise")
+	id := addAdvertise(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "AddAdvertise")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}, Id: id}, nil
 }
 
 func addCustomer(db *gorm.DB, info *advertise.CustomerInfo) int64 {
-	customer := Customer{Name: info.Name, Contact: info.Contact,
-		Phone: info.Phone, Address: info.Address,
-		Remark: info.Remark, Ctime: time.Now(),
-		Atime: info.Atime, Etime: info.Etime,
-	}
+	customer := locCustomer(*info)
 	db.Create(&customer)
 	return customer.ID
 }
@@ -55,11 +62,7 @@ func (s *server) AddCustomer(ctx context.Context, in *advertise.CustomerRequest)
 }
 
 func modCustomer(db *gorm.DB, info *advertise.CustomerInfo) {
-	customer := Customer{ID: info.Id, Name: info.Name, Contact: info.Contact,
-		Phone: info.Phone, Address: info.Address,
-		Remark: info.Remark,
-		Atime:  info.Atime, Etime: info.Etime, Deleted: info.Deleted,
-	}
+	customer := locCustomer(*info)
 	db.Save(&customer)
 }
 
@@ -71,23 +74,9 @@ func (s *server) ModCustomer(ctx context.Context, in *advertise.CustomerRequest)
 		Head: &common.Head{Retcode: 0}}, nil
 }
 
-func convertCustomerInfo(info Customer) advertise.CustomerInfo {
-	return advertise.CustomerInfo{
-		Id:      info.ID,
-		Name:    info.Name,
-		Contact: info.Contact,
-		Phone:   info.Phone,
-		Address: info.Address,
-		Remark:  info.Remark,
-		Deleted: info.Deleted,
-		Atime:   info.Atime,
-		Etime:   info.Etime,
-	}
-}
-
 func fetchCustomer(db *gorm.DB, seq, num int64) []*advertise.CustomerInfo {
 	var infos []*advertise.CustomerInfo
-	var customers []Customer
+	var customers []locCustomer
 	if seq == 0 {
 		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&customers)
 	} else {
@@ -95,7 +84,7 @@ func fetchCustomer(db *gorm.DB, seq, num int64) []*advertise.CustomerInfo {
 	}
 	if len(customers) > 0 {
 		for i := 0; i < len(customers); i++ {
-			info := convertCustomerInfo(customers[i])
+			info := advertise.CustomerInfo(customers[i])
 			infos = append(infos, &info)
 		}
 	}
@@ -104,7 +93,7 @@ func fetchCustomer(db *gorm.DB, seq, num int64) []*advertise.CustomerInfo {
 
 func getTotalCustomer(db *gorm.DB) int64 {
 	var count int64
-	db.Model(&Customer{}).Where("deleted = 0").Count(&count)
+	db.Model(&locCustomer{}).Where("deleted = 0").Count(&count)
 	return count
 }
 

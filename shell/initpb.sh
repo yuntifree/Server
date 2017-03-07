@@ -1,5 +1,6 @@
 #!/bin/bash
-RPCLIST="discover fetch hot modify push verify punch"
+RPCLIST="discover fetch hot modify push verify punch userinfo monitor config"
+ORMLIST="advertise"
 
 function gen_rpc()
 {
@@ -9,6 +10,15 @@ function gen_rpc()
      done
 }
 
+function gen_orm_rpc()
+{
+    for srv in $ORMLIST; do
+        echo $srv
+        protoc --go_out=plugins=grpc:../proto/$srv/ ../proto/$srv/$srv.proto -I../.. -I../proto/$srv
+        sed -i "s/ID,omitempty/id,omitempty/g" ../proto/$srv/$srv.pb.go
+    done
+}
+
 function gen_comm()
 {
     protoc --go_out=../proto/common ../proto/common/common.proto -I../proto/common
@@ -16,3 +26,4 @@ function gen_comm()
 
 gen_comm
 gen_rpc
+gen_orm_rpc
