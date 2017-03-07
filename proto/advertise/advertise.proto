@@ -10,6 +10,7 @@ service Advertise{
     rpc FetchCustomer(common.CommRequest) returns (CustomerReply) {}
     rpc AddAdvertise(AdvertiseRequest) returns (common.CommReply) {}
     rpc ModAdvertise(AdvertiseRequest) returns (common.CommReply) {}
+    rpc FetchAdvertise(common.CommRequest) returns (AdvertiseReply) {}
 }
 
 message CustomerInfo {
@@ -53,4 +54,10 @@ message AdvertiseInfo{
 message AdvertiseRequest {
     common.Head head = 1;
     AdvertiseInfo info = 2;
+}
+
+message AdvertiseReply {
+    common.Head head = 1;
+    repeated AdvertiseInfo infos = 2;
+    int64 total = 3;
 }

@@ -62,6 +62,38 @@ func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 		Head: &common.Head{Retcode: 0}}, nil
 }
 
+func fetchAdvertise(db *gorm.DB, seq, num int64) []*advertise.AdvertiseInfo {
+	var infos []*advertise.AdvertiseInfo
+	var ads []locAdvertise
+	if seq == 0 {
+		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&ads)
+	} else {
+		db.Where("deleted = 0 AND id < ?", seq).Order("id desc").Limit(num).Find(&ads)
+	}
+	if len(ads) > 0 {
+		for i := 0; i < len(ads); i++ {
+			info := advertise.AdvertiseInfo(ads[i])
+			infos = append(infos, &info)
+		}
+	}
+	return infos
+}
+
+func getTotalAdvertise(db *gorm.DB) int64 {
+	var count int64
+	db.Model(&locAdvertise{}).Where("deleted = 0").Count(&count)
+	return count
+}
+
+func (s *server) FetchAdvertise(ctx context.Context, in *common.CommRequest) (*advertise.AdvertiseReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchAdvertise")
+	infos := fetchAdvertise(db, in.Seq, in.Num)
+	total := getTotalAdvertise(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchAdvertise")
+	return &advertise.AdvertiseReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
+}
+
 func addCustomer(db *gorm.DB, info *advertise.CustomerInfo) int64 {
 	customer := locCustomer(*info)
 	customer.Ctime = time.Now().Format(util.TimeFormat)

@@ -762,6 +762,29 @@ func modAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func getAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchAdvertise",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchAdvertise")
+	res := resp.Interface().(*advertise.AdvertiseReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchAdvertise")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1171,6 +1194,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_tags", httpserver.AppHandler(addTags))
 	mux.Handle("/add_advertise", httpserver.AppHandler(addAdvertise))
 	mux.Handle("/mod_advertise", httpserver.AppHandler(modAdvertise))
+	mux.Handle("/get_advertise", httpserver.AppHandler(getAdvertise))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))
