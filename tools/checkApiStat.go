@@ -41,7 +41,7 @@ func checkApiStat(db *sql.DB, api string) {
 	}
 	log.Printf("api:%s req:%d succrsp:%d ctime:%s", api, req, succ, ctime)
 
-	if req > 0 {
+	if req >= 10 {
 		rate := succ * 100 / req
 		if rate < 95 {
 			content := fmt.Sprintf("%s API:%s req:%d succ:%d rate:%d",
@@ -66,7 +66,7 @@ func checkRpcStat(db *sql.DB, rpc rpcMethod) {
 	log.Printf("rpc:%s-%s req:%d succrsp:%d ctime:%s", rpc.Service, rpc.Method, req,
 		succ, ctime)
 
-	if req > 0 {
+	if req >= 10 {
 		rate := succ * 100 / req
 		if rate < 99 {
 			content := fmt.Sprintf("%s RPC Method: %s-%s req:%d succ:%d rate:%d",
