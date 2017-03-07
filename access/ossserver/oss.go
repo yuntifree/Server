@@ -733,6 +733,35 @@ func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func modAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	name := req.GetParamString("name")
+	version := req.GetParamString("version")
+	adid := req.GetParamInt("adid")
+	areaid := req.GetParamInt("areaid")
+	tsid := req.GetParamInt("tsid")
+	abstract := req.GetParamString("abstract")
+	content := req.GetParamString("content")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModAdvertise",
+		&advertise.AdvertiseRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.AdvertiseInfo{ID: id, Name: name, Version: version,
+				Adid: adid, Areaid: areaid, Tsid: tsid, Abstract: abstract,
+				Content: content, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModAdvertise")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModAdvertise")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func getCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1141,6 +1170,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/set_conf", httpserver.AppHandler(addConf))
 	mux.Handle("/add_tags", httpserver.AppHandler(addTags))
 	mux.Handle("/add_advertise", httpserver.AppHandler(addAdvertise))
+	mux.Handle("/mod_advertise", httpserver.AppHandler(modAdvertise))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))

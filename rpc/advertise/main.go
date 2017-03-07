@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -35,6 +36,7 @@ func (ad locAdvertise) TableName() string {
 
 func addAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) int64 {
 	ad := locAdvertise(*info)
+	ad.Ctime = time.Now().Format(util.TimeFormat)
 	db.Create(&ad)
 	return ad.ID
 }
@@ -47,8 +49,22 @@ func (s *server) AddAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 		Head: &common.Head{Retcode: 0}, Id: id}, nil
 }
 
+func modAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) {
+	ad := locAdvertise(*info)
+	db.Save(&ad)
+}
+
+func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModAdvertise")
+	modAdvertise(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "ModAdvertise")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
+}
+
 func addCustomer(db *gorm.DB, info *advertise.CustomerInfo) int64 {
 	customer := locCustomer(*info)
+	customer.Ctime = time.Now().Format(util.TimeFormat)
 	db.Create(&customer)
 	return customer.ID
 }

@@ -9,6 +9,7 @@ service Advertise{
     rpc ModCustomer(CustomerRequest) returns (common.CommReply) {}
     rpc FetchCustomer(common.CommRequest) returns (CustomerReply) {}
     rpc AddAdvertise(AdvertiseRequest) returns (common.CommReply) {}
+    rpc ModAdvertise(AdvertiseRequest) returns (common.CommReply) {}
 }
 
 message CustomerInfo {
@@ -21,6 +22,7 @@ message CustomerInfo {
     string etime = 7;
     string remark = 8;
     int64 deleted = 9;
+    string ctime = 10;
 }
 
 message CustomerRequest{
@@ -44,6 +46,8 @@ message AdvertiseInfo{
     string img = 7;
     string content = 8;
     int64  tsid = 9;
+    int64 deleted = 10;
+    string ctime = 11;
 }
 
 message AdvertiseRequest {
