@@ -22,10 +22,14 @@ import (
 )
 
 const (
-	expiretime = 3600 * 24 * 30
-	mastercode = 251653
-	randrange  = 1000000
-	portalDir  = "http://api.yunxingzh.com/"
+	expiretime  = 3600 * 24 * 30
+	mastercode  = 251653
+	randrange   = 1000000
+	portalDir   = "http://api.yunxingzh.com/"
+	testAcname  = "2043.0769.200.00"
+	testAcip    = "120.197.159.10"
+	testUserip  = "10.96.72.28"
+	testUsermac = "f45c89987347"
 )
 
 type server struct{}
@@ -602,6 +606,14 @@ func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 	}
 }
 
+func isTestParam(info *verify.PortalInfo) bool {
+	if info.Acname == testAcname && info.Acip == testAcip &&
+		info.Userip == testUserip && info.Usermac == testUsermac {
+		return true
+	}
+	return false
+}
+
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
 	log.Printf("PortalLogin request:%v", in)
 	util.PubRPCRequest(w, "verify", "PortalLogin")
@@ -614,13 +626,15 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 
 	}
 	log.Printf("PortalLogin info:%v", in.Info)
-	flag := zteLogin(in.Info.Phone, in.Info.Userip,
-		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-	if !flag {
-		log.Printf("PortalLogin zteLogin retry failed, phone:%s code:%s",
-			in.Info.Phone, in.Info.Code)
-		return &verify.PortalLoginReply{
-			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	if !isTestParam(in.Info) {
+		flag := zteLogin(in.Info.Phone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("PortalLogin zteLogin retry failed, phone:%s code:%s",
+				in.Info.Phone, in.Info.Code)
+			return &verify.PortalLoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
 	}
 
 	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), ?, 2, NOW()) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?, aptime = NOW()",
@@ -798,13 +812,15 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		return &verify.PortalLoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
-	flag := zteLogin(phone, in.Info.Userip,
-		in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
-	if !flag {
-		log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
-			phone)
-		return &verify.PortalLoginReply{
-			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	if !isTestParam(in.Info) {
+		flag := zteLogin(phone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
+				phone)
+			return &verify.PortalLoginReply{
+				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+		}
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	refreshActiveTime(db, uid)
