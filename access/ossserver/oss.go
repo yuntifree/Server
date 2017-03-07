@@ -230,12 +230,13 @@ func getVideos(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	num := req.GetParamInt("num")
 	seq := req.GetParamInt("seq")
 	ctype := req.GetParamInt("type")
+	search := req.GetParamStringDef("search", "")
 	num = genReqNum(num)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchVideos",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num, Type: ctype})
+			Seq: seq, Num: num, Type: ctype, Search: search})
 	httpserver.CheckRPCErr(rpcerr, "FetchVideos")
 	res := resp.Interface().(*fetch.VideoReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "FetchVideos")

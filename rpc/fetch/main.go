@@ -105,9 +105,12 @@ func getTotalNews(db *sql.DB, ctype, stype int64, search string) int64 {
 	return total
 }
 
-func getTotalVideos(db *sql.DB, ctype int64) int64 {
+func getTotalVideos(db *sql.DB, ctype int64, search string) int64 {
 	query := "SELECT COUNT(vid) FROM youku_video WHERE 1 = 1 " + genTypeQuery(ctype)
 	var total int64
+	if search != "" {
+		query += " AND title LIKE '%" + search + "%' "
+	}
 	err := db.QueryRow(query).Scan(&total)
 	if err != nil {
 		log.Printf("get total failed:%v", err)
@@ -508,10 +511,13 @@ func (s *server) FetchTemplates(ctx context.Context, in *common.CommRequest) (*f
 		Infos: infos, Total: total}, nil
 }
 
-func getVideos(db *sql.DB, seq, num, ctype int64) []*fetch.VideoInfo {
+func getVideos(db *sql.DB, seq, num, ctype int64, search string) []*fetch.VideoInfo {
 	var infos []*fetch.VideoInfo
 	query := "SELECT vid, img, title, dst, ctime, source, duration FROM youku_video WHERE 1 = 1 " +
 		genTypeQuery(ctype)
+	if search != "" {
+		query += " AND title LIKE '%" + search + "%' "
+	}
 	query += " ORDER BY vid DESC LIMIT " + strconv.Itoa(int(seq)) + "," +
 		strconv.Itoa(int(num))
 	log.Printf("query string:%s", query)
@@ -538,10 +544,11 @@ func getVideos(db *sql.DB, seq, num, ctype int64) []*fetch.VideoInfo {
 
 func (s *server) FetchVideos(ctx context.Context, in *common.CommRequest) (*fetch.VideoReply, error) {
 	util.PubRPCRequest(w, "fetch", "FetchVideos")
-	log.Printf("request uid:%d, sid:%s seq:%d num:%d", in.Head.Uid, in.Head.Sid,
-		in.Seq, in.Num)
-	infos := getVideos(db, in.Seq, in.Num, in.Type)
-	total := getTotalVideos(db, in.Type)
+	log.Printf("request uid:%d, sid:%s seq:%d num:%d search:%s",
+		in.Head.Uid, in.Head.Sid,
+		in.Seq, in.Num, in.Search)
+	infos := getVideos(db, in.Seq, in.Num, in.Type, in.Search)
+	total := getTotalVideos(db, in.Type, in.Search)
 	util.PubRPCSuccRsp(w, "fetch", "FetchVideos")
 	return &fetch.VideoReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
