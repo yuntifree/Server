@@ -26,9 +26,30 @@ CREATE TABLE IF NOT EXISTS advertise
     img     varchar(128) NOT NULL,
     abstract varchar(256) NOT NULL,
     content  varchar(512) NOT NULL,
+    click   bigint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ad_click
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid    int unsigned NOT NULL,
+    aid    int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid, aid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ad_click_stat
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    aid    int unsigned NOT NULL,
+    cnt    int unsigned NOT NULL DEFAULT 0,
+    ctime   date NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(aid, ctime)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS unit
@@ -39,6 +60,60 @@ CREATE TABLE IF NOT EXISTS unit
     longitude   double NOT NULL,
     latitude    double NOT NULL,
     cnt     int unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS area
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS area_unit
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    aid     bigint unsigned NOT NULL,
+    unid     bigint unsigned NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(aid, unid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS unit_tag
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS unit_tag_relation
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    tid     bigint unsigned NOT NULL,
+    unid     bigint unsigned NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(tid, unid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS timeslot
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    stime   varchar(32) NOT NULL,
+    etime   varchar(32) NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),

@@ -532,6 +532,26 @@ func reportClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func reportAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	log.Printf("reportAdClick uid:%d id:%d ", uid, id)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ClickAd",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: id})
+	httpserver.CheckRPCErr(rpcerr, "ClickAd")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ClickAd")
+
+	w.Write([]byte(`{"errno":0}`))
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -2047,6 +2067,11 @@ func genNonce() string {
 	return string(res)
 }
 
+func printHead(w http.ResponseWriter, r *http.Request) {
+	headers := fmt.Sprintf("headers:%v", r.Header)
+	w.Write([]byte(headers))
+}
+
 func getJsapiSign(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	address := httpserver.GetNameServer(0, util.VerifyServerName)
@@ -2169,6 +2194,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_all_aps", httpserver.AppHandler(getAllAps))
 	mux.Handle("/report_wifi", httpserver.AppHandler(reportWifi))
 	mux.Handle("/report_click", httpserver.AppHandler(reportClick))
+	mux.Handle("/report_ad_click", httpserver.AppHandler(reportAdClick))
 	mux.Handle("/report_apmac", httpserver.AppHandler(reportApmac))
 	mux.Handle("/connect_wifi", httpserver.AppHandler(connectWifi))
 	mux.Handle("/upload_callback", httpserver.AppHandler(uploadCallback))
@@ -2191,6 +2217,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/correct_ap", httpserver.AppHandler(correctAp))
 	mux.HandleFunc("/jump", jump)
+	mux.HandleFunc("/test", printHead)
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)

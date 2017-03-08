@@ -14,6 +14,7 @@ service Advertise{
     rpc AddUnit(UnitRequest) returns (common.CommReply) {}
     rpc ModUnit(UnitRequest) returns (common.CommReply) {}
     rpc FetchUnit(common.CommRequest) returns (UnitReply) {}
+    rpc ClickAd(common.CommRequest) returns (common.CommReply) {}
 }
 
 message CustomerInfo {
