@@ -30,3 +30,17 @@ CREATE TABLE IF NOT EXISTS advertise
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS unit
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    address varchar(256) NOT NULL,
+    longitude   double NOT NULL,
+    latitude    double NOT NULL,
+    cnt     int unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(name)
+) ENGINE = InnoDB;

@@ -705,6 +705,81 @@ func addCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func addUnit(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+	address := req.GetParamString("address")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+	cnt := req.GetParamInt("cnt")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddUnit",
+		&advertise.UnitRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.UnitInfo{Name: name, Address: address,
+				Longitude: longitude, Latitude: latitude, Cnt: cnt}})
+	httpserver.CheckRPCErr(rpcerr, "AddUnit")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddUnit")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func modUnit(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+	address := req.GetParamString("address")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+	cnt := req.GetParamInt("cnt")
+	id := req.GetParamInt("id")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModUnit",
+		&advertise.UnitRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.UnitInfo{ID: id, Name: name, Address: address,
+				Longitude: longitude, Latitude: latitude,
+				Cnt: cnt, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModUnit")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModUnit")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func getUnit(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchUnit",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchUnit")
+	res := resp.Interface().(*advertise.UnitReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchUnit")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1195,6 +1270,9 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_advertise", httpserver.AppHandler(addAdvertise))
 	mux.Handle("/mod_advertise", httpserver.AppHandler(modAdvertise))
 	mux.Handle("/get_advertise", httpserver.AppHandler(getAdvertise))
+	mux.Handle("/add_unit", httpserver.AppHandler(addUnit))
+	mux.Handle("/mod_unit", httpserver.AppHandler(modUnit))
+	mux.Handle("/get_unit", httpserver.AppHandler(getUnit))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))

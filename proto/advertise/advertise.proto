@@ -11,6 +11,9 @@ service Advertise{
     rpc AddAdvertise(AdvertiseRequest) returns (common.CommReply) {}
     rpc ModAdvertise(AdvertiseRequest) returns (common.CommReply) {}
     rpc FetchAdvertise(common.CommRequest) returns (AdvertiseReply) {}
+    rpc AddUnit(UnitRequest) returns (common.CommReply) {}
+    rpc ModUnit(UnitRequest) returns (common.CommReply) {}
+    rpc FetchUnit(common.CommRequest) returns (UnitReply) {}
 }
 
 message CustomerInfo {
@@ -59,5 +62,27 @@ message AdvertiseRequest {
 message AdvertiseReply {
     common.Head head = 1;
     repeated AdvertiseInfo infos = 2;
+    int64 total = 3;
+}
+
+message UnitInfo {
+    int64 ID = 1;
+    string name = 2;
+    double longitude = 3;
+    double latitude = 4;
+    int64  cnt = 5;
+    int64 deleted = 6;
+    string ctime = 7;
+    string address = 8;
+}
+
+message UnitRequest {
+    common.Head head = 1;
+    UnitInfo info = 2;
+}
+
+message UnitReply {
+    common.Head head = 1;
+    repeated UnitInfo infos = 2;
     int64 total = 3;
 }

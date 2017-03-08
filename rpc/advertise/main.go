@@ -34,6 +34,72 @@ func (ad locAdvertise) TableName() string {
 	return "advertise"
 }
 
+type locUnit advertise.UnitInfo
+
+func (u locUnit) TableName() string {
+	return "unit"
+}
+
+func addUnit(db *gorm.DB, info *advertise.UnitInfo) int64 {
+	u := locUnit(*info)
+	u.Ctime = time.Now().Format(util.TimeFormat)
+	db.Create(&u)
+	return u.ID
+}
+
+func (s *server) AddUnit(ctx context.Context, in *advertise.UnitRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "AddUnit")
+	id := addUnit(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "AddUnit")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}, Id: id}, nil
+}
+
+func modUnit(db *gorm.DB, info *advertise.UnitInfo) {
+	u := locUnit(*info)
+	db.Save(&u)
+}
+
+func (s *server) ModUnit(ctx context.Context, in *advertise.UnitRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModUnit")
+	modUnit(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "ModUnit")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
+}
+
+func fetchUnit(db *gorm.DB, seq, num int64) []*advertise.UnitInfo {
+	var infos []*advertise.UnitInfo
+	var ads []locUnit
+	if seq == 0 {
+		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&ads)
+	} else {
+		db.Where("deleted = 0 AND id < ?", seq).Order("id desc").Limit(num).Find(&ads)
+	}
+	if len(ads) > 0 {
+		for i := 0; i < len(ads); i++ {
+			info := advertise.UnitInfo(ads[i])
+			infos = append(infos, &info)
+		}
+	}
+	return infos
+}
+
+func getTotalUnit(db *gorm.DB) int64 {
+	var count int64
+	db.Model(&locUnit{}).Where("deleted = 0").Count(&count)
+	return count
+}
+
+func (s *server) FetchUnit(ctx context.Context, in *common.CommRequest) (*advertise.UnitReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchUnit")
+	infos := fetchUnit(db, in.Seq, in.Num)
+	total := getTotalUnit(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchUnit")
+	return &advertise.UnitReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
+}
+
 func addAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) int64 {
 	ad := locAdvertise(*info)
 	ad.Ctime = time.Now().Format(util.TimeFormat)
