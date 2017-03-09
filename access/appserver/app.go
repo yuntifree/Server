@@ -2038,6 +2038,17 @@ func getPortalDir() string {
 
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
+	r.ParseForm()
+	var acname, usermac string
+	names := r.Form["wlanacname"]
+	macs := r.Form["wlanusermac"]
+	if len(names) > 0 {
+		acname = names[0]
+	}
+	if len(macs) > 0 {
+		usermac = macs[0]
+	}
+	log.Printf("acname:%s usermac:%s", acname, usermac)
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
 	var path string
@@ -2050,6 +2061,10 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	prefix := portalDst
 	dir := getPortalDir()
 	dst := prefix + dir + postfix
+	if usermac == "F45C89987347" {
+		dst = "http://192.168.100.4:8080/logintest201703081908/" + postfix
+	}
+
 	log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
