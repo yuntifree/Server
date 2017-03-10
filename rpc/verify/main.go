@@ -791,6 +791,14 @@ func refreshActiveTime(db *sql.DB, uid int64) {
 	}
 }
 
+func addOnlineRecord(db *sql.DB, uid int64, phone, usermac, apmac, acname string) {
+	_, err := db.Exec("INSERT INTO online_record(uid, phone, usermac, apmac, acname, ctime) VALUES (?, ?, ?, ?, ?, NOW())", uid, phone, usermac, apmac, acname)
+	if err != nil {
+		log.Printf("addOnlineRecord failed:%d %s %s %s %s %v",
+			uid, phone, usermac, apmac, acname, err)
+	}
+}
+
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {
 	log.Printf("OneClickLogin request:%v", in)
 	util.PubRPCRequest(w, "verify", "OneClickLogin")

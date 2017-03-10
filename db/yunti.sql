@@ -559,13 +559,16 @@ CREATE TABLE IF NOT EXISTS nickname
     KEY(type)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS adj_prefix
+CREATE TABLE IF NOT EXISTS online_record
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    -- type 0:normal
-    type    tinyint unsigned NOT NULL DEFAULT 0,
-    name    varchar(64) NOT NULL,
+    uid     int unsigned NOT NULL,
+    phone   varchar(16) NOT NULL,
+    acname  varchar(64) NOT NULL,
+    apmac   varchar(32) NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
-    KEY(type)
+    KEY(uid),
+    KEY(apmac),
+    KEY(phone)
 ) ENGINE = InnoDB;
