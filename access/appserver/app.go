@@ -1550,13 +1550,6 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamIntDef("term", 0)
-	response, err := getRspFromSSDB(configDiscoveryKey)
-	if err == nil {
-		log.Printf("getRspFromSSDB succ key:%s\n", configDiscoveryKey)
-		httpserver.RspGzip(w, []byte(response))
-		httpserver.ReportSuccResp(r.RequestURI)
-		return nil
-	}
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetDiscovery",
@@ -1580,8 +1573,6 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
-	data := js.Get("data")
-	setSSDBCache(configDiscoveryKey, data)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
