@@ -304,7 +304,8 @@ func getServices(db *sql.DB) []*config.ServiceCategory {
 
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
-	banners := getBanners(db, false)
+	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
+	banners := getBanners(db, flag)
 	urbanservices := getUrbanServices(db, in.Head.Term)
 	recommends := getRecommends(db)
 	services := getServices(db)
