@@ -484,7 +484,8 @@ CREATE TABLE IF NOT EXISTS user_mac
 CREATE TABLE IF NOT EXISTS portal_page
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    -- 0:login 1:portal
+    -- 0:login 1:portal 2:login test 3:portal test
+    -- 4:portal2.0 5:portal2.0 test
     type    tinyint unsigned NOT NULL DEFAULT 0,
     dir     varchar(64) NOT NULL,
     description varchar(512) NOT NULL,

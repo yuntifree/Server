@@ -15,6 +15,9 @@ service Advertise{
     rpc ModUnit(UnitRequest) returns (common.CommReply) {}
     rpc FetchUnit(common.CommRequest) returns (UnitReply) {}
     rpc ClickAd(common.CommRequest) returns (common.CommReply) {}
+    rpc AddArea(AreaRequest) returns (common.CommReply) {}
+    rpc ModArea(AreaRequest) returns (common.CommReply) {}
+    rpc FetchArea(common.CommRequest) returns (AreaReply) {}
 }
 
 message CustomerInfo {
@@ -87,3 +90,22 @@ message UnitReply {
     repeated UnitInfo infos = 2;
     int64 total = 3;
 }
+
+message AreaInfo {
+    int64 ID = 1;
+    string name = 2;
+    string ctime = 3;
+    int64 deleted = 4;
+}
+
+message AreaRequest {
+    common.Head head = 1;
+    AreaInfo info = 2;
+}
+
+message AreaReply {
+    common.Head head = 1;
+    repeated AreaInfo infos = 2;
+    int64 total = 3;
+}
+

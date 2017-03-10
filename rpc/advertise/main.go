@@ -40,6 +40,12 @@ func (u locUnit) TableName() string {
 	return "unit"
 }
 
+type locArea advertise.AreaInfo
+
+func (a locArea) TableName() string {
+	return "area"
+}
+
 func addUnit(db *gorm.DB, info *advertise.UnitInfo) int64 {
 	u := locUnit(*info)
 	u.Ctime = time.Now().Format(util.TimeFormat)
@@ -232,6 +238,66 @@ func (s *server) ClickAd(ctx context.Context, in *common.CommRequest) (*common.C
 	util.PubRPCSuccRsp(w, "advertise", "FetchCustomer")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}}, nil
+}
+
+func addArea(db *gorm.DB, info *advertise.AreaInfo) int64 {
+	area := locArea(*info)
+	area.Ctime = time.Now().Format(util.TimeFormat)
+	db.Create(&area)
+	return area.ID
+}
+
+func (s *server) AddArea(ctx context.Context, in *advertise.AreaRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "AddArea")
+	id := addArea(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "AddArea")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}, Id: id}, nil
+}
+
+func modArea(db *gorm.DB, info *advertise.AreaInfo) {
+	in := locArea(*info)
+	db.Save(&in)
+}
+
+func (s *server) ModArea(ctx context.Context, in *advertise.AreaRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModArea")
+	modArea(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "ModArea")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
+}
+
+func fetchArea(db *gorm.DB, seq, num int64) []*advertise.AreaInfo {
+	var infos []*advertise.AreaInfo
+	var res []locArea
+	if seq == 0 {
+		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&res)
+	} else {
+		db.Where("deleted = 0 AND id < ?", seq).Order("id desc").Limit(num).Find(&res)
+	}
+	if len(res) > 0 {
+		for i := 0; i < len(res); i++ {
+			info := advertise.AreaInfo(res[i])
+			infos = append(infos, &info)
+		}
+	}
+	return infos
+}
+
+func getTotalArea(db *gorm.DB) int64 {
+	var count int64
+	db.Model(&locArea{}).Where("deleted = 0").Count(&count)
+	return count
+}
+
+func (s *server) FetchArea(ctx context.Context, in *common.CommRequest) (*advertise.AreaReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchArea")
+	infos := fetchArea(db, in.Seq, in.Num)
+	total := getTotalArea(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchArea")
+	return &advertise.AreaReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 
 func main() {
