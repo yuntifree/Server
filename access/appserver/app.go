@@ -2061,8 +2061,11 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	prefix := portalDst
 	dir := getPortalDir()
 	dst := prefix + dir + postfix
-	if usermac == "F45C89987347" {
-		dst = "http://192.168.100.4:8080/logintest201703081908/" + postfix
+	if acname == "AC_SSH_A_04" &&
+		(usermac == "F45C89987347" || usermac == "14F65A9F590C" ||
+			usermac == "0C51015B928B" || usermac == "20AB37909A39" ||
+			usermac == "60F81D405892") {
+		dst = "http://192.168.100.4:8080/logintest201703091820/" + postfix
 	}
 
 	log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
