@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -363,6 +364,49 @@ func (s *server) FetchTimeslot(ctx context.Context, in *common.CommRequest) (*ad
 	total := getTotalTimeslot(db)
 	util.PubRPCSuccRsp(w, "advertise", "FetchTimeslot")
 	return &advertise.TimeslotReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
+}
+
+func getTotalAdRecords(db *gorm.DB) int64 {
+	var total int64
+	err := db.Raw("SELECT COUNT(id) FROM ad_click").Scan(&total)
+	if err != nil {
+		log.Printf("getTotalAdRecords query failed:%v", err)
+	}
+	return total
+}
+
+func fetchAdRecords(db *gorm.DB, seq, num int64) []*advertise.AdClickInfo {
+	var infos []*advertise.AdClickInfo
+	query := "SELECT c.id, c.uid, c.aid, c.usermac, c.userip, u.phone, a.name FROM ad_click c, advertise a, user u WHERE c.aid = a.id AND c.uid = u.uid"
+	if seq != 0 {
+		query += fmt.Sprintf(" AND c.id < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY c.id DESC LIMIT %d", num)
+	rows, err := db.Raw(query).Rows()
+	if err != nil {
+		log.Printf("query failed:%v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info advertise.AdClickInfo
+		err := rows.Scan(&info.Id, &info.Uid, &info.Aid, &info.Phone,
+			&info.Usermac, &info.Userip, &info.Ctime)
+		if err != nil {
+			log.Printf("scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) FetchAdRecords(ctx context.Context, in *common.CommRequest) (*advertise.AdRecordsReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchAdRecords")
+	infos := fetchAdRecords(db, in.Seq, in.Num)
+	total := getTotalAdRecords(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchAdRecords")
+	return &advertise.AdRecordsReply{
 		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 

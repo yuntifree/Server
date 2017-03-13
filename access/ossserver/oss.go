@@ -1044,6 +1044,29 @@ func getCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchAdRecords",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchAdRecords")
+	res := resp.Interface().(*advertise.AdRecordsReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchAdRecords")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func modCustomer(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1443,6 +1466,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))
+	mux.Handle("/get_ad_click", httpserver.AppHandler(getAdClick))
 	mux.Handle("/send_mipush", httpserver.AppHandler(sendMipush))
 	mux.Handle("/del_tags", httpserver.AppHandler(delTags))
 	mux.Handle("/del_conf", httpserver.AppHandler(delConf))
