@@ -286,6 +286,7 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	log.Printf("uid:%d\n", uid)
 
 	var headurl, nickname string
+	var pushtest int64
 	if uid == 0 {
 		err = db.QueryRow("SELECT uid, headurl, nickname FROM user WHERE username = ?", in.Username).Scan(&uid, &headurl, &nickname)
 		if err != nil {
@@ -306,6 +307,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
+		if util.IsWhiteUser(db, uid, util.PushTestType) {
+			pushtest = 1
+		}
 	}
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format(util.TimeFormat)
@@ -316,7 +320,8 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	}
 	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expire,
-		Expiretime: strTime, Headurl: headurl, Nickname: string(nick)}, nil
+		Expiretime: strTime, Headurl: headurl, Nickname: string(nick),
+		Pushtest: pushtest}, nil
 }
 
 func (s *server) Logout(ctx context.Context, in *verify.LogoutRequest) (*common.CommReply, error) {

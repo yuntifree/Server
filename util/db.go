@@ -26,6 +26,7 @@ const (
 	FlashAdDbgType
 	LiveDbgType
 	PortalMenuDbgType
+	PushTestType
 )
 
 //UserInfo user base information
