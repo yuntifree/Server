@@ -780,6 +780,71 @@ func getUnit(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func addArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddArea",
+		&advertise.AreaRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.AreaInfo{Name: name}})
+	httpserver.CheckRPCErr(rpcerr, "AddArea")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddArea")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func modArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+	id := req.GetParamInt("id")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModArea",
+		&advertise.UnitRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.UnitInfo{ID: id, Name: name,
+				Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModArea")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModArea")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func getArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchArea",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchArea")
+	res := resp.Interface().(*advertise.UnitReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchArea")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1273,6 +1338,9 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_unit", httpserver.AppHandler(addUnit))
 	mux.Handle("/mod_unit", httpserver.AppHandler(modUnit))
 	mux.Handle("/get_unit", httpserver.AppHandler(getUnit))
+	mux.Handle("/add_area", httpserver.AppHandler(addArea))
+	mux.Handle("/mod_area", httpserver.AppHandler(modArea))
+	mux.Handle("/get_area", httpserver.AppHandler(getArea))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))

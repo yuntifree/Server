@@ -46,6 +46,12 @@ func (a locArea) TableName() string {
 	return "area"
 }
 
+type locTimeslot advertise.TimeslotInfo
+
+func (a locTimeslot) TableName() string {
+	return "timeslot"
+}
+
 func addUnit(db *gorm.DB, info *advertise.UnitInfo) int64 {
 	u := locUnit(*info)
 	u.Ctime = time.Now().Format(util.TimeFormat)
@@ -297,6 +303,66 @@ func (s *server) FetchArea(ctx context.Context, in *common.CommRequest) (*advert
 	total := getTotalArea(db)
 	util.PubRPCSuccRsp(w, "advertise", "FetchArea")
 	return &advertise.AreaReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
+}
+
+func addTimeslot(db *gorm.DB, info *advertise.TimeslotInfo) int64 {
+	in := locTimeslot(*info)
+	in.Ctime = time.Now().Format(util.TimeFormat)
+	db.Create(&in)
+	return in.ID
+}
+
+func (s *server) AddTimeslot(ctx context.Context, in *advertise.TimeslotRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "AddTimeslot")
+	id := addTimeslot(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "AddTimeslot")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}, Id: id}, nil
+}
+
+func modTimeslot(db *gorm.DB, info *advertise.TimeslotInfo) {
+	in := locTimeslot(*info)
+	db.Save(&in)
+}
+
+func (s *server) ModTimeslot(ctx context.Context, in *advertise.TimeslotRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModTimeslot")
+	modTimeslot(db, in.Info)
+	util.PubRPCSuccRsp(w, "advertise", "ModTimeslot")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0}}, nil
+}
+
+func fetchTimeslot(db *gorm.DB, seq, num int64) []*advertise.TimeslotInfo {
+	var infos []*advertise.TimeslotInfo
+	var res []locTimeslot
+	if seq == 0 {
+		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&res)
+	} else {
+		db.Where("deleted = 0 AND id < ?", seq).Order("id desc").Limit(num).Find(&res)
+	}
+	if len(res) > 0 {
+		for i := 0; i < len(res); i++ {
+			info := advertise.TimeslotInfo(res[i])
+			infos = append(infos, &info)
+		}
+	}
+	return infos
+}
+
+func getTotalTimeslot(db *gorm.DB) int64 {
+	var count int64
+	db.Model(&locTimeslot{}).Where("deleted = 0").Count(&count)
+	return count
+}
+
+func (s *server) FetchTimeslot(ctx context.Context, in *common.CommRequest) (*advertise.TimeslotReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchTimeslot")
+	infos := fetchTimeslot(db, in.Seq, in.Num)
+	total := getTotalTimeslot(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchTimeslot")
+	return &advertise.TimeslotReply{
 		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 

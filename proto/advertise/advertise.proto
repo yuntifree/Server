@@ -18,6 +18,9 @@ service Advertise{
     rpc AddArea(AreaRequest) returns (common.CommReply) {}
     rpc ModArea(AreaRequest) returns (common.CommReply) {}
     rpc FetchArea(common.CommRequest) returns (AreaReply) {}
+    rpc AddTimeslot(TimeslotRequest) returns (common.CommReply) {}
+    rpc ModTimeslot(TimeslotRequest) returns (common.CommReply) {}
+    rpc FetchTimeslot(common.CommRequest) returns (TimeslotReply) {}
 }
 
 message CustomerInfo {
@@ -108,4 +111,25 @@ message AreaReply {
     repeated AreaInfo infos = 2;
     int64 total = 3;
 }
+
+message TimeslotInfo {
+    int64 ID = 1;
+    string content = 2;
+    int64 start = 3;
+    int64 end = 4;
+    int64 deleted = 5;
+    string ctime = 6;
+}
+
+message TimeslotRequest {
+    common.Head head = 1;
+    TimeslotInfo info = 2;
+}
+
+message TimeslotReply {
+    common.Head head = 1;
+    repeated TimeslotInfo infos = 2;
+    int64 total = 3;
+}
+
 
