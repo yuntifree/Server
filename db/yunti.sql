@@ -379,7 +379,7 @@ CREATE TABLE IF NOT EXISTS white_list
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     -- 0: flash_ad 1:banner 2:activity 3:flash_ad dbg 4:live dbg
-    -- 5: portal_menu dbg
+    -- 5: portal_menu dbg 6: push test
     type    int unsigned NOT NULL,
     uid     int unsigned NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
@@ -572,4 +572,20 @@ CREATE TABLE IF NOT EXISTS online_record
     KEY(uid),
     KEY(apmac),
     KEY(phone)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS online_status
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    phone   varchar(16) NOT NULL,
+    mac     varchar(16) NOT NULL,
+    apmac   varchar(16) NOT NULL,
+    ip      varchar(16) NOT NULL,
+    acip    varchar(16) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    etime   datetime NOT NULL DEFAULT '2017-01-01',
+    ktime   datetime NOT NULL DEFAULT '2017-01-01',
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(id),
+    UNIQUE KEY(phone, mac)
 ) ENGINE = InnoDB;

@@ -662,6 +662,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
+	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
@@ -796,11 +797,19 @@ func refreshActiveTime(db *sql.DB, uid int64) {
 	}
 }
 
-func addOnlineRecord(db *sql.DB, uid int64, phone, usermac, apmac, acname string) {
-	_, err := db.Exec("INSERT INTO online_record(uid, phone, usermac, apmac, acname, ctime) VALUES (?, ?, ?, ?, ?, NOW())", uid, phone, usermac, apmac, acname)
+func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInfo) {
+	_, err := db.Exec("INSERT INTO online_record(uid, phone, usermac, apmac, acname, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+		uid, phone, info.Usermac, info.Apmac, info.Acname)
 	if err != nil {
-		log.Printf("addOnlineRecord failed:%d %s %s %s %s %v",
-			uid, phone, usermac, apmac, acname, err)
+		log.Printf("addOnlineRecord online record failed:%d %s %v %v",
+			uid, phone, info, err)
+	}
+	_, err = db.Exec("INSERT INTO online_status(phone, mac, ip, apmac, acip, ctime, etime) VALUES (?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 4 HOUR)) ON DUPLICATE KEY UPDATE ip = ?, apmac = ?, acip = ?, etime = DATE_ADD(NOW(), INTERVAL 4 HOUR)",
+		phone, info.Usermac, info.Userip, info.Apmac, info.Acip, info.Userip,
+		info.Apmac, info.Acip)
+	if err != nil {
+		log.Printf("addOnlineRecord online status failed:%d %s %v %v",
+			uid, phone, info, err)
 	}
 }
 
@@ -837,6 +846,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	recordUserMac(db, uid, in.Info.Usermac, phone)
 	refreshActiveTime(db, uid)
+	addOnlineRecord(db, uid, phone, in.Info)
 	token, _, _, err := util.RefreshTokenPrivdata(db, kv, uid, expiretime)
 	if err != nil {
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
