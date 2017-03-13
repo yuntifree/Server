@@ -410,6 +410,48 @@ func (s *server) FetchAdRecords(ctx context.Context, in *common.CommRequest) (*a
 		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 
+func getParamInfo(db *gorm.DB, table string) []*advertise.ParamInfo {
+	var infos []*advertise.ParamInfo
+	rows, err := db.Table(table).Select("id, name").Rows()
+	if err != nil {
+		log.Printf("getParamInfo failed:%s %v", table, err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info advertise.ParamInfo
+		err := rows.Scan(&info.Id, &info.Name)
+		if err != nil {
+			log.Printf("getCustomerParam scan failed:%v", err)
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getCustomerParam(db *gorm.DB) []*advertise.ParamInfo {
+	return getParamInfo(db, "customer")
+}
+
+func getAreaParam(db *gorm.DB) []*advertise.ParamInfo {
+	return getParamInfo(db, "area")
+}
+
+func getTimeslotParam(db *gorm.DB) []*advertise.ParamInfo {
+	return getParamInfo(db, "timeslot")
+}
+
+func (s *server) FetchAdParam(ctx context.Context, in *common.CommRequest) (*advertise.AdParamReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchAdParam")
+	customer := getCustomerParam(db)
+	area := getAreaParam(db)
+	timeslot := getTimeslotParam(db)
+	util.PubRPCSuccRsp(w, "advertise", "FetchAdParam")
+	return &advertise.AdParamReply{
+		Head: &common.Head{Retcode: 0}, Customer: customer, Area: area,
+		Timeslot: timeslot}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.AdvertiseServerPort)
 	if err != nil {

@@ -22,6 +22,7 @@ service Advertise{
     rpc ModTimeslot(TimeslotRequest) returns (common.CommReply) {}
     rpc FetchTimeslot(common.CommRequest) returns (TimeslotReply) {}
     rpc FetchAdRecords(common.CommRequest) returns (AdRecordsReply) {}
+    rpc FetchAdParam(common.CommRequest) returns (AdParamReply) {}
 }
 
 message CustomerInfo {
@@ -156,4 +157,16 @@ message AdRecordsReply {
     common.Head head = 1;
     repeated AdClickInfo infos = 2;
     int64 total = 3;
+}
+
+message ParamInfo {
+    int64 id = 1;
+    string name = 2;
+}
+
+message AdParamReply {
+    common.Head head = 1;
+    repeated ParamInfo customer = 2;
+    repeated ParamInfo area = 3;
+    repeated ParamInfo timeslot = 4;
 }
