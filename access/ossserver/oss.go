@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"Server/aliyun"
 	"Server/httpserver"
@@ -837,8 +838,103 @@ func getArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Num:  num,
 		})
 	httpserver.CheckRPCErr(rpcerr, "FetchArea")
-	res := resp.Interface().(*advertise.UnitReply)
+	res := resp.Interface().(*advertise.AreaReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "FetchArea")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func parseTime(content string) int64 {
+	arr := strings.Split(content, ":")
+	if len(arr) != 2 || len(arr[0]) != 2 || len(arr[1]) != 2 {
+		panic("illegal time format")
+	}
+	s, err := strconv.ParseInt(arr[0], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	t, err := strconv.ParseInt(arr[1], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return s*100 + t
+}
+
+func parseTimeslot(content string) (int64, int64) {
+	var start, end int64
+	arr := strings.Split(content, "~")
+	if len(arr) != 2 {
+		panic("illegal timeslot")
+	}
+	start = parseTime(arr[0])
+	end = parseTime(arr[1])
+	return start, end
+}
+
+func addTimeslot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	content := req.GetParamString("content")
+	start, end := parseTimeslot(content)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddTimeslot",
+		&advertise.TimeslotRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.TimeslotInfo{Content: content,
+				Start: start, End: end}})
+	httpserver.CheckRPCErr(rpcerr, "AddTimeslot")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddTimeslot")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
+func modTimeslot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	content := req.GetParamString("content")
+	start, end := parseTimeslot(content)
+	id := req.GetParamInt("id")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModTimeslot",
+		&advertise.TimeslotRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &advertise.TimeslotInfo{ID: id, Content: content,
+				Start: start, End: end, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModTimeslot")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModTimeslot")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
+func getTimeslot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchTimeslot",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchTimeslot")
+	res := resp.Interface().(*advertise.TimeslotReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchTimeslot")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
@@ -1341,6 +1437,9 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_area", httpserver.AppHandler(addArea))
 	mux.Handle("/mod_area", httpserver.AppHandler(modArea))
 	mux.Handle("/get_area", httpserver.AppHandler(getArea))
+	mux.Handle("/add_timeslot", httpserver.AppHandler(addTimeslot))
+	mux.Handle("/mod_timeslot", httpserver.AppHandler(modTimeslot))
+	mux.Handle("/get_timeslot", httpserver.AppHandler(getTimeslot))
 	mux.Handle("/add_customer", httpserver.AppHandler(addCustomer))
 	mux.Handle("/mod_customer", httpserver.AppHandler(modCustomer))
 	mux.Handle("/get_customer", httpserver.AppHandler(getCustomer))
