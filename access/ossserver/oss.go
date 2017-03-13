@@ -1108,7 +1108,7 @@ func sendMipush(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	pushtype := req.GetParamInt("pushtype")
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "Push",
+	resp, rpcerr := httpserver.CallRPC(util.PushServerType, uid, "Push",
 		&push.PushRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &push.PushInfo{PushType: pushtype, Target: target, TermType: term,
