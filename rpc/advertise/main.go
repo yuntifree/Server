@@ -232,15 +232,15 @@ func (s *server) FetchCustomer(ctx context.Context, in *common.CommRequest) (*ad
 		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 
-func recordAdClick(db *gorm.DB, uid, id int64) {
-	db.Exec("INSERT INTO ad_click(uid, aid, ctime) VALUES(?, ?, NOW())", uid, id)
-	db.Exec("INSERT INTO ad_click_stat(aid, ctime, cnt) VALUES (?, CURDATE(), 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1", id)
-	db.Exec("UPDATE advertise SET click = click + 1 WHERE id = ?", id)
+func recordAdClick(db *gorm.DB, in *advertise.AdRequest) {
+	db.Exec("INSERT INTO ad_click(uid, aid, usermac, userip, apmac, ctime) VALUES(?, ?, ?, ?, NOW())", in.Head.Uid, in.Aid, in.Usermac, in.Userip, in.Apmac)
+	db.Exec("INSERT INTO ad_click_stat(aid, ctime, cnt) VALUES (?, CURDATE(), 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1", in.Aid)
+	db.Exec("UPDATE advertise SET click = click + 1 WHERE id = ?", in.Aid)
 }
 
-func (s *server) ClickAd(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+func (s *server) ClickAd(ctx context.Context, in *advertise.AdRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "advertise", "FetchCustomer")
-	recordAdClick(db, in.Head.Uid, in.Id)
+	recordAdClick(db, in)
 	util.PubRPCSuccRsp(w, "advertise", "FetchCustomer")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}}, nil

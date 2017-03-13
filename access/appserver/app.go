@@ -14,6 +14,7 @@ import (
 	"Server/aliyun"
 	"Server/httpserver"
 	"Server/pay"
+	"Server/proto/advertise"
 	"Server/proto/common"
 	"Server/proto/config"
 	"Server/proto/fetch"
@@ -537,12 +538,15 @@ func reportAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
+	usermac := req.GetParamString("wlanusermac")
+	userip := req.GetParamString("wlanuserip")
+	apmac := req.GetParamString("wlanapmac")
 	log.Printf("reportAdClick uid:%d id:%d ", uid, id)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ClickAd",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: id})
+		&advertise.AdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Aid: id, Usermac: usermac, Userip: userip, Apmac: apmac})
 	httpserver.CheckRPCErr(rpcerr, "ClickAd")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ClickAd")

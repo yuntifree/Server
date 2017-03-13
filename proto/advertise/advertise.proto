@@ -14,7 +14,7 @@ service Advertise{
     rpc AddUnit(UnitRequest) returns (common.CommReply) {}
     rpc ModUnit(UnitRequest) returns (common.CommReply) {}
     rpc FetchUnit(common.CommRequest) returns (UnitReply) {}
-    rpc ClickAd(common.CommRequest) returns (common.CommReply) {}
+    rpc ClickAd(AdRequest) returns (common.CommReply) {}
     rpc AddArea(AreaRequest) returns (common.CommReply) {}
     rpc ModArea(AreaRequest) returns (common.CommReply) {}
     rpc FetchArea(common.CommRequest) returns (AreaReply) {}
@@ -132,4 +132,10 @@ message TimeslotReply {
     int64 total = 3;
 }
 
-
+message AdRequest {
+    common.Head head = 1;
+    int64 aid = 2;
+    string usermac = 3;
+    string userip = 4;
+    string apmac = 5;
+}

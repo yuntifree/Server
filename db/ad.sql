@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS ad_click
     id     bigint unsigned NOT NULL AUTO_INCREMENT,
     uid    int unsigned NOT NULL,
     aid    int unsigned NOT NULL,
+    phone   varchar(16) NOT NULL,
+    usermac varchar(16) NOT NULL,
+    userip  varchar(16) NOT NULL,
+    apmac   varchar(16) NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(uid, aid)
