@@ -128,14 +128,18 @@ func (s *server) AddAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 		Head: &common.Head{Retcode: 0}, Id: id}, nil
 }
 
-func modAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) {
-	ad := locAdvertise(*info)
+func modAdvertise(db *gorm.DB, in *advertise.AdvertiseRequest) {
+	ad := locAdvertise(*in.Info)
+	if ad.Online == 1 {
+		ad.Puid = in.Head.Uid
+		ad.Ptime = time.Now().Format(util.TimeFormat)
+	}
 	db.Save(&ad)
 }
 
 func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "advertise", "ModAdvertise")
-	modAdvertise(db, in.Info)
+	modAdvertise(db, in)
 	util.PubRPCSuccRsp(w, "advertise", "ModAdvertise")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}}, nil
@@ -143,17 +147,27 @@ func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 
 func fetchAdvertise(db *gorm.DB, seq, num int64) []*advertise.AdvertiseInfo {
 	var infos []*advertise.AdvertiseInfo
-	var ads []locAdvertise
-	if seq == 0 {
-		db.Where("deleted = 0").Order("id desc").Limit(num).Find(&ads)
-	} else {
-		db.Where("deleted = 0 AND id < ?", seq).Order("id desc").Limit(num).Find(&ads)
+	query := "SELECT a.id, a.name, a.version, a.adid, a.areaid, a.tsid, a.abstract, a.img, a.content, a.online, c.name, ar.name, ts.name FROM advertise a, area ar, timeslot ts, customer c WHERE a.aid = c.id AND a.areaid = ar.id AND a.tsid = ts.id AND a.deleted = 0"
+	if seq != 0 {
+		query += fmt.Sprintf(" AND a.id < %d", seq)
 	}
-	if len(ads) > 0 {
-		for i := 0; i < len(ads); i++ {
-			info := advertise.AdvertiseInfo(ads[i])
-			infos = append(infos, &info)
+	query += fmt.Sprintf(" ORDER BY a.id DESC LIMIT %d", num)
+	rows, err := db.Raw(query).Rows()
+	if err != nil {
+		log.Printf("fetchAdvertise query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info advertise.AdvertiseInfo
+		err := rows.Scan(&info.ID, &info.Name, &info.Version, &info.Adid,
+			&info.Areaid, &info.Tsid, &info.Abstract, &info.Img, &info.Content,
+			&info.Online, &info.Adname, &info.Area, &info.Timeslot)
+		if err != nil {
+			log.Printf("fetchAdvertise scan failed:%v", err)
+			continue
 		}
+		infos = append(infos, &info)
 	}
 	return infos
 }

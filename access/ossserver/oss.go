@@ -884,7 +884,7 @@ func addTimeslot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "AddTimeslot",
 		&advertise.TimeslotRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &advertise.TimeslotInfo{Content: content,
+			Info: &advertise.TimeslotInfo{Name: content,
 				Start: start, End: end}})
 	httpserver.CheckRPCErr(rpcerr, "AddTimeslot")
 	res := resp.Interface().(*common.CommReply)
@@ -908,7 +908,7 @@ func modTimeslot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModTimeslot",
 		&advertise.TimeslotRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &advertise.TimeslotInfo{ID: id, Content: content,
+			Info: &advertise.TimeslotInfo{ID: id, Name: content,
 				Start: start, End: end, Deleted: deleted}})
 	httpserver.CheckRPCErr(rpcerr, "ModTimeslot")
 	res := resp.Interface().(*common.CommReply)

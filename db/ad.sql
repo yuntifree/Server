@@ -28,7 +28,10 @@ CREATE TABLE IF NOT EXISTS advertise
     content  varchar(512) NOT NULL,
     click   bigint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    puid    int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    ptime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
 
@@ -116,8 +119,8 @@ CREATE TABLE IF NOT EXISTS timeslot
 (
     id     bigint unsigned NOT NULL AUTO_INCREMENT,
     name    varchar(128) NOT NULL,
-    stime   varchar(32) NOT NULL,
-    etime   varchar(32) NOT NULL,
+    start   int unsigned NOT NULL,
+    end     int unsigned NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),

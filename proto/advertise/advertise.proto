@@ -61,6 +61,12 @@ message AdvertiseInfo{
     int64  tsid = 9;
     int64 deleted = 10;
     string ctime = 11;
+    int64 puid = 12;
+    string ptime = 13;
+    int64 online = 14;
+    string adname = 15;
+    string area =  16;
+    string timeslot = 17;
 }
 
 message AdvertiseRequest {
@@ -116,7 +122,7 @@ message AreaReply {
 
 message TimeslotInfo {
     int64 ID = 1;
-    string content = 2;
+    string Name = 2;
     int64 start = 3;
     int64 end = 4;
     int64 deleted = 5;
