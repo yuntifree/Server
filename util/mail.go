@@ -11,8 +11,7 @@ const (
 	smtpAddress = "smtp.yunxingzh.com"
 )
 
-//SendAlertMail send alert mail
-func SendAlertMail(content string) error {
+func sendMail(title, content string) error {
 	auth := smtp.PlainAuth(
 		"",
 		mailAddress,
@@ -21,8 +20,7 @@ func SendAlertMail(content string) error {
 	)
 	var mailList []string
 	mailList = append(mailList, mailAddress)
-	subject := "【告警邮件】"
-	sub := fmt.Sprintf("subject: %s\r\n\r\n", subject)
+	sub := fmt.Sprintf("subject: %s\r\n\r\n", title)
 
 	err := smtp.SendMail(
 		smtpAddress+":25",
@@ -32,4 +30,16 @@ func SendAlertMail(content string) error {
 		[]byte(sub+content),
 	)
 	return err
+}
+
+//SendAlertMail send alert mail
+func SendAlertMail(content string) error {
+	title := "【告警邮件】"
+	return sendMail(title, content)
+}
+
+//SendCronMail send cron mail
+func SendCronMail(content string) error {
+	title := "【定时任务】"
+	return sendMail(title, content)
 }

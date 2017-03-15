@@ -3,8 +3,10 @@ package main
 import (
 	"Server/util"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -40,5 +42,8 @@ func main() {
 	if err != nil {
 		log.Printf("insert failed:%v", err)
 	}
+	msg := fmt.Sprintf("%s user stat active:%d register:%d",
+		time.Now().Format(util.TimeFormat), active, register)
+	util.SendCronMail(msg)
 	return
 }
