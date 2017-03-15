@@ -2092,7 +2092,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	prefix := portalDst
 	var dst string
 	if isTestAcname(acname) || isTestUsermac(usermac) {
-		dst = "http://192.168.100.4:8080/login201703141425/" + postfix
+		dst = "http://192.168.100.4:8080/login201703151837/" + postfix
 	} else {
 		dir := getPortalDir()
 		dst = prefix + dir + postfix
