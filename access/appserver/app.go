@@ -2031,6 +2031,37 @@ func getPortalDir() string {
 	return res.Dir
 }
 
+var sshAcnames = []string{
+	"AC_SSH_A_05",
+}
+
+var testUsermacs = []string{
+	"F45C89987347",
+	"14F65A9F590C",
+	"0C51015B928B",
+	"20AB37909A39",
+	"60F81D405892",
+	"D065CA2F5BC6",
+}
+
+func isTestAcname(acname string) bool {
+	for i := 0; i < len(sshAcnames); i++ {
+		if sshAcnames[i] == acname {
+			return true
+		}
+	}
+	return false
+}
+
+func isTestUsermac(usermac string) bool {
+	for i := 0; i < len(testUsermacs); i++ {
+		if testUsermacs[i] == usermac {
+			return true
+		}
+	}
+	return false
+}
+
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
@@ -2054,16 +2085,15 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		path = r.RequestURI
 	}
 	prefix := portalDst
-	dir := getPortalDir()
-	dst := prefix + dir + postfix
-	if acname == "AC_SSH_A_05" ||
-		(usermac == "F45C89987347" || usermac == "14F65A9F590C" ||
-			usermac == "0C51015B928B" || usermac == "20AB37909A39" ||
-			usermac == "60F81D405892") {
+	var dst string
+	if isTestAcname(acname) || isTestUsermac(usermac) {
 		dst = "http://192.168.100.4:8080/login201703141425/" + postfix
+	} else {
+		dir := getPortalDir()
+		dst = prefix + dir + postfix
+		log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
 	}
 
-	log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
