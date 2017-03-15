@@ -605,7 +605,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	req.Init(r)
 	usermac := req.GetParamString("wlanusermac")
 	acname := req.GetParamString("wlanacname")
-	log.Printf("checkLogin usermac:%s", usermac)
+	log.Printf("checkLogin usermac:%s acname:%s", usermac, acname)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
@@ -2032,6 +2032,7 @@ func getPortalDir() string {
 }
 
 var sshAcnames = []string{
+	"AC_SSH_A_04",
 	"AC_SSH_A_05",
 }
 
@@ -2110,9 +2111,12 @@ func genNonce() string {
 	return string(res)
 }
 
-func printHead(w http.ResponseWriter, r *http.Request) {
-	headers := fmt.Sprintf("headers:%v", r.Header)
-	w.Write([]byte(headers))
+func printHead(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	log.Printf("printHead head:%v", r.Header)
+	req.WriteRsp(w, []byte(`{"errno":0}`))
+	return nil
 }
 
 func getJsapiSign(w http.ResponseWriter, r *http.Request) {
@@ -2260,7 +2264,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/correct_ap", httpserver.AppHandler(correctAp))
 	mux.HandleFunc("/jump", jump)
-	mux.HandleFunc("/test", printHead)
+	mux.Handle("/test", httpserver.AppHandler(printHead))
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
