@@ -2032,8 +2032,12 @@ func getPortalDir() string {
 }
 
 var sshAcnames = []string{
+	"AC_SSH_A_02",
+	"AC_SSH_A_03",
 	"AC_SSH_A_04",
 	"AC_SSH_A_05",
+	"AC_SSH_A_06",
+	"AC_SSH_A_07",
 }
 
 var testUsermacs = []string{
