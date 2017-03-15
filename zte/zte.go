@@ -56,14 +56,14 @@ func genReqbody(reqinfos map[string]interface{}) (string, error) {
 }
 
 //GetAPInfoList fetch ap info
-func GetAPInfoList(seq int) []APInfo {
-	infos := make([]APInfo, util.MaxListSize)
+func GetAPInfoList(seq int) []*APInfo {
+	var infos []*APInfo
 	url := baseurl + "/apInfoList"
 	data, err := genReqbody(map[string]interface{}{"seq": seq})
 	rspbody, err := util.HTTPRequest(url, string(data))
 	if err != nil {
 		log.Printf("HTTPRequest failed:%v", err)
-		return infos[:0]
+		return infos
 	}
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
@@ -71,13 +71,13 @@ func GetAPInfoList(seq int) []APInfo {
 	retcode, err := js.Get("retcode").Int()
 	if err != nil {
 		log.Printf("get retcode failed:%v", err)
-		return infos[:0]
+		return infos
 	}
 
 	if retcode != 0 {
 		errmsg, _ := js.Get("errmsg").String()
 		log.Printf("get ap info failed:%s", errmsg)
-		return infos[:0]
+		return infos
 	}
 
 	arr, err := js.Get("data").Get("infos").Array()
@@ -90,10 +90,10 @@ func GetAPInfoList(seq int) []APInfo {
 		info.Address, _ = tmp.Get("address").String()
 		info.Mac, _ = tmp.Get("apmac").String()
 		log.Printf("get %d %f %f %s %s", info.Aid, info.Longitude, info.Latitude, info.Address, info.Mac)
-		infos[i] = info
+		infos = append(infos, &info)
 	}
 
-	return infos[:len(arr)]
+	return infos
 }
 
 //GetRealTimeInfo get realtime info
@@ -171,15 +171,15 @@ func GetAPStat(aid int, start string, end string) (count int, traffic string) {
 }
 
 //GetOnlineRecords get user online records
-func GetOnlineRecords(username, start, end string) []OnlineRecord {
-	records := make([]OnlineRecord, util.MaxListSize)
+func GetOnlineRecords(username, start, end string) []*OnlineRecord {
+	var infos []*OnlineRecord
 	data, err := genReqbody(map[string]interface{}{"username": username, "start": start, "end": end})
 
 	url := baseurl + "/onlineRecord"
 	rspbody, err := util.HTTPRequest(url, string(data))
 	if err != nil {
 		log.Printf("HTTPRequest failed:%v", err)
-		return records[:0]
+		return infos
 	}
 
 	js, _ := simplejson.NewJson([]byte(`{}`))
@@ -187,13 +187,13 @@ func GetOnlineRecords(username, start, end string) []OnlineRecord {
 	retcode, err := js.Get("retcode").Int()
 	if err != nil {
 		log.Printf("get retcode failed:%v", err)
-		return records[:0]
+		return infos
 	}
 
 	if retcode != 0 {
 		errmsg, _ := js.Get("errmsg").String()
 		log.Printf("get ap info failed:%s", errmsg)
-		return records[:0]
+		return infos
 	}
 
 	arr, _ := js.Get("data").Get("infos").Array()
@@ -205,8 +205,8 @@ func GetOnlineRecords(username, start, end string) []OnlineRecord {
 		rec.Start, _ = tmp.Get("start").String()
 		rec.End, _ = tmp.Get("end").String()
 		rec.Traffic, _ = tmp.Get("traffic").String()
-		records[i] = rec
+		infos = append(infos, &rec)
 	}
 
-	return records[:i]
+	return infos
 }
