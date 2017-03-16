@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	homeNewsNum     = 6
+	homeNewsNum     = 10
 	saveRate        = 0.1 / (1024.0 * 1024.0)
 	marqueeInterval = 30
 	weatherDst      = "http://www.dg121.com/mobile"
@@ -334,7 +334,9 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 	}
 
 	infos := getNews(db, 0, homeNewsNum, 10)
-	infos = append(infos[:0], infos[1], infos[3], infos[5])
+	if len(infos) >= 9 {
+		infos = append(infos[:0], infos[1], infos[3], infos[5], infos[7], infos[8])
+	}
 	notice := getNotice(db)
 	util.PubRPCSuccRsp(w, "hot", "GetWeatherNews")
 	return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 0},
