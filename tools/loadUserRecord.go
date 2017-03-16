@@ -39,7 +39,8 @@ func main() {
 		os.Exit(1)
 	}
 	table := genTableName()
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS ? LIKE user_record", table)
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s LIKE user_record", table)
+	_, err = db.Exec(query)
 	if err != nil {
 		log.Printf("create table failed:%v", err)
 		os.Exit(1)
@@ -67,8 +68,8 @@ func main() {
 			total := 0
 			for i := 0; i < len(records); i++ {
 				traffic, _ := strconv.Atoi(records[i].Traffic)
-				_, err := db.Exec("INSERT INTO ?(uid, aid, stime, etime, traffic) VALUES (?, ?, ?, ?,?)",
-					table, uid, records[i].Aid, records[i].Start, records[i].End, traffic)
+				_, err := db.Exec("INSERT INTO "+table+"(uid, aid, stime, etime, traffic) VALUES (?, ?, ?, ?,?)",
+					uid, records[i].Aid, records[i].Start, records[i].End, traffic)
 				if err != nil {
 					log.Printf("insert failed:%v", err)
 					continue
