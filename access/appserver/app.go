@@ -1456,8 +1456,10 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	acip := req.GetParamString("wlanacip")
 	userip := req.GetParamString("wlanuserip")
 	usermac := req.GetParamString("wlanusermac")
-	log.Printf("portalLogin phone:%s code:%s acname:%s acip:%s userip:%s usermac:%s",
-		phone, code, acname, acip, userip, usermac)
+	apmac := req.GetParamStringDef("wlanapmac", "")
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	log.Printf("portalLogin phone:%s code:%s acname:%s acip:%s userip:%s usermac:%s apmac:%s",
+		phone, code, acname, acip, userip, usermac, apmac)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
@@ -1465,7 +1467,7 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{
 				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip,
-				Phone: phone, Code: code}})
+				Phone: phone, Code: code, Apmac: apmac}})
 	httpserver.CheckRPCErrCallback(rpcerr, "PortalLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
 	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "PortalLogin", req.Callback)
@@ -1485,15 +1487,18 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	acip := req.GetParamString("wlanacip")
 	userip := req.GetParamString("wlanuserip")
 	usermac := req.GetParamString("wlanusermac")
-	log.Printf("oneClickLogin acname:%s acip:%s userip:%s usermac:%s",
-		acname, acip, userip, usermac)
+	apmac := req.GetParamStringDef("wlanapmac", "")
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	log.Printf("oneClickLogin acname:%s acip:%s userip:%s usermac:%s apmac:%s",
+		acname, acip, userip, usermac, apmac)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
 		0, "OneClickLogin", req.Callback,
 		&verify.AccessRequest{Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{
-				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip}})
+				Acname: acname, Acip: acip, Usermac: usermac,
+				Userip: userip, Apmac: apmac}})
 	httpserver.CheckRPCErrCallback(rpcerr, "OneClickLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
 	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "OneClickLogin",
