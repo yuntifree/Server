@@ -824,23 +824,9 @@ func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 	if flag {
 		return true
 	}
-	log.Printf("zteLogin loginnopass failed, to retry phone:%s stype:%d",
+	log.Printf("PortalLogin zte loginnopass failed, phone:%s stype:%d",
 		phone, stype)
-	rflag := false
-	for i := 0; i < 1; i++ {
-		time.Sleep(500 * time.Millisecond)
-		log.Printf("PortalLogin retry loginnopass times:%d phone:%s stype:%d",
-			i, phone, stype)
-		rflag = zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
-		if rflag {
-			return true
-		}
-	}
-	if !rflag {
-		log.Printf("PortalLogin zte loginnopass retry failed, phone:%s stype:%d",
-			phone, stype)
-	}
-	return rflag
+	return flag
 }
 
 func refreshActiveTime(db *sql.DB, uid int64) {
