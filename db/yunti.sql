@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS ap_info (
     address     varchar(256) NOT NULL,
     unit        varchar(256) NOT NULL,
     mac         varchar(32) NOT NULL,
+    unid        int unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(id),
     UNIQUE KEY(mac)
 ) ENGINE = InnoDB;
