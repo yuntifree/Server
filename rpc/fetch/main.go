@@ -203,8 +203,6 @@ func getReviewNews(db *sql.DB, seq, num, ctype, stype int64, search string) []*f
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%s title:%s ctime:%s source:%s ", info.Id, info.Title,
-			info.Ctime, info.Source)
 		if ctype == 1 {
 			info.Tag = getNewsTag(db, info.Id)
 		}
@@ -245,7 +243,6 @@ func getTags(db *sql.DB, seq, num int64) []*fetch.TagInfo {
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%s content:%s ", info.Id, info.Content)
 	}
 	return infos
 }
@@ -456,8 +453,6 @@ func getUsers(db *sql.DB, seq, num int64) []*fetch.UserInfo {
 			}
 		}
 		infos = append(infos, &info)
-		log.Printf("uid:%d phone:%s udid:%s active:%s remark:%s", info.Id,
-			info.Phone, info.Imei, info.Active, info.Remark)
 	}
 	return infos
 }
@@ -494,7 +489,6 @@ func getTemplates(db *sql.DB, seq, num int64) []*fetch.TemplateInfo {
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%d title:%s Online:%d ", info.Id, info.Title, info.Online)
 	}
 	return infos
 }
@@ -537,7 +531,6 @@ func getVideos(db *sql.DB, seq, num, ctype int64, search string) []*fetch.VideoI
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%d title:%s dst:%s ", info.Id, info.Title, info.Dst)
 	}
 	return infos
 }
@@ -576,8 +569,6 @@ func getBanners(db *sql.DB, seq, btype, num int64) []*common.BannerInfo {
 			return infos
 		}
 		infos = append(infos, &info)
-		log.Printf("id:%d img:%s dst:%s Online:%d priority:%d\n", info.Id,
-			info.Img, info.Dst, info.Online, info.Priority)
 	}
 	return infos
 }
@@ -840,7 +831,6 @@ func (s *server) FetchActivity(ctx context.Context, in *common.CommRequest) (*fe
 		log.Printf("FetchActivity query failed uid:%d, %v", in.Head.Uid, err)
 		return &fetch.ActivityReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	log.Printf("title:%s dst:%s", info.Title, info.Dst)
 	util.PubRPCSuccRsp(w, "fetch", "FetchActivity")
 	return &fetch.ActivityReply{
 		Head:     &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
