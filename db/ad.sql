@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS unit
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
-    UNIQUE KEY(name)
+    KEY(name),
+    UNIQUE KEY(longitude, latitude)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS area
@@ -126,3 +127,4 @@ CREATE TABLE IF NOT EXISTS timeslot
     PRIMARY KEY(id),
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
+
