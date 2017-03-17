@@ -665,11 +665,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
+	adtype := getAdType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Live: live}, nil
+		Live: live, Adtype: adtype}, nil
 }
 
 func getPortalDir(db *sql.DB) string {
@@ -766,6 +767,58 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
 }
 
+func getApUnit(db *sql.DB, apmac string) int64 {
+	if apmac == "" {
+		return 0
+	}
+	var unit int64
+	err := db.QueryRow("SELECT unit FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
+	if err != nil {
+		log.Printf("getApUnit query failed:%v", err)
+	}
+	return unit
+}
+
+func getUnitArea(db *sql.DB, unit int64) int64 {
+	if unit == 0 {
+		return 0
+	}
+	var area int64
+	err := db.QueryRow("SELECT aid FROM area_unit WHERE unid = ?", unit).Scan(&area)
+	if err != nil {
+		log.Printf("getUnitArea query failed:%v", err)
+	}
+	return area
+}
+
+func getAreaAd(db *sql.DB, area int64) int64 {
+	if area == 0 {
+		return 0
+	}
+	var aid int64
+	var start, end int
+	err := db.QueryRow("SELECT a.id, ts.start, ts.end FROM advertise a, timeslot ts WHERE a.tsid = ts.id AND a.areaid = ?", area).Scan(&aid, start, end)
+	if err != nil {
+		log.Printf("getAreaAd query failed:%v", err)
+		return aid
+	}
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	ts := hour*100 + min
+	if ts >= start && ts <= end {
+		return aid
+	}
+	return 0
+}
+
+func getAdType(db *sql.DB, apmac string) int64 {
+	unit := getApUnit(db, apmac)
+	area := getUnitArea(db, unit)
+	adtype := getAreaAd(db, area)
+	return adtype
+}
+
 func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 	flag := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
 	if flag {
@@ -854,11 +907,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	dir := getPortalDir(db)
 	live := getLiveVal(db, uid)
+	adtype := getAdType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Live: live}, nil
+		Live: live, Adtype: adtype}, nil
 }
 
 func getLiveVal(db *sql.DB, uid int64) string {

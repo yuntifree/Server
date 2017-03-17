@@ -59,6 +59,7 @@ message PortalLoginReply {
     string token = 2;
     string portaldir = 3;
     string live = 4;
+    int64 adtype = 5;
 }
 
 message VerifyReply {
