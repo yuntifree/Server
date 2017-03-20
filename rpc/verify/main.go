@@ -253,7 +253,9 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*verify.RegisterReply, error) {
 	util.PubRPCRequest(w, "verify", "Register")
 	log.Printf("Register request:%v", in)
-	if in.Code != "" && !checkZteCode(db, in.Username, in.Code, zte.SshType) {
+	sshFlag := checkZteCode(db, in.Username, in.Code, zte.SshType)
+	wjjFlag := checkZteCode(db, in.Username, in.Code, zte.WjjType)
+	if in.Code != "" && !sshFlag && !wjjFlag {
 		log.Printf("Register check code failed, name:%s code:%s",
 			in.Username, in.Code)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
@@ -262,17 +264,24 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	privdata := util.GenSalt()
 	salt := util.GenSalt()
 	epass := util.GenSaltPasswd(in.Password, salt)
+	bitmap := 0
+	if sshFlag {
+		bitmap++
+	}
+	if wjjFlag {
+		bitmap += 2
+	}
 	var expire int64
 	log.Printf("phone:%s token:%s privdata:%s salt:%s epass:%s\n",
 		in.Username, token, privdata, salt, epass)
 	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, 
 	token, private, model, udid,
-	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime) VALUES
+	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime, bitmap) VALUES
 	(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
-	DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+	DATE_ADD(NOW(), INTERVAL 30 DAY), ?)`,
 		in.Username, epass, salt, token, privdata, in.Client.Model,
 		in.Client.Udid, in.Client.Channel, in.Client.Regip,
-		in.Client.Version, in.Client.Term, in.Code)
+		in.Client.Version, in.Client.Term, in.Code, bitmap)
 	if err != nil {
 		log.Printf("add user failed:%v", err)
 		return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
@@ -294,9 +303,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 		log.Printf("scan uid:%d \n", uid)
-		_, err := db.Exec("UPDATE user SET password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW() WHERE uid = ?",
+		_, err := db.Exec("UPDATE user SET password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW(), bitmap = bitmap | ? WHERE uid = ?",
 			epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version,
-			in.Client.Term, uid)
+			in.Client.Term, bitmap, uid)
 		if err != nil {
 			log.Printf("update user info failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
