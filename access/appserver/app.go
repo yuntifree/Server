@@ -2105,10 +2105,8 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	prefix := portalDst
 	var dst string
-	if acname == "AC_SSH_A_06" {
+	if isTestAcname(acname) || isTestUsermac(usermac) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
-	} else if isTestAcname(acname) || isTestUsermac(usermac) {
-		dst = "http://192.168.100.4:8080/login201703161903/" + postfix
 	} else {
 		dir := getPortalDir()
 		dst = prefix + dir + postfix
