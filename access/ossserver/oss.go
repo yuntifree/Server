@@ -448,13 +448,14 @@ func addBanner(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	btype := req.GetParamInt("type")
 	title := req.GetParamStringDef("title", "")
 	expire := req.GetParamStringDef("expire", "")
+	dbg := req.GetParamIntDef("dbg", 0)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "AddBanner",
 		&modify.BannerRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.BannerInfo{Img: img, Dst: dst, Priority: priority,
-				Title: title, Type: btype, Expire: expire}})
+				Title: title, Type: btype, Expire: expire, Dbg: dbg}})
 	httpserver.CheckRPCErr(rpcerr, "AddBanner")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddBanner")

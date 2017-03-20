@@ -228,9 +228,9 @@ func (s *server) FinImage(ctx context.Context, in *modify.ImageRequest) (*common
 }
 
 func (s *server) AddBanner(ctx context.Context, in *modify.BannerRequest) (*common.CommReply, error) {
-	res, err := db.Exec("INSERT INTO banner(img, dst, priority, title, type, ctime, etime) VALUES(?, ?, ?, ?, ?, NOW(), ?)",
+	res, err := db.Exec("INSERT INTO banner(img, dst, priority, title, type, ctime, etime, dbg) VALUES(?, ?, ?, ?, ?, NOW(), ?, ?)",
 		in.Info.Img, in.Info.Dst, in.Info.Priority, in.Info.Title, in.Info.Type,
-		in.Info.Expire)
+		in.Info.Expire, in.Info.Dbg)
 	if err != nil {
 		log.Printf("insert into banner failed img:%s dst:%s err:%v\n",
 			in.Info.Img, in.Info.Dst, err)
