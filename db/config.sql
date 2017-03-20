@@ -92,3 +92,15 @@ CREATE TABLE IF NOT EXISTS hospital_info
     PRIMARY KEY(id),
     KEY(hid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE education_video
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    dst     varchar(128) NOT NULL,
+    click   int unsigned NOT NULL DEFAULT 0,
+    priority    int unsigned NOT NULL,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
