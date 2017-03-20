@@ -674,11 +674,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
 	adtype := getAdType(db, in.Info.Apmac)
+	ptype := getPortalType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Adtype: adtype}, nil
+		Portaltype: ptype, Adtype: adtype}, nil
 }
 
 func getPortalDir(db *sql.DB) string {
@@ -827,6 +828,22 @@ func getAdType(db *sql.DB, apmac string) int64 {
 	return adtype
 }
 
+func getUnitPortal(db *sql.DB, unit int64) int64 {
+	var ptype int64
+	err := db.QueryRow("SELECT id FROM custom_portal WHERE unid = ?", unit).
+		Scan(&ptype)
+	if err != nil {
+		log.Printf("getUnitPortal query failed:%v", err)
+	}
+	return ptype
+}
+
+func getPortalType(db *sql.DB, apmac string) int64 {
+	unit := getApUnit(db, apmac)
+	ptype := getUnitPortal(db, unit)
+	return ptype
+}
+
 func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
 	flag := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
 	if flag {
@@ -901,11 +918,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	dir := getPortalDir(db)
 	adtype := getAdType(db, in.Info.Apmac)
+	ptype := getPortalType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Adtype: adtype}, nil
+		Portaltype: ptype, Adtype: adtype}, nil
 }
 
 func getLiveVal(db *sql.DB, uid int64) string {
