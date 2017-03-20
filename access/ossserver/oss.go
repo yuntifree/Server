@@ -26,7 +26,7 @@ import (
 var roleConf *simplejson.Json
 
 func initRoleConf() {
-	file, err := os.Open("role.json")
+	file, err := os.Open("/data/server/role.json")
 	if err != nil {
 		log.Fatal("open role.json failed:%v", err)
 	}
