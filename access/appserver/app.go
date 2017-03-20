@@ -2115,6 +2115,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
 	log.Printf("portal dst:%s", dst)
+	w.Header().Set("Cache-Control", "no-cache")
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
