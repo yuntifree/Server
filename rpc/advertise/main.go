@@ -115,9 +115,16 @@ func (s *server) FetchUnit(ctx context.Context, in *common.CommRequest) (*advert
 
 func addAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) int64 {
 	ad := locAdvertise(*info)
-	ad.Ctime = time.Now().Format(util.TimeFormat)
-	db.Create(&ad)
-	return ad.ID
+	gdb := db.DB()
+	res, err := gdb.Exec("INSERT INTO advertise(name, version, adid, areaid, tsid, abstract, img, content, ctime) values (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+		ad.Name, ad.Version, ad.Adid, ad.Areaid, ad.Tsid, ad.Abstract,
+		ad.Img, ad.Content)
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("addAdvertise get id failed:%v", err)
+		return 0
+	}
+	return id
 }
 
 func (s *server) AddAdvertise(ctx context.Context, in *advertise.AdvertiseRequest) (*common.CommReply, error) {
