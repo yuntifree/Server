@@ -664,13 +664,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
-	live := getLiveVal(db, uid)
 	adtype := getAdType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Live: live, Adtype: adtype}, nil
+		Adtype: adtype}, nil
 }
 
 func getPortalDir(db *sql.DB) string {
@@ -772,7 +771,7 @@ func getApUnit(db *sql.DB, apmac string) int64 {
 		return 0
 	}
 	var unit int64
-	err := db.QueryRow("SELECT unit FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
+	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
 	if err != nil {
 		log.Printf("getApUnit query failed:%v", err)
 	}
@@ -892,13 +891,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	dir := getPortalDir(db)
-	live := getLiveVal(db, uid)
 	adtype := getAdType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Live: live, Adtype: adtype}, nil
+		Adtype: adtype}, nil
 }
 
 func getLiveVal(db *sql.DB, uid int64) string {
