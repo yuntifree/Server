@@ -60,6 +60,7 @@ message PortalLoginReply {
     string portaldir = 3;
     string live = 4;
     int64 adtype = 5;
+    int64 portaltype = 6;
 }
 
 message VerifyReply {
