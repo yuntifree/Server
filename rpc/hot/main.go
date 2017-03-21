@@ -187,10 +187,24 @@ func calcJokeSeq() int64 {
 	return (time.Now().Unix() - jokeTime) / hourSeconds * 100
 }
 
+func getAdvertise(db *sql.DB, adtype int64) *hot.HotsInfo {
+	var info hot.HotsInfo
+	var img string
+	err := db.QueryRow("SELECT name, img, dst FROM advertise WHERE id = ?", adtype).Scan(&info.Title, &img, &info.Dst)
+	if err != nil {
+		log.Printf("getAdvertise query failed:%v", err)
+		return nil
+	}
+	info.Images = append(info.Images, img)
+	info.Stype = 1
+	return &info
+}
+
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
 	util.PubRPCRequest(w, "hot", "GetHots")
-	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d term:%d version:%d",
-		in.Head.Uid, in.Head.Sid, in.Type, in.Seq, in.Head.Term, in.Head.Version)
+	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d term:%d version:%d subtype:%d",
+		in.Head.Uid, in.Head.Sid, in.Type, in.Seq, in.Head.Term, in.Head.Version,
+		in.Subtype)
 	var infos []*hot.HotsInfo
 	if in.Type == typeHotNews {
 		if util.CheckTermVersion(in.Head.Term, in.Head.Version) {
@@ -198,6 +212,13 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 			if in.Seq == 0 {
 				max := getMaxNewsSeq(db)
 				tops := getTopNews(db, 0)
+				if in.Subtype != 0 {
+					ad := getAdvertise(db, in.Subtype)
+					log.Printf("ad:%v", ad)
+					if ad != nil {
+						tops = append(tops, ad)
+					}
+				}
 				for i := 0; i < len(tops); i++ {
 					tops[i].Seq += max
 				}
