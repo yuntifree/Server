@@ -2099,12 +2099,8 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	log.Printf("acname:%s usermac:%s", acname, usermac)
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
-	var path string
 	if pos != -1 {
 		postfix = r.RequestURI[pos:]
-		path = r.RequestURI[0:pos]
-	} else {
-		path = r.RequestURI
 	}
 	prefix := portalDst
 	var dst string
@@ -2113,7 +2109,6 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	} else {
 		dir := getPortalDir()
 		dst = prefix + dir + postfix
-		log.Printf("path:%s prefix:%s dir:%s", path, prefix, dir)
 	}
 
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
