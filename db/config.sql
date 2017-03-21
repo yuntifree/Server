@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS hospital_info
     KEY(hid)
 ) ENGINE = InnoDB;
 
-CREATE TABLE education_video
+CREATE TABLE IF NOT EXISTS education_video
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     title   varchar(256) NOT NULL,
@@ -103,4 +103,17 @@ CREATE TABLE education_video
     deleted     tinyint unsigned NOT NULL DEFAULT 0,
     ctime       datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS custom_portal
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- unid ap unit
+    unid    int unsigned NOT NULL,
+    -- type 0:医院 
+    type    int unsigned NOT NULL DEFAULT 0,
+    tid     int unsigned NOT NULL DEFAULT 0,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY kEY(id)
 ) ENGINE = InnoDB;
