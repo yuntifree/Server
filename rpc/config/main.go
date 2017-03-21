@@ -158,11 +158,36 @@ func getHospital(db *sql.DB, hid int64) []*config.MediaInfo {
 	return infos
 }
 
+func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT img, dst FROM advertise WHERE id = ?", adtype)
+	if err != nil {
+		log.Printf("getAdvertiseBanner query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst)
+		if err != nil {
+			log.Printf("getAdvertiseBanner scan failed:%v", err)
+			continue
+		}
+		info.Type = 1
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
 	log.Printf("GetPortalConf uid:%d type:%d", in.Head.Uid, in.Type)
 	if in.Type == 0 {
 		banners := getBanners(db, false)
+		if in.Subtype != 0 {
+			ads := getAdvertiseBanner(db, in.Subtype)
+			banners = append(ads, banners...)
+		}
 		urbanservices := getUrbanServices(db, in.Head.Term)
 		services := getPortalService(db, in.Type)
 		util.PubRPCSuccRsp(w, "config", "GetPortalMenu")
