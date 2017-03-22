@@ -1971,7 +1971,8 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s&openid=%s", echostr[0], res.Head.Uid, res.Token, res.Privdata, res.Openid)
+	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s&open=%s", echostr[0],
+		res.Head.Uid, res.Token, res.Privdata, res.Openid)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
@@ -2072,6 +2073,22 @@ var sshAcnames = []string{
 	"AC-SSH-02-11",
 }
 
+var wjjAcnames = []string{
+	"AC_120_A_01",
+	"AC_120_A_02",
+	"AC_120_A_03",
+	"AC_120_A_04",
+	"AC_120_A_05",
+	"AC_120_A_06",
+	"AC_120_A_07",
+	"AC_120_A_08",
+	"AC_120_A_09",
+	"AC_120_A_10",
+	"TRX1",
+	"TRX2",
+	"TRX3",
+}
+
 var testUsermacs = []string{
 	"F45C89987347",
 	"14F65A9F590C",
@@ -2081,9 +2098,18 @@ var testUsermacs = []string{
 	"D065CA2F5BC6",
 }
 
-func isTestAcname(acname string) bool {
+func isSshAcname(acname string) bool {
 	for i := 0; i < len(sshAcnames); i++ {
 		if sshAcnames[i] == acname {
+			return true
+		}
+	}
+	return false
+}
+
+func isWjjAcname(acname string) bool {
+	for i := 0; i < len(wjjAcnames); i++ {
+		if wjjAcnames[i] == acname {
 			return true
 		}
 	}
@@ -2119,7 +2145,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	prefix := portalDst
 	var dst string
-	if isTestAcname(acname) || isTestUsermac(usermac) {
+	if isSshAcname(acname) || isTestUsermac(usermac) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
 	} else {
 		dir := getPortalDir()
