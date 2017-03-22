@@ -101,7 +101,7 @@ func getOnlineService(db *sql.DB) []*config.PortalService {
 
 func getHospitalInfos(db *sql.DB, hid, stype int64) []*config.MediaInfo {
 	var items []*config.MediaInfo
-	rows, err := db.Query("SELECT id, img, dst, title FROM hospital_info WHERE deleted = 0 AND hid = ? AND type = ? ORDER BY priority DESC", hid, stype)
+	rows, err := db.Query("SELECT id, img, dst, title, routername FROM hospital_info WHERE deleted = 0 AND hid = ? AND type = ? ORDER BY priority DESC", hid, stype)
 	if err != nil {
 		log.Printf("getHospitalInfos query failed:%v", err)
 		return items
@@ -110,7 +110,8 @@ func getHospitalInfos(db *sql.DB, hid, stype int64) []*config.MediaInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var item config.MediaInfo
-		err := rows.Scan(&item.Id, &item.Img, &item.Dst, &item.Title)
+		err := rows.Scan(&item.Id, &item.Img, &item.Dst, &item.Title,
+			&item.Routername)
 		if err != nil {
 			log.Printf("getHospitalInfos scan failed:%v", err)
 			continue
@@ -181,7 +182,8 @@ func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
 
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
-	log.Printf("GetPortalConf uid:%d type:%d", in.Head.Uid, in.Type)
+	log.Printf("GetPortalConf uid:%d type:%d subtype:%d", in.Head.Uid, in.Type,
+		in.Subtype)
 	if in.Type == 0 {
 		banners := getBanners(db, false)
 		if in.Subtype != 0 {
