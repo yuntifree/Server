@@ -781,7 +781,7 @@ func getApUnit(db *sql.DB, apmac string) int64 {
 	}
 	var unit int64
 	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getApUnit query failed:%v", err)
 	}
 	return unit
@@ -793,7 +793,7 @@ func getUnitArea(db *sql.DB, unit int64) int64 {
 	}
 	var area int64
 	err := db.QueryRow("SELECT aid FROM area_unit WHERE unid = ?", unit).Scan(&area)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getUnitArea query failed:%v", err)
 	}
 	return area
@@ -806,7 +806,7 @@ func getAreaAd(db *sql.DB, area int64) int64 {
 	var aid int64
 	var start, end int
 	err := db.QueryRow("SELECT a.id, ts.start, ts.end FROM advertise a, timeslot ts WHERE a.tsid = ts.id AND a.areaid = ?", area).Scan(&aid, start, end)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getAreaAd query failed:%v", err)
 		return aid
 	}
@@ -831,7 +831,7 @@ func getUnitPortal(db *sql.DB, unit int64) int64 {
 	var ptype int64
 	err := db.QueryRow("SELECT id FROM custom_portal WHERE unid = ?", unit).
 		Scan(&ptype)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getUnitPortal query failed:%v", err)
 	}
 	return ptype
