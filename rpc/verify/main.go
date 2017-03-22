@@ -823,8 +823,7 @@ func getAreaAd(db *sql.DB, area int64) int64 {
 func getAdType(db *sql.DB, apmac string) int64 {
 	unit := getApUnit(db, apmac)
 	area := getUnitArea(db, unit)
-	adtype := getAreaAd(db, area)
-	return adtype
+	return area
 }
 
 func getUnitPortal(db *sql.DB, unit int64) int64 {

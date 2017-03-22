@@ -190,7 +190,7 @@ func calcJokeSeq() int64 {
 func getAdvertise(db *sql.DB, adtype int64) *hot.HotsInfo {
 	var info hot.HotsInfo
 	var img string
-	err := db.QueryRow("SELECT name, img, dst FROM advertise WHERE id = ?", adtype).Scan(&info.Title, &img, &info.Dst)
+	err := db.QueryRow("SELECT name, img, dst FROM advertise WHERE areaid = ? AND type = 1", adtype).Scan(&info.Title, &img, &info.Dst)
 	if err != nil {
 		log.Printf("getAdvertise query failed:%v", err)
 		return nil
