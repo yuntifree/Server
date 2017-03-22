@@ -748,10 +748,9 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	recordPortalMac(db, mac)
 	var phone string
 	var uid int64
-	err := db.QueryRow("SELECT phone, uid FROM user_mac WHERE etime > NOW() AND mac = ?", mac).
+	err := db.QueryRow("SELECT phone, uid FROM user_mac WHERE mac = ?", mac).
 		Scan(&phone, &uid)
 	if err != nil {
-		log.Printf("checkLoginMac failed, mac:%s %v", err)
 		return 0
 	}
 	if phone != "" {
@@ -770,7 +769,7 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
-	log.Printf("CheckLogin ret:%d", ret)
+	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
