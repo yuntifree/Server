@@ -1377,7 +1377,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	seq := req.GetParamInt("seq")
 	adtype := req.GetParamIntDef("adtype", 0)
 	log.Printf("uid:%d ctype:%d seq:%d term:%d version:%d\n", uid, ctype, seq, term, version)
-	if seq == 0 && adtype != 0 {
+	if seq == 0 && adtype == 0 {
 		flag := util.CheckTermVersion(term, version)
 		key := genSsdbKey(ctype, flag)
 		log.Printf("key:%s", key)
@@ -1416,7 +1416,7 @@ func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
-	if seq == 0 && adtype != 0 {
+	if seq == 0 && adtype == 0 {
 		flag := util.CheckTermVersion(term, version)
 		key := genSsdbKey(ctype, flag)
 		data := js.Get("data")
