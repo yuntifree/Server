@@ -204,7 +204,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 		}
 	}
 
-	recordWxOpenid(db, uid, 0, wxi.Openid)
+	recordWxOpenid(db, uid, 1, wxi.Openid)
 	recordWxUnionid(db, uid, privdata)
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
@@ -212,7 +212,7 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	util.PubRPCSuccRsp(w, "verify", "WxMpLogin")
 	return &verify.LoginReply{Head: &common.Head{Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
-		Expiretime: strTime, Wifipass: wifipass}, nil
+		Expiretime: strTime, Wifipass: wifipass, Openid: wxi.Openid}, nil
 }
 
 func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {

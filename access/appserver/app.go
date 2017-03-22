@@ -1971,7 +1971,22 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s", echostr[0], res.Head.Uid, res.Token, res.Privdata)
+	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s&openid=%s", echostr[0], res.Head.Uid, res.Token, res.Privdata, res.Openid)
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
+func jumpOnline(w http.ResponseWriter, r *http.Request) {
+	httpserver.ReportRequest(r.RequestURI)
+	r.ParseForm()
+	file := r.Form["echofile"]
+	var echostr string
+	if len(file) > 0 {
+		echostr = file[0]
+		echostr = wxHost + echostr
+	}
+	redirect := wxHost + "wx_mp_login"
+	redirect += "?echostr=" + echostr
+	dst := util.GenRedirectURL(redirect)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
@@ -2281,6 +2296,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/correct_ap", httpserver.AppHandler(correctAp))
 	mux.HandleFunc("/jump", jump)
+	mux.HandleFunc("/jump_online", jumpOnline)
 	mux.Handle("/test", httpserver.AppHandler(printHead))
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

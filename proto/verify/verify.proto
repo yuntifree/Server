@@ -52,6 +52,7 @@ message LoginReply {
     string wifipass = 5;
     string expiretime = 6;
     int64 role = 7;
+    string openid = 8;
 }
 
 message PortalLoginReply {
