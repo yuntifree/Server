@@ -106,6 +106,16 @@ func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
 	return queryNews(db, query)
 }
 
+func getHospitalNews(db *sql.DB, seq, num, hid int64) []*hot.HotsInfo {
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM hospital_news WHERE deleted = 0 AND top = 0 AND hid = " +
+		strconv.Itoa(int(hid))
+	if seq != 0 {
+		query += " AND id < " + strconv.Itoa(int(seq))
+	}
+	query += " ORDER BY id DESC LIMIT " + strconv.Itoa(int(num))
+	return queryNews(db, query)
+}
+
 func getTopNews(db *sql.DB, newsType int64) []*hot.HotsInfo {
 	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND top = 1 AND stype = " +
 		strconv.Itoa(int(newsType))
@@ -198,6 +208,14 @@ func getAdvertise(db *sql.DB, adtype int64) *hot.HotsInfo {
 	info.Images = append(info.Images, img)
 	info.Stype = 1
 	return &info
+}
+func (s *server) GetHospitalNews(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
+	util.PubRPCRequest(w, "hot", "GetHospitalNews")
+	infos := getHospitalNews(db, in.Seq, util.MaxListSize, in.Type)
+	util.PubRPCSuccRsp(w, "hot", "GetHospitalNews")
+	return &hot.HotsReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos}, nil
 }
 
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {

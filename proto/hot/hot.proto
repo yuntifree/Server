@@ -15,6 +15,7 @@ service Hot {
     rpc GetDetail(DetailRequest) returns (DetailReply) {}
     rpc GetLive(common.CommRequest) returns (LiveReply) {}
     rpc GetJoke(common.CommRequest) returns (JokeReply) {}
+    rpc GetHospitalNews(common.CommRequest) returns (HotsReply) {}
 }
 
 message HotsInfo {

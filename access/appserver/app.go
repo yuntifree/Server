@@ -1367,6 +1367,45 @@ func setSSDBCache(key string, data *simplejson.Json) {
 	return
 }
 
+func getHospitalNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	ctype := req.GetParamInt("type")
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
+	seq := req.GetParamInt("seq")
+	log.Printf("uid:%d ctype:%d seq:%d term:%d version:%d\n", uid, ctype, seq, term, version)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetHospitalNews",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term, Version: version},
+			Type: ctype, Seq: seq})
+	httpserver.CheckRPCErr(rpcerr, "GetHots")
+	res := resp.Interface().(*hot.HotsReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetHots")
+
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "invalid param"}
+	}
+	js.SetPath([]string{"data", "infos"}, res.Infos)
+	if len(res.Infos) >= util.MaxListSize ||
+		(seq == 0 && ctype == 0 && len(res.Infos) >= util.MaxListSize/2) {
+		js.SetPath([]string{"data", "hasmore"}, 1)
+	}
+
+	body, err := js.MarshalJSON()
+	if err != nil {
+		return &util.AppError{Code: httpserver.ErrInner,
+			Msg: "marshal json failed"}
+	}
+	httpserver.RspGzip(w, body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getHot(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -2256,6 +2295,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/register", httpserver.AppHandler(register))
 	mux.Handle("/logout", httpserver.AppHandler(logout))
 	mux.Handle("/hot", httpserver.AppHandler(getHot))
+	mux.Handle("/get_hospital_news", httpserver.AppHandler(getHospitalNews))
 	mux.Handle("/get_weather_news", httpserver.AppHandler(getWeatherNews))
 	mux.Handle("/get_live_info", httpserver.AppHandler(getLiveInfo))
 	mux.Handle("/get_jokes", httpserver.AppHandler(getJokes))
