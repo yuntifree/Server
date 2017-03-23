@@ -26,6 +26,7 @@ const (
 	mastercode  = 251653
 	randrange   = 1000000
 	portalDir   = "http://api.yunxingzh.com/"
+	testDir     = "http://wx.yunxingzh.com/"
 	testAcname  = "2043.0769.200.00"
 	testAcip    = "120.197.159.10"
 	testUserip  = "10.96.72.28"
@@ -673,6 +674,9 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
+	if in.Info.Acname == "AC_SSH_A_04" {
+		dir = testDir + "portaltest201703222216/"
+	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
@@ -915,6 +919,9 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
 	dir := getPortalDir(db)
+	if in.Info.Acname == "AC_SSH_A_04" {
+		dir = testDir + "portaltest201703222216/"
+	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
