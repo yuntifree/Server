@@ -117,9 +117,9 @@ func (s *server) FetchUnit(ctx context.Context, in *common.CommRequest) (*advert
 func addAdvertise(db *gorm.DB, info *advertise.AdvertiseInfo) int64 {
 	ad := locAdvertise(*info)
 	gdb := db.DB()
-	res, err := gdb.Exec("INSERT INTO advertise(name, version, adid, areaid, tsid, abstract, img, content, ctime) values (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+	res, err := gdb.Exec("INSERT INTO advertise(name, version, adid, areaid, tsid, abstract, img, content, dst, ctime) values (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
 		ad.Name, ad.Version, ad.Adid, ad.Areaid, ad.Tsid, ad.Abstract,
-		ad.Img, ad.Content)
+		ad.Img, ad.Content, ad.Dst)
 	id, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("addAdvertise get id failed:%v", err)
@@ -155,7 +155,7 @@ func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 
 func fetchAdvertise(db *gorm.DB, seq, num int64) []*advertise.AdvertiseInfo {
 	var infos []*advertise.AdvertiseInfo
-	query := "SELECT a.id, a.name, a.version, a.adid, a.areaid, a.tsid, a.abstract, a.img, a.content, a.online, c.name, ar.name, ts.name FROM advertise a, area ar, timeslot ts, customer c WHERE a.adid = c.id AND a.areaid = ar.id AND a.tsid = ts.id AND a.deleted = 0"
+	query := "SELECT a.id, a.name, a.version, a.adid, a.areaid, a.tsid, a.abstract, a.img, a.content, a.online, c.name, ar.name, ts.name, a.dst FROM advertise a, area ar, timeslot ts, customer c WHERE a.adid = c.id AND a.areaid = ar.id AND a.tsid = ts.id AND a.deleted = 0"
 	if seq != 0 {
 		query += fmt.Sprintf(" AND a.id < %d", seq)
 	}
@@ -170,7 +170,7 @@ func fetchAdvertise(db *gorm.DB, seq, num int64) []*advertise.AdvertiseInfo {
 		var info advertise.AdvertiseInfo
 		err := rows.Scan(&info.ID, &info.Name, &info.Version, &info.Adid,
 			&info.Areaid, &info.Tsid, &info.Abstract, &info.Img, &info.Content,
-			&info.Online, &info.Adname, &info.Area, &info.Timeslot)
+			&info.Online, &info.Adname, &info.Area, &info.Timeslot, &info.Dst)
 		if err != nil {
 			log.Printf("fetchAdvertise scan failed:%v", err)
 			continue

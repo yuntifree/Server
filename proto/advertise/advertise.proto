@@ -68,6 +68,7 @@ message AdvertiseInfo{
     string adname = 15;
     string area =  16;
     string timeslot = 17;
+    string dst = 18;
 }
 
 message AdvertiseRequest {
