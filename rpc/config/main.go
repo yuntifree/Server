@@ -139,18 +139,19 @@ func getHospitalIntro(db *sql.DB, hid int64) []*config.MediaInfo {
 
 func getPortalService(db *sql.DB, stype int64) []*config.PortalService {
 	if stype == 0 {
-		return getOnlineService(db)
+		return nil
+		//return getOnlineService(db)
 	}
-	online := getOnlineService(db)
+	//online := getOnlineService(db)
 	hospital := getHospitalService(db, stype)
-	infos := append(online, hospital...)
-	return infos
+	//infos := append(online, hospital...)
+	return hospital
 }
 
 func getHospital(db *sql.DB, hid int64) []*config.MediaInfo {
 	var infos []*config.MediaInfo
 	var info config.MediaInfo
-	err := db.QueryRow("SELECT img, title FROM hospital WHERE id = ?", hid).Scan(&info.Img, &info.Title)
+	err := db.QueryRow("SELECT img, title, dst FROM hospital WHERE id = ?", hid).Scan(&info.Img, &info.Title, &info.Dst)
 	if err != nil {
 		log.Printf("getHospital query failed:%v", err)
 		return infos
