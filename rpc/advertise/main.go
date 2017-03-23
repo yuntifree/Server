@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -325,6 +326,53 @@ func (s *server) FetchArea(ctx context.Context, in *common.CommRequest) (*advert
 	total := getTotalArea(db)
 	util.PubRPCSuccRsp(w, "advertise", "FetchArea")
 	return &advertise.AreaReply{
+		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
+}
+
+func fetchAreaUnit(db *sql.DB, seq, num int64) []*advertise.AreaUnitInfo {
+	var infos []*advertise.AreaUnitInfo
+	query := "SELECT au.id, a.id, a.name, u.name, u.id, u.longitude, u.latitude, u.cnt FROM area_unit au, area a, unit u WHERE au.aid = a.id AND au.unid = u.id AND au.deleted = 0 AND a.deleted = 0 AND u.deleted = 0"
+	if seq != 0 {
+		query += fmt.Sprintf(" AND au.id < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY au.id DESC LIMIT %d", num)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("fetchAreaUnit query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info advertise.AreaUnitInfo
+		err := rows.Scan(&info.Id, &info.Aid, &info.Areaname, &info.Unit,
+			&info.Unid, &info.Longitude, &info.Latitude, &info.Cnt)
+		if err != nil {
+			log.Printf("fetchAreaUnit scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getTotalAreaUnit(db *sql.DB) int64 {
+	var total int64
+	err := db.QueryRow("SELECT COUNT(id) FROM area_unit WHERE deleted = 0").Scan(&total)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getTotalAreaUnit query failed:%v", err)
+	}
+	return total
+}
+
+func (s *server) FetchAreaUnit(ctx context.Context, in *common.CommRequest) (*advertise.AreaUnitReply, error) {
+	util.PubRPCRequest(w, "advertise", "FetchAreaUnit")
+	gdb := db.DB()
+	infos := fetchAreaUnit(gdb, in.Seq, in.Num)
+	total := getTotalAreaUnit(gdb)
+	util.PubRPCSuccRsp(w, "advertise", "FetchAreaUnit")
+	return &advertise.AreaUnitReply{
 		Head: &common.Head{Retcode: 0}, Infos: infos, Total: total}, nil
 }
 

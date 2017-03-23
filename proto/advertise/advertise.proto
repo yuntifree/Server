@@ -23,6 +23,7 @@ service Advertise{
     rpc FetchTimeslot(common.CommRequest) returns (TimeslotReply) {}
     rpc FetchAdRecords(common.CommRequest) returns (AdRecordsReply) {}
     rpc FetchAdParam(common.CommRequest) returns (AdParamReply) {}
+    rpc FetchAreaUnit(common.CommRequest) returns (AreaUnitReply) {}
 }
 
 message CustomerInfo {
@@ -175,4 +176,21 @@ message AdParamReply {
     repeated ParamInfo customer = 2;
     repeated ParamInfo area = 3;
     repeated ParamInfo timeslot = 4;
+}
+
+message AreaUnitInfo {
+    int64 id = 1;
+    int64 aid = 2;
+    string areaname = 3;
+    int64 unid = 4;
+    string unit = 5;
+    double longitude = 6;
+    double latitude = 7;
+    int64 cnt = 8;
+}
+
+message AreaUnitReply {
+    common.Head head = 1;
+    repeated AreaUnitInfo infos = 2;
+    int64 total = 3;
 }

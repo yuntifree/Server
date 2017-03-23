@@ -847,6 +847,29 @@ func getArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getAreaUnit(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "FetchAreaUnit",
+		&common.CommRequest{
+			Head: &common.Head{Uid: uid, Sid: uuid},
+			Seq:  seq,
+			Num:  num,
+		})
+	httpserver.CheckRPCErr(rpcerr, "FetchAreaUnit")
+	res := resp.Interface().(*advertise.AreaUnitReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchAreaUnit")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func parseTime(content string) int64 {
 	arr := strings.Split(content, ":")
 	if len(arr) != 2 || len(arr[0]) != 2 || len(arr[1]) != 2 {
@@ -1480,6 +1503,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_area", httpserver.AppHandler(addArea))
 	mux.Handle("/mod_area", httpserver.AppHandler(modArea))
 	mux.Handle("/get_area", httpserver.AppHandler(getArea))
+	mux.Handle("/get_area_unit", httpserver.AppHandler(getAreaUnit))
 	mux.Handle("/add_timeslot", httpserver.AppHandler(addTimeslot))
 	mux.Handle("/mod_timeslot", httpserver.AppHandler(modTimeslot))
 	mux.Handle("/get_timeslot", httpserver.AppHandler(getTimeslot))
