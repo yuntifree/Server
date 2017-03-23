@@ -675,7 +675,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
 	dir := getPortalDir(db)
 	if in.Info.Acname == "AC_SSH_A_04" {
-		dir = testDir + "portaltest201703222216/"
+		dir = testDir + "portaltest201703231541/"
 	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
@@ -920,7 +920,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	dir := getPortalDir(db)
 	if in.Info.Acname == "AC_SSH_A_04" {
-		dir = testDir + "portaltest201703222216/"
+		dir = testDir + "portaltest201703231541/"
 	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
