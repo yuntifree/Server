@@ -2012,6 +2012,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 
 	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s&open=%s", echostr[0],
 		res.Head.Uid, res.Token, res.Privdata, res.Openid)
+	log.Printf("wxMpLogin dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
@@ -2027,6 +2028,7 @@ func jumpOnline(w http.ResponseWriter, r *http.Request) {
 	redirect := wxHost + "wx_mp_login"
 	redirect += "?echostr=" + echostr
 	dst := util.GenRedirectURL(redirect)
+	log.Printf("jumpOnline redirect:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
