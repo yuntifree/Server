@@ -9,12 +9,10 @@ import (
 )
 
 const (
-	//WxAppid wx appid
-	WxAppid = "wx0387308775179bfe"
-	//WxAppkey wx appkey
-	WxAppkey    = "829008d0ae26aa03522bc0dbc370d790"
-	WxDgAppid   = "wxbf43854270af39aa"
-	WxDgAppkey  = "3adcb7719d35c0fcf0dd9cc9d12a2565"
+	WxDgAppid   = "wx0387308775179bfe"
+	WxDgAppkey  = "829008d0ae26aa03522bc0dbc370d790"
+	WxAppid     = "wxbf43854270af39aa"
+	WxAppkey    = "3adcb7719d35c0fcf0dd9cc9d12a2565"
 	wxTokenURL  = "https://api.weixin.qq.com/sns/oauth2/access_token"
 	wxInfoURL   = "https://api.weixin.qq.com/sns/userinfo"
 	wxAuthURL   = "https://open.weixin.qq.com/connect/oauth2/authorize"
