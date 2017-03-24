@@ -33,9 +33,16 @@ message HotsInfo {
     string content = 12;
 }
 
+message TopInfo {
+    string title = 1;
+    string dst = 2;
+    string img = 3;
+}
+
 message HotsReply {
     common.Head head = 1;
     repeated HotsInfo infos = 2;
+    TopInfo top = 3;
 }
 
 message ServiceInfo {

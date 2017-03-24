@@ -218,12 +218,21 @@ func (s *server) GetHospitalNews(ctx context.Context, in *common.CommRequest) (*
 		Infos: infos}, nil
 }
 
+func getTopVideo() *hot.TopInfo {
+	return &hot.TopInfo{
+		Title: "360安全教育视频集",
+		Dst:   "http://yunxingzh.com/app/about.html",
+		Img:   "http://img.yunxingzh.com/de22398d-b482-43fa-a4c4-112270510245.png",
+	}
+}
+
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
 	util.PubRPCRequest(w, "hot", "GetHots")
 	log.Printf("request uid:%d, sid:%s ctype:%d, seq:%d term:%d version:%d subtype:%d",
 		in.Head.Uid, in.Head.Sid, in.Type, in.Seq, in.Head.Term, in.Head.Version,
 		in.Subtype)
 	var infos []*hot.HotsInfo
+	var top *hot.TopInfo
 	if in.Type == typeHotNews {
 		if util.CheckTermVersion(in.Head.Term, in.Head.Version) {
 			infos = getHotNews(db, in.Seq, util.MaxListSize)
@@ -260,6 +269,9 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		}
 	} else if in.Type == typeVideos {
 		infos = getVideos(db, in.Seq)
+		if in.Seq == 0 {
+			top = getTopVideo()
+		}
 	} else if in.Type == typeDgNews {
 		infos = getNews(db, in.Seq, util.MaxListSize, 10)
 	} else if in.Type == typeAmuse {
@@ -268,7 +280,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 	util.PubRPCSuccRsp(w, "hot", "GetHots")
 	return &hot.HotsReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Infos: infos}, nil
+		Infos: infos, Top: top}, nil
 }
 
 func getCategoryTitleIcon(category int) (string, string) {
