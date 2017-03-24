@@ -20,13 +20,19 @@ import (
 const (
 	femaleType = 0
 	maleType   = 1
-	saveRate   = 0.1 / (1024.0 * 1024.0)
+	saveRate   = 0.03 / (1024.0 * 1024.0)
 )
 
 type server struct{}
 
 var db *sql.DB
 var w *nsq.Producer
+
+func genUserTip(traffic int64) string {
+	traffMb := traffic / (8 * 1024 * 1024)
+	save := int64(float64(traffic) * saveRate / 8)
+	return fmt.Sprintf("您已节省流量%dM，话费%d元", traffMb, save)
+}
 
 func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo.InfoReply, error) {
 	util.PubRPCRequest(w, "userinfo", "GetInfo")
@@ -38,6 +44,7 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 		return &userinfo.InfoReply{
 			Head: &common.Head{Retcode: 1}}, nil
 	}
+	tip := genUserTip(save)
 	save = int64(float64(save) * saveRate)
 	util.PubRPCSuccRsp(w, "userinfo", "GetInfo")
 	nick, err := base64.StdEncoding.DecodeString(nickname)
@@ -46,7 +53,7 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 	}
 	return &userinfo.InfoReply{
 		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: string(nick),
-		Total: total, Save: save}, nil
+		Total: total, Save: save, Tip: tip}, nil
 }
 
 func getDefHead(db *sql.DB, stype int64) []*userinfo.HeadInfo {

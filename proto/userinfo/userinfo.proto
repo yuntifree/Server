@@ -23,6 +23,7 @@ message InfoReply {
     string nickname = 3;
     int64 total = 4;
     int64 save = 5;
+    string tip = 6;
 }
 
 message HeadInfo {
