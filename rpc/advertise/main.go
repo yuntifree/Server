@@ -521,6 +521,27 @@ func (s *server) FetchAdParam(ctx context.Context, in *common.CommRequest) (*adv
 		Timeslot: timeslot}, nil
 }
 
+func modAreaUnit(db *gorm.DB, mtype, aid int64, units []int64) {
+	rdb := db.DB()
+	for i := 0; i < len(units); i++ {
+		if mtype == 0 {
+			rdb.Exec("INSERT INTO area_unit(aid, unid, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0", aid, units[i])
+		} else {
+			rdb.Exec("UPDATE area_unit SET deleted = 1 WHERE aid = ? AND unid = ?",
+				aid, units[i])
+		}
+	}
+}
+
+func (s *server) ModAreaUnit(ctx context.Context, in *advertise.AreaUnitRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "advertise", "ModAreaUnit")
+	modAreaUnit(db, in.Type, in.Aid, in.Units)
+	util.PubRPCSuccRsp(w, "advertise", "ModAreaUnit")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0},
+	}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.AdvertiseServerPort)
 	if err != nil {

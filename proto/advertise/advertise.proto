@@ -24,6 +24,7 @@ service Advertise{
     rpc FetchAdRecords(common.CommRequest) returns (AdRecordsReply) {}
     rpc FetchAdParam(common.CommRequest) returns (AdParamReply) {}
     rpc FetchAreaUnit(common.CommRequest) returns (AreaUnitReply) {}
+    rpc ModAreaUnit(AreaUnitRequest) returns (common.CommReply) {}
 }
 
 message CustomerInfo {
@@ -194,4 +195,11 @@ message AreaUnitReply {
     common.Head head = 1;
     repeated AreaUnitInfo infos = 2;
     int64 total = 3;
+}
+
+message AreaUnitRequest {
+    common.Head head = 1;
+    int64 aid = 2;
+    repeated int64 units = 3;
+    int64 type = 4;
 }
