@@ -817,6 +817,20 @@ func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Subscribe: subscribe}, nil
 }
 
+func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*common.CommReply, error) {
+	log.Printf("RecordWxConn request:%v", in)
+	util.PubRPCRequest(w, "verify", "RecordWxConn")
+	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, etime = DATE_ADD(NOW(), INTERVAL 5 MINUTE)",
+		in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac,
+		in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac)
+	if err != nil {
+		log.Printf("RecordWxConn failed:%v", err)
+	}
+	util.PubRPCSuccRsp(w, "verify", "RecordWxConn")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
 func getApUnit(db *sql.DB, apmac string) int64 {
 	if apmac == "" {
 		return 0

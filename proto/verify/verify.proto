@@ -21,6 +21,7 @@ service Verify{
      rpc checkLogin(AccessRequest) returns (CheckReply) {}
      rpc oneClickLogin(AccessRequest) returns (PortalLoginReply) {}
      rpc checkSubscribe(SubscribeRequest) returns (CheckReply) {}
+     rpc RecordWxConn(WxConnRequest) returns (common.CommReply) {}
 }
 
 message TokenRequest {
@@ -150,4 +151,14 @@ message SubscribeRequest {
     common.Head head = 1;
     string openid = 2;
     int64 type = 3;
+}
+
+message WxConnRequest {
+    common.Head head = 1;
+    string openid = 2;
+    string acname = 3;
+    string acip = 4;
+    string usermac = 5;
+    string userip = 6;
+    string apmac = 7;
 }

@@ -590,3 +590,18 @@ CREATE TABLE IF NOT EXISTS online_status
     PRIMARY KEY(id),
     UNIQUE KEY(phone, mac)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS wx_conn
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    openid  varchar(64) NOT NULL,
+    acname  varchar(32) NOT NULL,
+    acip    varchar(32) NOT NULL,
+    usermac varchar(32) NOT NULL,
+    userip  varchar(32) NOT NULL,
+    apmac   varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    etime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(openid)
+) ENGINE = InnoDB;
