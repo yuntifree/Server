@@ -34,9 +34,11 @@ import (
 )
 
 const (
-	wxHost     = "http://wx.yunxingzh.com/"
-	maxZipcode = 820000
-	portalDst  = "http://120.25.133.234/"
+	wxHost       = "http://wx.yunxingzh.com/"
+	maxZipcode   = 820000
+	portalDst    = "http://120.25.133.234/"
+	postLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxpostlogin.html"
+	succLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxloginsucc.html"
 )
 const (
 	hotNewsKey         = "hot:news"
@@ -2053,6 +2055,36 @@ func jumpOnline(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func checkSubscribe(w http.ResponseWriter, r *http.Request) {
+	httpserver.ReportRequest(r.RequestURI)
+	r.ParseForm()
+	openids := r.Form["open"]
+	var openid string
+	if len(openids) > 0 {
+		openid = openids[0]
+	}
+
+	dst := postLoginURL
+	if openid == "" {
+		http.Redirect(w, r, dst, http.StatusMovedPermanently)
+	}
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "CheckSubscribe",
+		&verify.SubscribeRequest{Head: &common.Head{Sid: uuid}, Type: 0,
+			Openid: openid})
+	if rpcerr.Interface() != nil {
+		http.Redirect(w, r, dst, http.StatusMovedPermanently)
+	}
+	res := resp.Interface().(*verify.CheckReply)
+	if res.Head.Retcode != 0 {
+		http.Redirect(w, r, dst, http.StatusMovedPermanently)
+	}
+	if res.Subscribe {
+		dst = succLoginURL
+	}
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 func auth(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
@@ -2397,6 +2429,7 @@ func NewAppServer() http.Handler {
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/auth", auth)
 	mux.HandleFunc("/jump_online", jumpOnline)
+	mux.HandleFunc("/check_subscribe", checkSubscribe)
 	mux.Handle("/test", httpserver.AppHandler(printHead))
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)

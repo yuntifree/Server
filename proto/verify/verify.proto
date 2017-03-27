@@ -20,6 +20,7 @@ service Verify{
      rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
      rpc checkLogin(AccessRequest) returns (CheckReply) {}
      rpc oneClickLogin(AccessRequest) returns (PortalLoginReply) {}
+     rpc checkSubscribe(SubscribeRequest) returns (CheckReply) {}
 }
 
 message TokenRequest {
@@ -142,4 +143,11 @@ message AccessRequest {
 message CheckReply {
     common.Head head = 1;
     int64 autologin = 2;
+    bool subscribe = 3;
+}
+
+message SubscribeRequest {
+    common.Head head = 1;
+    string openid = 2;
+    int64 type = 3;
 }

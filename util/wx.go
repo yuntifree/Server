@@ -9,15 +9,16 @@ import (
 )
 
 const (
-	WxDgAppid   = "wx0387308775179bfe"
-	WxDgAppkey  = "829008d0ae26aa03522bc0dbc370d790"
-	WxAppid     = "wxbf43854270af39aa"
-	WxAppkey    = "3adcb7719d35c0fcf0dd9cc9d12a2565"
-	wxTokenURL  = "https://api.weixin.qq.com/sns/oauth2/access_token"
-	wxInfoURL   = "https://api.weixin.qq.com/sns/userinfo"
-	wxAuthURL   = "https://open.weixin.qq.com/connect/oauth2/authorize"
-	wxAccessURL = "https://api.weixin.qq.com/cgi-bin/token"
-	wxTicketURL = "https://api.weixin.qq.com/cgi-bin/ticket/getticket"
+	WxDgAppid      = "wx0387308775179bfe"
+	WxDgAppkey     = "829008d0ae26aa03522bc0dbc370d790"
+	WxAppid        = "wxbf43854270af39aa"
+	WxAppkey       = "3adcb7719d35c0fcf0dd9cc9d12a2565"
+	wxTokenURL     = "https://api.weixin.qq.com/sns/oauth2/access_token"
+	wxInfoURL      = "https://api.weixin.qq.com/sns/userinfo"
+	wxAuthURL      = "https://open.weixin.qq.com/connect/oauth2/authorize"
+	wxAccessURL    = "https://api.weixin.qq.com/cgi-bin/token"
+	wxTicketURL    = "https://api.weixin.qq.com/cgi-bin/ticket/getticket"
+	wxSubscribeURL = "https://api.weixin.qq.com/cgi-bin/user/info/batchget"
 )
 
 //WxInfo wx login info
@@ -64,6 +65,57 @@ func GetCodeToken(code string) (wxi WxInfo, err error) {
 	wxi.Openid = openid
 	wxi.Token = token
 	return
+}
+
+type userinfo struct {
+	Openid string `json:"openid,omitempty"`
+	Lang   string `json:"lang,omitempty"`
+}
+
+func CheckSubscribe(accesstoken, openid string) bool {
+	url := fmt.Sprintf("%s?access_token=%s", wxSubscribeURL, accesstoken)
+	data, err := simplejson.NewJson([]byte(`{}`))
+	if err != nil {
+		log.Printf("CheckSubscribe newjson failed:%v", err)
+		return false
+	}
+	var users []userinfo
+	var user = userinfo{
+		Openid: openid,
+		Lang:   "zh_CN",
+	}
+	users = append(users, user)
+	data.Set("user_list", users)
+	body, err := data.Encode()
+	if err != nil {
+		log.Printf("CheckSubscribe json encode failed:%v", err)
+		return false
+	}
+	log.Printf("CheckSubscribe reqbody:%s", body)
+
+	res, err := HTTPRequest(url, string(body))
+	if err != nil {
+		log.Printf("fetch url %s failed:%v", url, err)
+		return false
+	}
+
+	log.Printf("CheckSubscribe resp:%s", res)
+	js, err := simplejson.NewJson([]byte(res))
+	if err != nil {
+		log.Printf("parse resp %s failed:%v", res, err)
+		return false
+	}
+
+	subscribe, err := js.Get("user_info_list").GetIndex(0).Get("subscribe").Int64()
+	if err != nil {
+		log.Printf("get openid failed:%v", err)
+		return false
+	}
+	if subscribe == 1 {
+		return true
+	}
+
+	return false
 }
 
 //GetWxInfo get wx user info
