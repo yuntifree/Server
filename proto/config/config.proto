@@ -11,6 +11,7 @@ service Config{
     rpc AddPortalMenu(MenuRequest) returns (common.CommReply) {}
     rpc GetDiscovery(common.CommRequest) returns (DiscoveryReply) {}
     rpc GetPortalConf(common.CommRequest) returns (PortalConfReply) {}
+    rpc GetEducationVideo(common.CommRequest) returns (EducationVideoReply) {}
 }
 
 message PortalMenuInfo {
@@ -49,6 +50,7 @@ message MediaInfo {
     int64 id = 4;
     int64 type = 5;
     string routername = 6;
+    int64 click = 7;
 }
 
 message PortalService {
@@ -83,4 +85,9 @@ message PortalConfReply {
     repeated MediaInfo urbanservices = 3;
     repeated MediaInfo hospitalintros = 4;
     repeated PortalService services = 5;
+}
+
+message EducationVideoReply {
+    common.Head head = 1;
+    repeated MediaInfo infos = 2;
 }

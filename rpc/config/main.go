@@ -336,6 +336,34 @@ func getServices(db *sql.DB) []*config.ServiceCategory {
 	return infos
 }
 
+func getEducationVideo(db *sql.DB) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT id, title, dst, click FROM education_video WHERE deleted = 0 ORDER BY id DESC")
+	if err != nil {
+		log.Printf("getEducationVideo query:%v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Id, &info.Title, &info.Dst, &info.Click)
+		if err != nil {
+			log.Printf("err:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetEducationVideo(ctx context.Context, in *common.CommRequest) (*config.EducationVideoReply, error) {
+	util.PubRPCRequest(w, "config", "GetEducationVideo")
+	infos := getEducationVideo(db)
+	util.PubRPCSuccRsp(w, "config", "GetEducationVideo")
+	return &config.EducationVideoReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Infos: infos}, nil
+}
+
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
