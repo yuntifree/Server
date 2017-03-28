@@ -29,6 +29,7 @@ const (
 	testAcip    = "120.197.159.10"
 	testUserip  = "10.96.72.28"
 	testUsermac = "f45c89987347"
+	defLoginImg = "http://img.yunxingzh.com/57970b5c-249a-4bc6-970e-064305e6d498.png"
 )
 
 type server struct{}
@@ -753,12 +754,21 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	return 0
 }
 
+func getLoginImg(db *sql.DB) string {
+	img := defLoginImg
+	err := db.QueryRow("SELECT img FROM banner WHERE type = 3 AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1").Scan(&img)
+	if err != nil {
+		log.Printf("getLoginImg failed:%v", err)
+	}
+	return img
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
-	img := "http://img.yunxingzh.com/711f41f9-9875-4f7e-90e5-e6c63368457b.png"
+	img := getLoginImg(db)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
