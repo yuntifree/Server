@@ -774,9 +774,11 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
+	img := "http://img.yunxingzh.com/711f41f9-9875-4f7e-90e5-e6c63368457b.png"
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
-		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret}, nil
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
+		Img: img}, nil
 }
 
 func getAccessToken(db *sql.DB, atype int64) string {
@@ -972,7 +974,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	dir := getPortalDir(db)
 	if in.Info.Acname == "AC_SSH_A_04" {
-		dir = testDir + "portaltest201703231541/"
+		dir = testDir + "scenestest201703241650/scenes.html"
 	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)

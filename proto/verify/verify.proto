@@ -145,6 +145,7 @@ message CheckReply {
     common.Head head = 1;
     int64 autologin = 2;
     bool subscribe = 3;
+    string img = 4;
 }
 
 message SubscribeRequest {
