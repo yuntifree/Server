@@ -25,8 +25,6 @@ const (
 	expiretime  = 3600 * 24 * 30
 	mastercode  = 251653
 	randrange   = 1000000
-	portalDir   = "http://api.yunxingzh.com/"
-	testDir     = "http://wx.yunxingzh.com/"
 	testAcname  = "2043.0769.200.00"
 	testAcip    = "120.197.159.10"
 	testUserip  = "10.96.72.28"
@@ -673,28 +671,14 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
-	dir := getPortalDir(db)
-	if in.Info.Acname == "AC_SSH_A_04" {
-		dir = testDir + "portaltest201703231541/"
-	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
+	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Portaltype: ptype, Adtype: adtype}, nil
-}
-
-func getPortalDir(db *sql.DB) string {
-	dir, err := util.GetPortalDir(db, util.PortalType)
-	if err != nil {
-		log.Printf("Register GetPortalDir portal failed type:%v", err)
-		dir = portalDir + "20170117/"
-	} else {
-		dir = portalDir + dir
-	}
-	return dir
 }
 
 func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error {
@@ -972,12 +956,9 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	dir := getPortalDir(db)
-	if in.Info.Acname == "AC_SSH_A_04" {
-		dir = testDir + "scenestest201703241650/scenes.html"
-	}
 	adtype := getAdType(db, in.Info.Apmac)
 	ptype := getPortalType(db, in.Info.Apmac)
+	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{

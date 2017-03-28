@@ -1,5 +1,17 @@
 package util
 
+import (
+	"database/sql"
+	"log"
+)
+
+const (
+	portalDir    = "http://api.yunxingzh.com/"
+	testDir      = "http://120.76.236.185/"
+	innerSshHost = "http://192.168.100.4:8080/"
+	innerWjjHost = "http://192.168.200.4:8080/"
+)
+
 var sshAcnames = []string{
 	"0110.0001.001.01",
 	"2013.0769.200.00",
@@ -78,4 +90,43 @@ func IsTestUsermac(usermac string) bool {
 		}
 	}
 	return false
+}
+
+func getPortalHost(acname string) string {
+	host := portalDir
+	if IsTestAcname(acname) {
+		host = testDir
+	} else {
+		if IsSshAcname(acname) {
+			host = innerSshHost
+		} else if IsWjjAcname(acname) {
+			host = innerWjjHost
+		}
+	}
+	return host
+}
+
+//GetPortalPath get portal path
+func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
+	var dir string
+	var ptype int64
+	if IsTestAcname(acname) {
+		if portaltype == 0 {
+			ptype = PortalTestType
+		} else {
+			ptype = SceneTestType
+		}
+	} else {
+		if portaltype == 0 {
+			ptype = PortalType
+		} else {
+			ptype = SceneType
+		}
+	}
+	dir, err := GetPortalDir(db, ptype)
+	if err != nil {
+		log.Printf("getPortalPath failed:%v", err)
+	}
+	host := getPortalHost(acname)
+	return host + dir
 }

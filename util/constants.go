@@ -58,4 +58,8 @@ const (
 	WxTerm              = 3
 	LoginType           = 0
 	PortalType          = 1
+	LoginTestType       = 2
+	PortalTestType      = 3
+	SceneType           = 4
+	SceneTestType       = 5
 )
