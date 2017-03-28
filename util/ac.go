@@ -92,7 +92,8 @@ func IsTestUsermac(usermac string) bool {
 	return false
 }
 
-func getPortalHost(acname string) string {
+//GetPortalHost get portal host
+func GetPortalHost(acname string) string {
 	host := portalDir
 	if IsTestAcname(acname) {
 		host = testDir
@@ -110,7 +111,9 @@ func getPortalHost(acname string) string {
 func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
 	var dir string
 	var ptype int64
+	host := portalDir
 	if IsTestAcname(acname) {
+		host = testDir
 		if portaltype == 0 {
 			ptype = PortalTestType
 		} else {
@@ -127,6 +130,5 @@ func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
 	if err != nil {
 		log.Printf("getPortalPath failed:%v", err)
 	}
-	host := getPortalHost(acname)
 	return host + dir
 }
