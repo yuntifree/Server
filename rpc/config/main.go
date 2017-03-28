@@ -338,14 +338,15 @@ func getServices(db *sql.DB) []*config.ServiceCategory {
 
 func getEducationVideo(db *sql.DB) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	rows, err := db.Query("SELECT id, title, dst, click FROM education_video WHERE deleted = 0 ORDER BY id DESC")
+	rows, err := db.Query("SELECT id, title, dst, click, img, source FROM education_video WHERE deleted = 0 ORDER BY id DESC")
 	if err != nil {
 		log.Printf("getEducationVideo query:%v", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var info config.MediaInfo
-		err := rows.Scan(&info.Id, &info.Title, &info.Dst, &info.Click)
+		err := rows.Scan(&info.Id, &info.Title, &info.Dst, &info.Click,
+			&info.Img, &info.Source)
 		if err != nil {
 			log.Printf("err:%v", err)
 			continue

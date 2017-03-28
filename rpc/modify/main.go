@@ -38,6 +38,10 @@ const (
 	bannerClickType
 	recommendClickType
 	urbanServiceClickType
+	hospitalIntroType
+	hospitalServiceType
+	onlineServiceType
+	educationVideoType
 )
 
 type server struct{}
@@ -188,6 +192,9 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 			_, err = db.Exec("UPDATE recommend SET click = click + 1 WHERE id = ?", in.Id)
 		case urbanServiceClickType:
 			_, err = db.Exec("UPDATE urban_service SET click = click + 1 WHERE id = ?", in.Id)
+		case educationVideoType:
+			_, err = db.Exec("UPDATE education_video SET click = click + 1 WHERE id = ?",
+				in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 

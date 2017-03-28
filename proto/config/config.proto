@@ -51,6 +51,7 @@ message MediaInfo {
     int64 type = 5;
     string routername = 6;
     int64 click = 7;
+    string source = 8;
 }
 
 message PortalService {
