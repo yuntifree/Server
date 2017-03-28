@@ -2269,7 +2269,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	prefix := portalDst
 	var dst string
-	if acname == "AC_120_A_02" {
+	if isWjjAcname(acname) {
 		dst = "http://192.168.200.4:8080/login201703171857/" + postfix
 	} else if acname == "AC_SSH_A_04" {
 		dst = "http://120.76.236.185/logintest201703271927/" + postfix
