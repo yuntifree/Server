@@ -1867,6 +1867,32 @@ func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
+func reportIssue(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	acname := req.GetParamString("wlanacname")
+	apmac := req.GetParamString("wlanapmac")
+	usermac := req.GetParamString("wlanusermac")
+	content := req.GetParamString("content")
+	contact := req.GetParamString("contact")
+	ids := req.GetParamString("ids")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, 0, "ReportIssue",
+		&modify.IssueRequest{
+			Head: &common.Head{Sid: uuid}, Acname: acname,
+			Apmac: apmac, Usermac: usermac, Content: content,
+			Contact: contact, Ids: ids})
+	httpserver.CheckRPCErr(rpcerr, "ReportIssue")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ReportIssue")
+
+	body := httpserver.GenResponseBody(res, false)
+	req.WriteRsp(w, body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.Init(r)
@@ -2380,6 +2406,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_userinfo", httpserver.AppHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", httpserver.AppHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))
+	mux.Handle("/report_issue", httpserver.AppHandler(reportIssue))
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/correct_ap", httpserver.AppHandler(correctAp))
 	mux.HandleFunc("/jump", jump)

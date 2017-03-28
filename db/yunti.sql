@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS user_unionid (
 
 CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
-    -- 0:banner 1:flash_ad 2:activity
+    -- 0:banner 1:flash_ad 2:activity 3:login image
     type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
@@ -604,4 +604,28 @@ CREATE TABLE IF NOT EXISTS wx_conn
     etime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(openid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS issue_record
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    acname  varchar(64) NOT NULL,
+    usermac varchar(32) NOT NULL,
+    apmac   varchar(32) NOT NULL,
+    contact varchar(32) NOT NULL,
+    content varchar(256) NOT NULL,
+    ids     varchar(128) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(usermac),
+    KEY(apmac)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS issue
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    content varchar(256) NOT NULL,
+    times   int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
 ) ENGINE = InnoDB;

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"Server/util"
@@ -822,6 +823,31 @@ func (s *server) ModChannelVersion(ctx context.Context, in *modify.ChannelVersio
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 
 	}
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func recordIssue(db *sql.DB, ids string) {
+	arr := strings.Split(ids, ",")
+	for i := 0; i < len(arr); i++ {
+		id, err := strconv.Atoi(arr[i])
+		if err != nil {
+			log.Printf("recordIssue failed:%d %s %v", i, arr[i], err)
+			continue
+		}
+		db.Exec("UPDATE issue SET times = times + 1 WHERE id = ?", id)
+	}
+}
+
+func (s *server) ReportIssue(ctx context.Context, in *modify.IssueRequest) (*common.CommReply, error) {
+	log.Printf("ReportIssue request:%v", in)
+	_, err := db.Exec("INSERT INTO issue_record(acname, usermac, apmac, contact, content, ids, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+		in.Acname, in.Usermac, in.Apmac, in.Contact, in.Content,
+		in.Ids)
+	if err != nil {
+		log.Printf("ReportIssue query failed:%v", err)
+	}
+	recordIssue(db, in.Ids)
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }

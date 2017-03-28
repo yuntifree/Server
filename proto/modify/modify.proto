@@ -36,6 +36,7 @@ service Modify{
     rpc OnlinePortalDir(common.CommRequest) returns (common.CommReply) {}
     rpc AddChannelVersion(ChannelVersionRequest) returns (common.CommReply) {}
     rpc ModChannelVersion(ChannelVersionRequest) returns (common.CommReply) {}
+    rpc ReportIssue(IssueRequest) returns (common.CommReply) {}
 }
 
 message NewsRequest {
@@ -206,4 +207,14 @@ message PortalDirRequest {
 message ChannelVersionRequest {
     common.Head head = 1;
     common.ChannelVersionInfo info = 2;
+}
+
+message IssueRequest {
+    common.Head head = 1;
+    string acname = 2;
+    string usermac = 3;
+    string apmac = 4;
+    string contact = 5;
+    string content = 6;
+    string ids = 7;
 }
