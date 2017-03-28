@@ -2180,75 +2180,6 @@ func getPortalDir() string {
 	return res.Dir
 }
 
-var sshAcnames = []string{
-	"0110.0001.001.01",
-	"2013.0769.200.00",
-	"2043.0769.200.00",
-	"AC_SSH_A_01",
-	"AC_SSH_A_02",
-	"AC_SSH_A_03",
-	"AC_SSH_A_04",
-	"AC_SSH_A_05",
-	"AC_SSH_A_06",
-	"AC_SSH_A_07",
-	"AC_SSH_A_08",
-	"AC_SSH_A_09",
-	"AC_SSH_B_10",
-	"AC-SSH-02-11",
-}
-
-var wjjAcnames = []string{
-	"AC_120_A_01",
-	"AC_120_A_02",
-	"AC_120_A_03",
-	"AC_120_A_04",
-	"AC_120_A_05",
-	"AC_120_A_06",
-	"AC_120_A_07",
-	"AC_120_A_08",
-	"AC_120_A_09",
-	"AC_120_A_10",
-	"TRX1",
-	"TRX2",
-	"TRX3",
-}
-
-var testUsermacs = []string{
-	"F45C89987347",
-	"14F65A9F590C",
-	"0C51015B928B",
-	"20AB37909A39",
-	"60F81D405892",
-	"D065CA2F5BC6",
-}
-
-func isSshAcname(acname string) bool {
-	for i := 0; i < len(sshAcnames); i++ {
-		if sshAcnames[i] == acname {
-			return true
-		}
-	}
-	return false
-}
-
-func isWjjAcname(acname string) bool {
-	for i := 0; i < len(wjjAcnames); i++ {
-		if wjjAcnames[i] == acname {
-			return true
-		}
-	}
-	return false
-}
-
-func isTestUsermac(usermac string) bool {
-	for i := 0; i < len(testUsermacs); i++ {
-		if testUsermacs[i] == usermac {
-			return true
-		}
-	}
-	return false
-}
-
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
@@ -2269,11 +2200,11 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	prefix := portalDst
 	var dst string
-	if isWjjAcname(acname) {
+	if util.IsWjjAcname(acname) {
 		dst = "http://192.168.200.4:8080/login201703171857/" + postfix
-	} else if acname == "AC_SSH_A_04" {
+	} else if util.IsTestAcname(acname) {
 		dst = "http://120.76.236.185/logintest201703271927/" + postfix
-	} else if isSshAcname(acname) || isTestUsermac(usermac) {
+	} else if util.IsSshAcname(acname) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
 	} else {
 		dir := getPortalDir()
