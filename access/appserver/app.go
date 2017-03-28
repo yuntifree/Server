@@ -2100,16 +2100,17 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	arr := strings.Split(extend, ",")
 	if len(arr) != 5 {
 		log.Printf("auth parse extend failed:%s", extend)
-	}
-	log.Printf("form:%v", r.Form)
+	} else {
+		log.Printf("form:%v", r.Form)
 
-	uuid := util.GenUUID()
-	_, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "RecordWxConn",
-		&verify.WxConnRequest{Head: &common.Head{Sid: uuid},
-			Openid: openid, Acname: arr[0], Userip: arr[1],
-			Acip: arr[2], Usermac: arr[3], Apmac: arr[4]})
-	if rpcerr.Interface() != nil {
-		log.Printf("auth RecordWxConn failed:%v", rpcerr)
+		uuid := util.GenUUID()
+		_, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "RecordWxConn",
+			&verify.WxConnRequest{Head: &common.Head{Sid: uuid},
+				Openid: openid, Acname: arr[0], Userip: arr[1],
+				Acip: arr[2], Usermac: arr[3], Apmac: arr[4]})
+		if rpcerr.Interface() != nil {
+			log.Printf("auth RecordWxConn failed:%v", rpcerr)
+		}
 	}
 	w.Write([]byte("OK"))
 }
@@ -2268,7 +2269,9 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	prefix := portalDst
 	var dst string
-	if acname == "AC_SSH_A_04" {
+	if acname == "AC_120_A_02" {
+		dst = "http://192.168.200.4:8080/login201703171857/" + postfix
+	} else if acname == "AC_SSH_A_04" {
 		dst = "http://120.76.236.185/logintest201703271927/" + postfix
 	} else if isSshAcname(acname) || isTestUsermac(usermac) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
