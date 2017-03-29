@@ -365,6 +365,58 @@ func (s *server) GetEducationVideo(ctx context.Context, in *common.CommRequest) 
 		Infos: infos}, nil
 }
 
+func getHospitalDepartment(db *sql.DB, hid int64) []*config.DepartmentCategoryInfo {
+	var infos []*config.DepartmentCategoryInfo
+	rows, err := db.Query("SELECT i.id, i.cid i.name, i.stime, i.click, c.name FROM hospital_department_info i, hospital_department_category c WHERE i.cid = c.id AND i.hid = ?", hid)
+	if err != nil {
+		log.Printf("getHospitalDepartment failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	var departs []*config.DepartmentInfo
+	var category int64
+	var catename string
+	for rows.Next() {
+		var dinfo config.DepartmentInfo
+		var cid int64
+		var name string
+		err = rows.Scan(&dinfo.Id, &cid, &dinfo.Name, &dinfo.Stime, &dinfo.Click,
+			&name)
+		if err != nil {
+			continue
+		}
+		if cid != category {
+			if len(departs) > 0 {
+				var cateinfo config.DepartmentCategoryInfo
+				cateinfo.Name = name
+				cateinfo.Infos = departs[:]
+				infos = append(infos, &cateinfo)
+				departs = departs[len(departs):]
+			}
+			category = cid
+			catename = name
+		} else {
+			departs = append(departs, &dinfo)
+		}
+	}
+	if len(departs) > 0 {
+		var cateinfo config.DepartmentCategoryInfo
+		cateinfo.Name = catename
+		cateinfo.Infos = departs
+		infos = append(infos, &cateinfo)
+	}
+	return infos
+}
+
+func (s *server) GetHospitalDepartment(ctx context.Context, in *common.CommRequest) (*config.HospitalDepartmentReply, error) {
+	util.PubRPCRequest(w, "config", "GetHospitalDepartment")
+	infos := getHospitalDepartment(db, in.Type)
+	util.PubRPCSuccRsp(w, "config", "GetHospitalDepartment")
+	return &config.HospitalDepartmentReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Infos: infos}, nil
+}
+
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)

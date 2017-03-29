@@ -93,6 +93,32 @@ CREATE TABLE IF NOT EXISTS hospital_info
     KEY(hid)
 ) ENGINE = InnoDB;
 
+-- hospital_department_category 医院科室类别
+CREATE TABLE IF NOT EXISTS hospital_department_category
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    name    varchar(128) NOT NULL,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
+
+-- hospital_department_info 医院科室信息
+CREATE TABLE IF NOT EXISTS hospital_department_info
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- hid 医院id
+    hid     int unsigned NOT NULL, 
+    -- cid 科室类别
+    cid     int unsigned NOT NULL,
+    name    varchar(128) NOT NULL,
+    click   int unsigned NOT NULL DEFAULT 0,
+    detail  varchar(4096) NOT NULL,
+    stime   date NOT NULL,
+    ctime   datetime NOT NULL,
+    PRIMARY KEY(id),
+    KEY(hid, cid)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS education_video
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,

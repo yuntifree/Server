@@ -12,6 +12,7 @@ service Config{
     rpc GetDiscovery(common.CommRequest) returns (DiscoveryReply) {}
     rpc GetPortalConf(common.CommRequest) returns (PortalConfReply) {}
     rpc GetEducationVideo(common.CommRequest) returns (EducationVideoReply) {}
+    rpc GetHospitalDepartment(common.CommRequest) returns (HospitalDepartmentReply){}
 }
 
 message PortalMenuInfo {
@@ -91,4 +92,22 @@ message PortalConfReply {
 message EducationVideoReply {
     common.Head head = 1;
     repeated MediaInfo infos = 2;
+}
+
+message DepartmentInfo {
+    int64 id = 1;
+    string name = 2;
+    string stime = 3;
+    int64 click = 4;
+    string detail = 5;
+}
+
+message DepartmentCategoryInfo {
+    string name = 1;
+    repeated DepartmentInfo infos = 2;
+}
+
+message HospitalDepartmentReply {
+    common.Head head = 1;
+    repeated DepartmentCategoryInfo infos = 2;
 }

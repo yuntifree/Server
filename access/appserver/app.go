@@ -1821,6 +1821,27 @@ func getEducationVideo(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	return nil
 }
 
+func getHospitalDepartment(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	hid := req.GetParamInt("hid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetHospitalDepartment",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}, Type: hid,
+		})
+	httpserver.CheckRPCErr(rpcerr, "GetHospitalDepartment")
+	res := resp.Interface().(*config.HospitalDepartmentReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetHospitalDepartment")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func modUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -2403,6 +2424,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_portal_menu", httpserver.AppHandler(getPortalMenu))
 	mux.Handle("/get_portal_conf", httpserver.AppHandler(getPortalConf))
 	mux.Handle("/get_education_video", httpserver.AppHandler(getEducationVideo))
+	mux.Handle("/get_hospital_department", httpserver.AppHandler(getHospitalDepartment))
 	mux.Handle("/get_userinfo", httpserver.AppHandler(getUserinfo))
 	mux.Handle("/get_punch_stat", httpserver.AppHandler(getPunchStat))
 	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))
