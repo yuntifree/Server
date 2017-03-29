@@ -132,3 +132,19 @@ func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
 	}
 	return host + dir
 }
+
+//GetLoginPath get login path
+func GetLoginPath(db *sql.DB, acname string, portaltype int64) string {
+	var ptype int64
+	if IsTestAcname(acname) {
+		ptype = LoginTestType
+	} else {
+		ptype = LoginType
+	}
+	host := GetPortalHost(acname)
+	dir, err := GetPortalDir(db, ptype)
+	if err != nil {
+		log.Printf("GetLoginPath failed:%v", err)
+	}
+	return host + dir
+}
