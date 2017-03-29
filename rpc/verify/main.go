@@ -808,7 +808,7 @@ func getAccessToken(db *sql.DB, atype int64) string {
 func genPortalDst(db *sql.DB, openid string) string {
 	var uid int64
 	var acname, apmac, token string
-	err := db.QueryRow("SELECT u.uid, u.token, o.acname FROM user u, online_status o, wx_conn w WHERE u.phone = o.phone AND o.mac = w.usermac AND w.openid = ?", openid).Scan(&uid, &token)
+	err := db.QueryRow("SELECT u.uid, u.token, i.name, w.apmac FROM user u, online_status o, wx_conn w, ac_info i WHERE u.phone = o.phone AND o.mac = w.usermac AND o.acip = i.ip AND w.openid = ?", openid).Scan(&uid, &token, &acname, &apmac)
 	if err != nil {
 		log.Printf("genPortalDst failed:%v", err)
 		return ""
@@ -839,9 +839,9 @@ func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest
 func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*common.CommReply, error) {
 	log.Printf("RecordWxConn request:%v", in)
 	util.PubRPCRequest(w, "verify", "RecordWxConn")
-	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, etime = DATE_ADD(NOW(), INTERVAL 5 MINUTE)",
-		in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac,
-		in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac)
+	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 5 MINUTE)",
+		in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid,
+		in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
 	if err != nil {
 		log.Printf("RecordWxConn failed:%v", err)
 	}

@@ -2132,14 +2132,18 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 func auth(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
-	openids := r.Form["openid"]
+	openids := r.Form["openId"]
 	extends := r.Form["extend"]
-	var openid, extend string
+	tids := r.Form["tid"]
+	var openid, extend, tid string
 	if len(openids) > 0 {
 		openid = openids[0]
 	}
 	if len(extends) > 0 {
 		extend = extends[0]
+	}
+	if len(tids) > 0 {
+		tid = tids[0]
 	}
 	arr := strings.Split(extend, ",")
 	if len(arr) != 5 {
@@ -2151,7 +2155,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		_, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "RecordWxConn",
 			&verify.WxConnRequest{Head: &common.Head{Sid: uuid},
 				Openid: openid, Acname: arr[0], Userip: arr[1],
-				Acip: arr[2], Usermac: arr[3], Apmac: arr[4]})
+				Acip: arr[2], Usermac: arr[3], Apmac: arr[4], Tid: tid})
 		if rpcerr.Interface() != nil {
 			log.Printf("auth RecordWxConn failed:%v", rpcerr)
 		}
