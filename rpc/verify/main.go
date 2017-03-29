@@ -623,7 +623,7 @@ func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 }
 
 func isTestParam(info *verify.PortalInfo) bool {
-	if info.Acname == testAcname && info.Acip == testAcip &&
+	if info.Acip == testAcip &&
 		info.Userip == testUserip && info.Usermac == testUsermac {
 		return true
 	}

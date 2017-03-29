@@ -2127,9 +2127,6 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	if res.Head.Retcode != 0 {
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
-	if strings.Contains(dst, "weixin.qq.com") {
-		w.Header().Set("Referer", res.Dst)
-	}
 	http.Redirect(w, r, res.Dst, http.StatusMovedPermanently)
 }
 
@@ -2214,9 +2211,9 @@ func jump(w http.ResponseWriter, r *http.Request) {
 
 func getPortalDir(acname, apmac string) string {
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "FetchPortalDir",
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "GetPortalDir",
 		&config.PortalDirRequest{Head: &common.Head{Sid: uuid},
-			Type: util.PortalType, Acname: acname, Apmac: apmac})
+			Type: util.LoginType, Acname: acname, Apmac: apmac})
 	if rpcerr.Interface() != nil {
 		return defLoginURL
 	}
@@ -2249,17 +2246,17 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	if pos != -1 {
 		postfix = r.RequestURI[pos:]
 	}
-	prefix := portalDst
 	var dst string
 	if util.IsWjjAcname(acname) {
 		dst = "http://192.168.200.4:8080/login201703171857/" + postfix
 	} else if util.IsTestAcname(acname) {
-		dst = "http://120.76.236.185/logintest201703271927/" + postfix
+		dir := getPortalDir(acname, apmac)
+		dst = dir + postfix
 	} else if util.IsSshAcname(acname) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
 	} else {
 		dir := getPortalDir(acname, apmac)
-		dst = prefix + dir + postfix
+		dst = dir + postfix
 	}
 
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())

@@ -429,6 +429,7 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 	util.PubRPCRequest(w, "config", "GetPortalDir")
 	dir := getPortalDir(db, in.Type, in.Acname, in.Apmac)
 	util.PubRPCSuccRsp(w, "config", "GetPortalDir")
+	log.Printf("GetPortalDir request:%v dir:%s", in, dir)
 	return &config.PortalDirReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Dir:  dir}, nil
