@@ -999,13 +999,6 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		Portaltype: ptype, Adtype: adtype}, nil
 }
 
-func getLiveVal(db *sql.DB, uid int64) string {
-	if util.IsWhiteUser(db, uid, util.LiveDbgType) {
-		return "livetrue"
-	}
-	return "livefalse"
-}
-
 func main() {
 	lis, err := net.Listen("tcp", util.VerifyServerPort)
 	if err != nil {
