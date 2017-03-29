@@ -13,6 +13,7 @@ service Config{
     rpc GetPortalConf(common.CommRequest) returns (PortalConfReply) {}
     rpc GetEducationVideo(common.CommRequest) returns (EducationVideoReply) {}
     rpc GetHospitalDepartment(common.CommRequest) returns (HospitalDepartmentReply){}
+    rpc GetPortalDir(PortalDirRequest) returns (PortalDirReply) {}
 }
 
 message PortalMenuInfo {
@@ -110,4 +111,16 @@ message DepartmentCategoryInfo {
 message HospitalDepartmentReply {
     common.Head head = 1;
     repeated DepartmentCategoryInfo infos = 2;
+}
+
+message PortalDirRequest {
+    common.Head head = 1;
+    int64 type = 2;
+    string acname = 3;
+    string apmac = 4;
+}
+
+message PortalDirReply {
+    common.Head head = 1;
+    string dir = 2;
 }

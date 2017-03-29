@@ -62,4 +62,6 @@ const (
 	PortalTestType      = 3
 	SceneType           = 4
 	SceneTestType       = 5
+	WjjLoginType        = 6
+	WjjPortalType       = 7
 )

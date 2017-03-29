@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 const (
@@ -121,7 +122,11 @@ func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
 		}
 	} else {
 		if portaltype == 0 {
-			ptype = PortalType
+			if IsWjjAcname(acname) {
+				ptype = WjjPortalType
+			} else {
+				ptype = PortalType
+			}
 		} else {
 			ptype = SceneType
 		}
@@ -139,7 +144,11 @@ func GetLoginPath(db *sql.DB, acname string, portaltype int64) string {
 	if IsTestAcname(acname) {
 		ptype = LoginTestType
 	} else {
-		ptype = LoginType
+		if IsWjjAcname(acname) {
+			ptype = WjjLoginType
+		} else {
+			ptype = LoginType
+		}
 	}
 	host := GetPortalHost(acname)
 	dir, err := GetPortalDir(db, ptype)
@@ -147,4 +156,73 @@ func GetLoginPath(db *sql.DB, acname string, portaltype int64) string {
 		log.Printf("GetLoginPath failed:%v", err)
 	}
 	return host + dir
+}
+
+func getApUnit(db *sql.DB, apmac string) int64 {
+	if apmac == "" {
+		return 0
+	}
+	var unit int64
+	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getApUnit query failed:%v", err)
+	}
+	return unit
+}
+
+func getUnitArea(db *sql.DB, unit int64) int64 {
+	if unit == 0 {
+		return 0
+	}
+	var area int64
+	err := db.QueryRow("SELECT aid FROM area_unit WHERE unid = ?", unit).Scan(&area)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getUnitArea query failed:%v", err)
+	}
+	return area
+}
+
+func getAreaAd(db *sql.DB, area int64) int64 {
+	if area == 0 {
+		return 0
+	}
+	var aid int64
+	var start, end int
+	err := db.QueryRow("SELECT a.id, ts.start, ts.end FROM advertise a, timeslot ts WHERE a.tsid = ts.id AND a.areaid = ?", area).Scan(&aid, start, end)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getAreaAd query failed:%v", err)
+		return aid
+	}
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	ts := hour*100 + min
+	if ts >= start && ts <= end {
+		return aid
+	}
+	return 0
+}
+
+//GetAdType get ad type
+func GetAdType(db *sql.DB, apmac string) int64 {
+	unit := getApUnit(db, apmac)
+	area := getUnitArea(db, unit)
+	return area
+}
+
+func getUnitPortal(db *sql.DB, unit int64) int64 {
+	var ptype int64
+	err := db.QueryRow("SELECT id FROM custom_portal WHERE unid = ?", unit).
+		Scan(&ptype)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getUnitPortal query failed:%v", err)
+	}
+	return ptype
+}
+
+//GetPortalType get portal type
+func GetPortalType(db *sql.DB, apmac string) int64 {
+	unit := getApUnit(db, apmac)
+	ptype := getUnitPortal(db, unit)
+	return ptype
 }

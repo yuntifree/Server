@@ -39,6 +39,7 @@ const (
 	portalDst    = "http://120.25.133.234/"
 	postLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxpostlogin.html"
 	succLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxloginsucc.html"
+	defLoginURL  = "http://192.168.100.4:8080/login201703171857/"
 )
 const (
 	hotNewsKey         = "hot:news"
@@ -2126,6 +2127,9 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	if res.Head.Retcode != 0 {
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
+	if strings.Contains(dst, "weixin.qq.com") {
+		w.Header().Set("Referer", res.Dst)
+	}
 	http.Redirect(w, r, res.Dst, http.StatusMovedPermanently)
 }
 
@@ -2208,39 +2212,38 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
-func getPortalDir() string {
-	if pdir.Expire > time.Now().Unix() {
-		return pdir.Dir
-	}
+func getPortalDir(acname, apmac string) string {
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, 0, "FetchPortal",
-		&common.CommRequest{Head: &common.Head{Sid: uuid}})
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "FetchPortalDir",
+		&config.PortalDirRequest{Head: &common.Head{Sid: uuid},
+			Type: util.PortalType, Acname: acname, Apmac: apmac})
 	if rpcerr.Interface() != nil {
-		return pdir.Dir
+		return defLoginURL
 	}
-	res := resp.Interface().(*fetch.PortalReply)
+	res := resp.Interface().(*config.PortalDirReply)
 	if res.Head.Retcode != 0 {
-		return pdir.Dir
+		return defLoginURL
 	}
-	pdir.Expire = time.Now().Unix() + 60
-	pdir.Dir = res.Dir
-	log.Printf("update pdir dir:%s expire:%d", pdir.Dir, pdir.Expire)
 	return res.Dir
 }
 
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
-	var acname, usermac string
+	var acname, usermac, apmac string
 	names := r.Form["wlanacname"]
 	macs := r.Form["wlanusermac"]
+	aps := r.Form["wlanapmac"]
 	if len(names) > 0 {
 		acname = names[0]
 	}
 	if len(macs) > 0 {
 		usermac = macs[0]
 	}
-	log.Printf("acname:%s usermac:%s", acname, usermac)
+	if len(aps) > 0 {
+		apmac = aps[0]
+	}
+	log.Printf("acname:%s usermac:%s apmac:%s", acname, usermac, apmac)
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
 	if pos != -1 {
@@ -2255,7 +2258,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	} else if util.IsSshAcname(acname) {
 		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
 	} else {
-		dir := getPortalDir()
+		dir := getPortalDir(acname, apmac)
 		dst = prefix + dir + postfix
 	}
 

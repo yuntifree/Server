@@ -674,8 +674,8 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
-	adtype := getAdType(db, in.Info.Apmac)
-	ptype := getPortalType(db, in.Info.Apmac)
+	adtype := util.GetAdType(db, in.Info.Apmac)
+	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
@@ -813,8 +813,8 @@ func genPortalDst(db *sql.DB, openid string) string {
 		log.Printf("genPortalDst failed:%v", err)
 		return ""
 	}
-	adtype := getAdType(db, apmac)
-	portaltype := getPortalType(db, apmac)
+	adtype := util.GetAdType(db, apmac)
+	portaltype := util.GetPortalType(db, apmac)
 	dir := util.GetPortalPath(db, acname, portaltype)
 	dst := fmt.Sprintf("%s?uid=%d&token=%s&adtype=%d&portaltype=%d&ts=%d&s=1",
 		dir, uid, token, adtype, portaltype, time.Now().Unix())
@@ -848,73 +848,6 @@ func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*c
 	util.PubRPCSuccRsp(w, "verify", "RecordWxConn")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
-}
-
-func getApUnit(db *sql.DB, apmac string) int64 {
-	if apmac == "" {
-		return 0
-	}
-	var unit int64
-	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unit)
-	if err != nil && err != sql.ErrNoRows {
-		log.Printf("getApUnit query failed:%v", err)
-	}
-	return unit
-}
-
-func getUnitArea(db *sql.DB, unit int64) int64 {
-	if unit == 0 {
-		return 0
-	}
-	var area int64
-	err := db.QueryRow("SELECT aid FROM area_unit WHERE unid = ?", unit).Scan(&area)
-	if err != nil && err != sql.ErrNoRows {
-		log.Printf("getUnitArea query failed:%v", err)
-	}
-	return area
-}
-
-func getAreaAd(db *sql.DB, area int64) int64 {
-	if area == 0 {
-		return 0
-	}
-	var aid int64
-	var start, end int
-	err := db.QueryRow("SELECT a.id, ts.start, ts.end FROM advertise a, timeslot ts WHERE a.tsid = ts.id AND a.areaid = ?", area).Scan(&aid, start, end)
-	if err != nil && err != sql.ErrNoRows {
-		log.Printf("getAreaAd query failed:%v", err)
-		return aid
-	}
-	now := time.Now()
-	hour := now.Hour()
-	min := now.Minute()
-	ts := hour*100 + min
-	if ts >= start && ts <= end {
-		return aid
-	}
-	return 0
-}
-
-func getAdType(db *sql.DB, apmac string) int64 {
-	unit := getApUnit(db, apmac)
-	area := getUnitArea(db, unit)
-	return area
-}
-
-func getUnitPortal(db *sql.DB, unit int64) int64 {
-	var ptype int64
-	err := db.QueryRow("SELECT id FROM custom_portal WHERE unid = ?", unit).
-		Scan(&ptype)
-	if err != nil && err != sql.ErrNoRows {
-		log.Printf("getUnitPortal query failed:%v", err)
-	}
-	return ptype
-}
-
-func getPortalType(db *sql.DB, apmac string) int64 {
-	unit := getApUnit(db, apmac)
-	ptype := getUnitPortal(db, unit)
-	return ptype
 }
 
 func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
@@ -989,8 +922,8 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	adtype := getAdType(db, in.Info.Apmac)
-	ptype := getPortalType(db, in.Info.Apmac)
+	adtype := util.GetAdType(db, in.Info.Apmac)
+	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)

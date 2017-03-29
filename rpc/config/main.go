@@ -417,6 +417,23 @@ func (s *server) GetHospitalDepartment(ctx context.Context, in *common.CommReque
 		Infos: infos}, nil
 }
 
+func getPortalDir(db *sql.DB, ptype int64, acname, apmac string) string {
+	portaltype := util.GetPortalType(db, apmac)
+	if ptype == util.PortalType {
+		return util.GetPortalPath(db, acname, portaltype)
+	}
+	return util.GetLoginPath(db, acname, portaltype)
+}
+
+func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) (*config.PortalDirReply, error) {
+	util.PubRPCRequest(w, "config", "GetPortalDir")
+	dir := getPortalDir(db, in.Type, in.Acname, in.Apmac)
+	util.PubRPCSuccRsp(w, "config", "GetPortalDir")
+	return &config.PortalDirReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Dir:  dir}, nil
+}
+
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
