@@ -221,8 +221,8 @@ func (s *server) GetHospitalNews(ctx context.Context, in *common.CommRequest) (*
 func getTopVideo() *hot.TopInfo {
 	return &hot.TopInfo{
 		Title: "360安全教育视频集",
-		Dst:   "http://yunxingzh.com/app/about.html",
-		Img:   "http://img.yunxingzh.com/de22398d-b482-43fa-a4c4-112270510245.png",
+		Dst:   "http://wx.yunxingzh.com/app/video.html",
+		Img:   "http://img.yunxingzh.com/a9c36ff0-486c-4e3a-874a-fe8c5f61e09b.png",
 	}
 }
 
