@@ -146,6 +146,7 @@ message CheckReply {
     int64 autologin = 2;
     bool subscribe = 3;
     string img = 4;
+    string dst = 5;
 }
 
 message SubscribeRequest {

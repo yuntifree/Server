@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -30,6 +31,7 @@ const (
 	testUserip  = "10.96.72.28"
 	testUsermac = "f45c89987347"
 	defLoginImg = "http://img.yunxingzh.com/57970b5c-249a-4bc6-970e-064305e6d498.png"
+	mpURL       = "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIzOTc0OTcyMw==&scene=124#wechat_redirect"
 )
 
 type server struct{}
@@ -803,14 +805,35 @@ func getAccessToken(db *sql.DB, atype int64) string {
 	return accesstoken
 }
 
+func genPortalDst(db *sql.DB, openid string) string {
+	var uid int64
+	var acname, apmac, token string
+	err := db.QueryRow("SELECT u.uid, u.token, o.acname FROM user u, online_status o, wx_conn w WHERE u.phone = o.phone AND o.mac = w.usermac AND w.openid = ?", openid).Scan(&uid, &token)
+	if err != nil {
+		log.Printf("genPortalDst failed:%v", err)
+		return ""
+	}
+	adtype := getAdType(db, apmac)
+	portaltype := getPortalType(db, apmac)
+	dir := util.GetPortalPath(db, acname, portaltype)
+	dst := fmt.Sprintf("%s?uid=%d&token=%s&adtype=%d&portaltype=%d&ts=%d&s=1",
+		dir, uid, token, adtype, portaltype, time.Now().Unix())
+	return dst
+}
+
 func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest) (*verify.CheckReply, error) {
 	log.Printf("CheckSubscribe request:%v", in)
 	util.PubRPCRequest(w, "verify", "CheckSubscribe")
 	accesstoken := getAccessToken(db, in.Type)
 	subscribe := util.CheckSubscribe(accesstoken, in.Openid)
+	dst := mpURL
+	if subscribe {
+		dst = genPortalDst(db, in.Openid)
+	}
 	util.PubRPCSuccRsp(w, "verify", "CheckSubscribe")
 	return &verify.CheckReply{
-		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Subscribe: subscribe}, nil
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Subscribe: subscribe,
+		Dst: dst}, nil
 }
 
 func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*common.CommReply, error) {

@@ -2126,10 +2126,7 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	if res.Head.Retcode != 0 {
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
-	if res.Subscribe {
-		dst = succLoginURL
-	}
-	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+	http.Redirect(w, r, res.Dst, http.StatusMovedPermanently)
 }
 
 func auth(w http.ResponseWriter, r *http.Request) {
