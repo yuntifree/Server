@@ -539,7 +539,7 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 func isExceedCodeFrequency(db *sql.DB, phone string, stype uint) bool {
 	var flag int
 	err := db.QueryRow("SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 1 MINUTE), 0, 1) FROM zte_code WHERE phone = ? AND type = ?", phone, stype).Scan(&flag)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("isExceedCodeFrequency query failed:%v", err)
 		return false
 	}
@@ -759,7 +759,7 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 func getLoginImg(db *sql.DB) string {
 	img := defLoginImg
 	err := db.QueryRow("SELECT img FROM banner WHERE type = 3 AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1").Scan(&img)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
 	}
 	return img
