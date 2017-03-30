@@ -1603,10 +1603,12 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamIntDef("term", 0)
+	version := req.GetParamIntDef("version", 0)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetDiscovery",
-		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid, Term: term}})
+		&common.CommRequest{Head: &common.Head{Uid: uid, Sid: uuid, Term: term,
+			Version: version}})
 	httpserver.CheckRPCErr(rpcerr, "GetDiscovery")
 	res := resp.Interface().(*config.DiscoveryReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetDiscovery")

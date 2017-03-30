@@ -187,7 +187,7 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 		in.Subtype)
 	var banners []*config.MediaInfo
 	if in.Type == 0 {
-		banners = getBanners(db, false)
+		banners = getBanners(db, false, false)
 	} else {
 		banners = getHospital(db, in.Type)
 	}
@@ -213,13 +213,24 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 		Hospitalintros: hospitalintros, Services: services}, nil
 }
 
-func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
+func isDstType(term, version int64) bool {
+	if (term == 0 && version < 10) ||
+		(term == 1 && version < 9) {
+		return false
+	}
+	return true
+}
+
+func getBanners(db *sql.DB, dstflag, dbgflag bool) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	query := "SELECT img, dst, id FROM banner WHERE deleted = 0 AND type = 0"
-	if flag {
+	query := "SELECT img, dst, id, dsttype FROM banner WHERE deleted = 0 AND type = 0"
+	if dbgflag {
 		query += " AND (online = 1 OR dbg = 1) "
 	} else {
 		query += " AND online = 1 "
+	}
+	if !dstflag {
+		query += " AND dsttype = 0 "
 	}
 	query += " ORDER BY priority DESC LIMIT 20"
 	rows, err := db.Query(query)
@@ -229,7 +240,7 @@ func getBanners(db *sql.DB, flag bool) []*config.MediaInfo {
 	}
 	for rows.Next() {
 		var info config.MediaInfo
-		err := rows.Scan(&info.Img, &info.Dst, &info.Id)
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id, &info.Type)
 		if err != nil {
 			log.Printf("scan failed:%v", err)
 			continue
@@ -437,8 +448,9 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
-	flag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
-	banners := getBanners(db, flag)
+	dbgflag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
+	dstflag := isDstType(in.Head.Term, in.Head.Version)
+	banners := getBanners(db, dstflag, dbgflag)
 	urbanservices := getUrbanServices(db, in.Head.Term)
 	recommends := getRecommends(db)
 	services := getServices(db)
