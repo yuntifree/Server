@@ -2247,13 +2247,17 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		postfix = r.RequestURI[pos:]
 	}
 	var dst string
-	if util.IsWjjAcname(acname) {
-		dst = "http://192.168.200.4:8080/login201703171857/" + postfix
+	if acname == "AC_SSH_B_10" {
+		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
+	} else if util.IsWjjAcname(acname) {
+		dir := getPortalDir(acname, apmac)
+		dst = dir + postfix
 	} else if util.IsTestAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
 	} else if util.IsSshAcname(acname) {
-		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
+		dir := getPortalDir(acname, apmac)
+		dst = dir + postfix
 	} else {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
