@@ -765,12 +765,28 @@ func getLoginImg(db *sql.DB) string {
 	return img
 }
 
+func getAdImg(db *sql.DB, area int64) string {
+	var img string
+	err := db.QueryRow("SELECT img FROM advertise WHERE areaid = ? AND type = 2 AND deleted = 0 AND online = 1", area).Scan(&img)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("gtAdImg query failed:%v", err)
+	}
+	return img
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
 	img := getLoginImg(db)
+	if in.Info.Apmac != "" {
+		adtype := util.GetAdType(db, in.Info.Apmac)
+		ad := getAdImg(db, adtype)
+		if ad != "" {
+			img = ad
+		}
+	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,

@@ -142,8 +142,9 @@ func getPortalService(db *sql.DB, stype int64) []*config.PortalService {
 		return nil
 		//return getOnlineService(db)
 	}
+	_, tid := getCustomPortal(db, stype)
 	//online := getOnlineService(db)
-	hospital := getHospitalService(db, stype)
+	hospital := getHospitalService(db, tid)
 	//infos := append(online, hospital...)
 	return hospital
 }
@@ -181,6 +182,15 @@ func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
 	return infos
 }
 
+func getCustomPortal(db *sql.DB, id int64) (stype, tid int64) {
+	err := db.QueryRow("SELECT type, tid FROM custom_portal WHERE id = ?", id).
+		Scan(&stype, &tid)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getCustomPortal failed:%v", err)
+	}
+	return
+}
+
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
 	log.Printf("GetPortalConf uid:%d type:%d subtype:%d", in.Head.Uid, in.Type,
@@ -189,7 +199,10 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 	if in.Type == 0 {
 		banners = getBanners(db, false, false)
 	} else {
-		banners = getHospital(db, in.Type)
+		stype, tid := getCustomPortal(db, in.Type)
+		if stype == 0 {
+			banners = getHospital(db, tid)
+		}
 	}
 	if in.Subtype != 0 {
 		ads := getAdvertiseBanner(db, in.Subtype)
@@ -205,7 +218,8 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 			Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
 			Urbanservices: urbanservices, Services: services}, nil
 	}
-	hospitalintros := getHospitalIntro(db, in.Type)
+	_, tid := getCustomPortal(db, in.Type)
+	hospitalintros := getHospitalIntro(db, tid)
 	services := getPortalService(db, in.Type)
 	util.PubRPCSuccRsp(w, "config", "GetPortalConf")
 	return &config.PortalConfReply{

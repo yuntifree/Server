@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS advertise
     version varchar(128) NOT NULL,
     adid    int unsigned NOT NULL,
     areaid  int unsigned NOT NULL,
-    -- type 0:banner 1:news
+    -- type 0:banner 1:news 2:login
     type    int unsigned NOT NULL DEFAULT 0,
     tsid    int unsigned NOT NULL,
     img     varchar(128) NOT NULL,

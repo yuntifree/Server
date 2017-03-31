@@ -608,17 +608,19 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	req.Init(r)
 	usermac := req.GetParamString("wlanusermac")
 	acname := req.GetParamString("wlanacname")
-	log.Printf("checkLogin usermac:%s acname:%s", usermac, acname)
+	apmac := req.GetParamStringDef("wlanapmac", "")
+	log.Printf("checkLogin usermac:%s acname:%s apmac:%s", usermac, acname, apmac)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
 		0, "CheckLogin", req.Callback,
 		&verify.AccessRequest{
 			Head: &common.Head{Sid: uuid},
-			Info: &verify.PortalInfo{Usermac: usermac, Acname: acname}})
-	httpserver.CheckRPCErrCallback(rpcerr, "FetchLatestVersion", req.Callback)
+			Info: &verify.PortalInfo{Usermac: usermac, Acname: acname,
+				Apmac: apmac}})
+	httpserver.CheckRPCErrCallback(rpcerr, "CheckLogin", req.Callback)
 	res := resp.Interface().(*verify.CheckReply)
-	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "FetchLatestVersion",
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "CheckLogin",
 		req.Callback)
 
 	body := httpserver.GenResponseBodyCallback(res, req.Callback, false)
