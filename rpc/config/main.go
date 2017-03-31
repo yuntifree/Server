@@ -19,11 +19,13 @@ import (
 )
 
 const (
-	menuType        = 0
-	tabType         = 1
-	newsNum         = 10
-	hospitalIntro   = 0
-	hospitalService = 1
+	menuType         = 0
+	tabType          = 1
+	newsNum          = 10
+	hospitalIntro    = 0
+	hospitalService  = 1
+	appBannerType    = 0
+	portalBannerType = 4
 )
 
 type server struct{}
@@ -197,7 +199,7 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 		in.Subtype)
 	var banners []*config.MediaInfo
 	if in.Type == 0 {
-		banners = getBanners(db, false, false)
+		banners = getBanners(db, portalBannerType, false, false)
 	} else {
 		stype, tid := getCustomPortal(db, in.Type)
 		if stype == 0 {
@@ -235,9 +237,9 @@ func isDstType(term, version int64) bool {
 	return true
 }
 
-func getBanners(db *sql.DB, dstflag, dbgflag bool) []*config.MediaInfo {
+func getBanners(db *sql.DB, btype int64, dstflag, dbgflag bool) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	query := "SELECT img, dst, id, dsttype FROM banner WHERE deleted = 0 AND type = 0"
+	query := fmt.Sprintf("SELECT img, dst, id, dsttype FROM banner WHERE deleted = 0 AND type = %d ", btype)
 	if dbgflag {
 		query += " AND (online = 1 OR dbg = 1) "
 	} else {
@@ -464,7 +466,7 @@ func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*con
 	util.PubRPCRequest(w, "config", "GetDiscovery")
 	dbgflag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
 	dstflag := isDstType(in.Head.Term, in.Head.Version)
-	banners := getBanners(db, dstflag, dbgflag)
+	banners := getBanners(db, appBannerType, dstflag, dbgflag)
 	urbanservices := getUrbanServices(db, in.Head.Term)
 	recommends := getRecommends(db)
 	services := getServices(db)

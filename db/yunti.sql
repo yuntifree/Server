@@ -257,7 +257,8 @@ CREATE TABLE IF NOT EXISTS user_unionid (
 
 CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
-    -- 0:banner 1:flash_ad 2:activity 3:login image
+    -- type 0:banner 1:flash_ad 2:activity 3:login image
+    -- 4:portal banner
     type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
