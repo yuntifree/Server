@@ -218,12 +218,21 @@ func (s *server) GetHospitalNews(ctx context.Context, in *common.CommRequest) (*
 		Infos: infos}, nil
 }
 
-func getTopVideo() *hot.TopInfo {
+func getTopVideo(uid int64, token string) *hot.TopInfo {
 	return &hot.TopInfo{
 		Title: "360安全教育视频集",
-		Dst:   "http://wx.yunxingzh.com/app/video.html",
+		Dst:   fmt.Sprintf("http://wx.yunxingzh.com/app/video.html?uid=%d&token=%s", uid, token),
 		Img:   "http://img.yunxingzh.com/a9c36ff0-486c-4e3a-874a-fe8c5f61e09b.png",
 	}
+}
+
+func getUserToken(db *sql.DB, uid int64) string {
+	var token string
+	err := db.QueryRow("SELECT token FROM user WHERE uid = ?", uid).Scan(&token)
+	if err != nil {
+		log.Printf("getUserToken failed:%v", err)
+	}
+	return token
 }
 
 func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.HotsReply, error) {
@@ -270,7 +279,8 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 	} else if in.Type == typeVideos {
 		infos = getVideos(db, in.Seq)
 		if in.Seq == 0 {
-			top = getTopVideo()
+			token := getUserToken(db, in.Head.Uid)
+			top = getTopVideo(in.Head.Uid, token)
 		}
 	} else if in.Type == typeDgNews {
 		infos = getNews(db, in.Seq, util.MaxListSize, 10)
