@@ -118,6 +118,19 @@ CREATE TABLE IF NOT EXISTS youku_video (
     UNIQUE KEY(md5)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS wx_appinfo (
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    appid  varchar(64) NOT NULL,
+    secret varchar(64) NOT NULL,
+    shopid  varchar(64) NOT NULL,
+    authurl varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    unid    int unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(appid)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS wx_openid (
     wid     int unsigned NOT NULL AUTO_INCREMENT,
     uid     int unsigned NOT NULL,

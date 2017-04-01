@@ -147,6 +147,10 @@ message CheckReply {
     bool subscribe = 3;
     string img = 4;
     string dst = 5;
+    string wxappid = 6;
+    string wxsecret = 7;
+    string wxshopid = 8;
+    string wxauthurl = 9;
 }
 
 message SubscribeRequest {

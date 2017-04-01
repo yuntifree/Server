@@ -774,23 +774,34 @@ func getAdImg(db *sql.DB, area int64) string {
 	return img
 }
 
+func getWxAppinfo(db *sql.DB, apmac string) (appid, secret, shopid, authurl string) {
+	err := db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getWxAppinfo failed:%v", err)
+	}
+	return
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
 	img := getLoginImg(db)
+	var appid, secret, shopid, authurl string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
 		ad := getAdImg(db, adtype)
 		if ad != "" {
 			img = ad
 		}
+		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Apmac)
 	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
-		Img: img}, nil
+		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
+		Wxauthurl: authurl}, nil
 }
 
 func getAccessToken(db *sql.DB, atype int64) string {
