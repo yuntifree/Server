@@ -1457,7 +1457,7 @@ func (s *server) FetchFeedback(ctx context.Context, in *common.CommRequest) (*fe
 func getMenus(db *sql.DB, term, version int64) []*fetch.MenuInfo {
 	var infos []*fetch.MenuInfo
 	query := "SELECT type, ctype, title, dst FROM menu WHERE deleted = 0"
-	if term == 0 && (version <= 6 || version == 10) || term == 1 && version == 9 {
+	if term == 0 && (version <= 6 || version == 11) || term == 1 && version == 9 {
 		query += " AND ctype < 4 "
 	}
 	rows, err := db.Query(query)
