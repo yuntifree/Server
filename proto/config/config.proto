@@ -88,6 +88,7 @@ message PortalConfReply {
     repeated MediaInfo urbanservices = 3;
     repeated MediaInfo hospitalintros = 4;
     repeated PortalService services = 5;
+    string unit = 6;
 }
 
 message EducationVideoReply {

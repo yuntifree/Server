@@ -193,6 +193,15 @@ func getCustomPortal(db *sql.DB, id int64) (stype, tid int64) {
 	return
 }
 
+func getUnitTitle(db *sql.DB, cid int64) string {
+	var title string
+	err := db.QueryRow("SELECT u.name FROM custom_portal c, unit u WHERE c.unid = u.id AND c.id = ?", cid).Scan(&title)
+	if err != nil {
+		log.Printf("getUnitTitle failed:%v", err)
+	}
+	return title
+}
+
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
 	log.Printf("GetPortalConf uid:%d type:%d subtype:%d", in.Head.Uid, in.Type,
@@ -223,10 +232,11 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 	_, tid := getCustomPortal(db, in.Type)
 	hospitalintros := getHospitalIntro(db, tid)
 	services := getPortalService(db, in.Type)
+	unit := getUnitTitle(db, in.Type)
 	util.PubRPCSuccRsp(w, "config", "GetPortalConf")
 	return &config.PortalConfReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
-		Hospitalintros: hospitalintros, Services: services}, nil
+		Hospitalintros: hospitalintros, Services: services, Unit: unit}, nil
 }
 
 func isDstType(term, version int64) bool {
