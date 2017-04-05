@@ -2263,8 +2263,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
 	} else {
-		dir := getPortalDir(acname, apmac)
-		dst = dir + postfix
+		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
 	}
 
 	dst += fmt.Sprintf("&ts=%d", time.Now().Unix())
