@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Server/util"
 	"crypto/tls"
 	"log"
 	"net/http"
@@ -12,6 +13,11 @@ const (
 	certPath    = "/data/server/fullchain.pem"
 	privKeyPath = "/data/server/privkey.pem"
 )
+
+func init() {
+	w := util.NewRotateWriter("/data/server/app.log", 1024*1024*1024)
+	log.SetOutput(w)
+}
 
 func main() {
 	cer, err := tls.LoadX509KeyPair(certPath, privKeyPath)
