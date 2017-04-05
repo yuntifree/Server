@@ -138,11 +138,10 @@ func (s *server) AddAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 
 func modAdvertise(db *gorm.DB, in *advertise.AdvertiseRequest) {
 	ad := locAdvertise(*in.Info)
-	if ad.Online == 1 {
-		ad.Puid = in.Head.Uid
-		ad.Ptime = time.Now().Format(util.TimeFormat)
-	}
-	db.Save(&ad)
+	gdb := db.DB()
+	gdb.Exec("UPDATE advertise SET name = ?, version = ?, adid = ?, areaid = ?, tsid=?, abstract=?, img=?, content=?, dst=?, deleted = ? WHERE id = ?",
+		ad.Name, ad.Version, ad.Adid, ad.Areaid, ad.Tsid, ad.Abstract,
+		ad.Img, ad.Content, ad.Dst, ad.Deleted, ad.ID)
 }
 
 func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseRequest) (*common.CommReply, error) {
@@ -438,7 +437,8 @@ func (s *server) FetchTimeslot(ctx context.Context, in *common.CommRequest) (*ad
 
 func getTotalAdRecords(db *gorm.DB) int64 {
 	var total int64
-	err := db.Raw("SELECT COUNT(id) FROM ad_click").Scan(&total)
+	gdb := db.DB()
+	err := gdb.QueryRow("SELECT COUNT(id) FROM ad_click").Scan(&total)
 	if err != nil {
 		log.Printf("getTotalAdRecords query failed:%v", err)
 	}

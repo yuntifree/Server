@@ -1005,6 +1005,7 @@ func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	name := req.GetParamString("name")
+	img := req.GetParamString("img")
 	version := req.GetParamString("version")
 	adid := req.GetParamInt("adid")
 	areaid := req.GetParamInt("areaid")
@@ -1019,7 +1020,7 @@ func addAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &advertise.AdvertiseInfo{Name: name, Version: version,
 				Adid: adid, Areaid: areaid, Tsid: tsid, Abstract: abstract,
-				Content: content, Dst: dst}})
+				Content: content, Dst: dst, Img: img}})
 	httpserver.CheckRPCErr(rpcerr, "AddAdvertise")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddAdvertise")
@@ -1034,6 +1035,7 @@ func modAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
+	img := req.GetParamString("img")
 	name := req.GetParamString("name")
 	version := req.GetParamString("version")
 	adid := req.GetParamInt("adid")
@@ -1050,7 +1052,7 @@ func modAdvertise(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &advertise.AdvertiseInfo{ID: id, Name: name, Version: version,
 				Adid: adid, Areaid: areaid, Tsid: tsid, Abstract: abstract,
-				Content: content, Deleted: deleted, Dst: dst}})
+				Content: content, Deleted: deleted, Dst: dst, Img: img}})
 	httpserver.CheckRPCErr(rpcerr, "ModAdvertise")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ModAdvertise")
