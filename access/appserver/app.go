@@ -2117,7 +2117,11 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := fmt.Sprintf("%s?uid=%d&token=%s&union=%s&open=%s", echostr[0],
+	sym := "?"
+	if strings.Contains(echostr[0], "?") {
+		sym = "&"
+	}
+	dst := fmt.Sprintf("%s%suid=%d&token=%s&union=%s&open=%s", echostr[0], sym,
 		res.Head.Uid, res.Token, res.Privdata, res.Openid)
 	log.Printf("wxMpLogin dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
@@ -2235,7 +2239,11 @@ func jump(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"errno":106,"desc":"微信公众号登录失败"}`))
 			return
 		}
-		dst := fmt.Sprintf("%s?uid=%d&token=%s", echostr, res.Head.Uid, res.Token)
+		sym := "?"
+		if strings.Contains(echostr, "?") {
+			sym = "&"
+		}
+		dst := fmt.Sprintf("%s%suid=%d&token=%s", echostr, sym, res.Head.Uid, res.Token)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 		return
 	}
