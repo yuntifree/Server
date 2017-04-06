@@ -2121,7 +2121,7 @@ func wxMpLogin(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(echostr[0], "?") {
 		sym = "&"
 	}
-	dst := fmt.Sprintf("%s%suid=%d&token=%s&union=%s&open=%s", echostr[0], sym,
+	dst := fmt.Sprintf("%s%suid=%d&token=%s&union=%s&open=%s&s=1", echostr[0], sym,
 		res.Head.Uid, res.Token, res.Privdata, res.Openid)
 	log.Printf("wxMpLogin dst:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
@@ -2211,7 +2211,9 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	var echostr string
 	if len(file) > 0 {
 		echostr = file[0]
-		echostr = wxHost + echostr
+		if echostr[0] == '/' {
+			echostr = wxHost + echostr
+		}
 	}
 	ck, err := r.Cookie("UNION")
 	if err == nil {
@@ -2243,7 +2245,7 @@ func jump(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(echostr, "?") {
 			sym = "&"
 		}
-		dst := fmt.Sprintf("%s%suid=%d&token=%s", echostr, sym, res.Head.Uid, res.Token)
+		dst := fmt.Sprintf("%s%suid=%d&token=%s&s=1", echostr, sym, res.Head.Uid, res.Token)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 		return
 	}
