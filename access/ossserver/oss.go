@@ -812,9 +812,9 @@ func modArea(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.AdvertiseServerType, uid, "ModArea",
-		&advertise.UnitRequest{
+		&advertise.AreaRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &advertise.UnitInfo{ID: id, Name: name,
+			Info: &advertise.AreaInfo{ID: id, Name: name,
 				Deleted: deleted}})
 	httpserver.CheckRPCErr(rpcerr, "ModArea")
 	res := resp.Interface().(*common.CommReply)
