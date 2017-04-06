@@ -204,35 +204,43 @@ func getUnitTitle(db *sql.DB, cid int64) string {
 
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
-	log.Printf("GetPortalConf uid:%d type:%d subtype:%d", in.Head.Uid, in.Type,
-		in.Subtype)
+	log.Printf("GetPortalConf uid:%d type:%d subtype:%d id:%d", in.Head.Uid, in.Type,
+		in.Subtype, in.Id)
 	var banners []*config.MediaInfo
-	if in.Type == 0 {
+	var portaltype, adtype int64
+	if in.Id != 0 {
+		adtype = util.GetUnitArea(db, in.Id)
+		portaltype = util.GetUnitPortal(db, in.Id)
+	} else {
+		portaltype = in.Type
+		adtype = in.Subtype
+	}
+	if portaltype == 0 {
 		banners = getBanners(db, portalBannerType, false, false)
 	} else {
-		stype, tid := getCustomPortal(db, in.Type)
+		stype, tid := getCustomPortal(db, portaltype)
 		if stype == 0 {
 			banners = getHospital(db, tid)
 		}
 	}
-	if in.Subtype != 0 {
-		ads := getAdvertiseBanner(db, in.Subtype)
+	if adtype != 0 {
+		ads := getAdvertiseBanner(db, adtype)
 		log.Printf("ads:%v", ads)
 		banners = append(ads, banners...)
 
 	}
-	if in.Type == 0 {
+	if portaltype == 0 {
 		urbanservices := getUrbanServices(db, in.Head.Term)
-		services := getPortalService(db, in.Type)
+		services := getPortalService(db, portaltype)
 		util.PubRPCSuccRsp(w, "config", "GetPortalMenu")
 		return &config.PortalConfReply{
 			Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,
 			Urbanservices: urbanservices, Services: services}, nil
 	}
-	_, tid := getCustomPortal(db, in.Type)
+	_, tid := getCustomPortal(db, portaltype)
 	hospitalintros := getHospitalIntro(db, tid)
-	services := getPortalService(db, in.Type)
-	unit := getUnitTitle(db, in.Type)
+	services := getPortalService(db, portaltype)
+	unit := getUnitTitle(db, portaltype)
 	util.PubRPCSuccRsp(w, "config", "GetPortalConf")
 	return &config.PortalConfReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Banners: banners,

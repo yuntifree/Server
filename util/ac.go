@@ -172,7 +172,8 @@ func getApUnit(db *sql.DB, apmac string) int64 {
 	return unit
 }
 
-func getUnitArea(db *sql.DB, unit int64) int64 {
+//GetUnitArea get unit area
+func GetUnitArea(db *sql.DB, unit int64) int64 {
 	if unit == 0 {
 		return 0
 	}
@@ -208,11 +209,12 @@ func getAreaAd(db *sql.DB, area int64) int64 {
 //GetAdType get ad type
 func GetAdType(db *sql.DB, apmac string) int64 {
 	unit := getApUnit(db, apmac)
-	area := getUnitArea(db, unit)
+	area := GetUnitArea(db, unit)
 	return area
 }
 
-func getUnitPortal(db *sql.DB, unit int64) int64 {
+//GetUnitPortal get unit portal
+func GetUnitPortal(db *sql.DB, unit int64) int64 {
 	var ptype int64
 	err := db.QueryRow("SELECT id FROM custom_portal WHERE deleted = 0 AND unid = ?", unit).
 		Scan(&ptype)
@@ -225,6 +227,6 @@ func getUnitPortal(db *sql.DB, unit int64) int64 {
 //GetPortalType get portal type
 func GetPortalType(db *sql.DB, apmac string) int64 {
 	unit := getApUnit(db, apmac)
-	ptype := getUnitPortal(db, unit)
+	ptype := GetUnitPortal(db, unit)
 	return ptype
 }

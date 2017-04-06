@@ -1821,12 +1821,13 @@ func getPortalConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	uid := req.GetParamInt("uid")
 	portaltype := req.GetParamIntDef("portaltype", 0)
 	adtype := req.GetParamIntDef("adtype", 0)
+	unid := req.GetParamIntDef("unid", 0)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetPortalConf",
 		&common.CommRequest{
 			Head: &common.Head{Sid: uuid, Uid: uid}, Type: portaltype,
-			Subtype: adtype})
+			Subtype: adtype, Id: unid})
 	httpserver.CheckRPCErr(rpcerr, "GetPortalConf")
 	res := resp.Interface().(*config.PortalConfReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetPortalConf")
