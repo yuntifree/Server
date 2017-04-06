@@ -26,6 +26,7 @@ const (
 	expiretime  = 3600 * 24 * 30
 	mastercode  = 251653
 	randrange   = 1000000
+	specPhone   = "13800000000"
 	testAcname  = "2043.0769.200.00"
 	testAcip    = "120.197.159.10"
 	testUserip  = "10.96.72.28"
@@ -908,6 +909,108 @@ func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInf
 		log.Printf("addOnlineRecord online status failed:%d %s %v %v",
 			uid, phone, info, err)
 	}
+}
+
+func hasMacRecord(db *sql.DB, usermac string) bool {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM user_mac WHERE mac = ?", usermac).Scan(&cnt)
+	if err != nil {
+		log.Printf("hasMacRecord query failed:%v", err)
+		return false
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
+func oneClickLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
+	var uid int64
+	var phone string
+	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
+		Scan(&phone, &uid)
+	if err != nil {
+		log.Printf("OneClickLogin query failed:%v", err)
+		return 0, err
+	}
+
+	stype := getAcSys(db, in.Info.Acname)
+	bitmap := getUserBitmap(db, uid)
+	err = checkZteReg(db, bitmap, stype, uid, phone)
+	if err != nil {
+		return uid, err
+	}
+	if !isTestParam(in.Info) {
+		flag := zteLogin(phone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
+				phone)
+			return uid, err
+		}
+	}
+	recordUserMac(db, uid, in.Info.Usermac, phone)
+	refreshActiveTime(db, uid)
+	addOnlineRecord(db, uid, phone, in.Info)
+	return uid, nil
+}
+
+func portalLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
+	stype := getAcSys(db, in.Info.Acname)
+	if !isTestParam(in.Info) {
+		flag := zteLogin(specPhone, in.Info.Userip,
+			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
+		if !flag {
+			log.Printf("portalLogin zteLogin retry failed, request:%v", in)
+			return 0, errors.New("zteLogin login failed")
+		}
+	}
+
+	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), 3, 2, NOW()) ON DUPLICATE KEY UPDATE atime = NOW(), bitmap = 3, aptime = NOW()",
+		in.Info.Usermac, specPhone)
+	if err != nil {
+		log.Printf("portalLogin insert user failed, request:%v", in)
+		return 0, err
+	}
+	uid, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("PortalLogin add user failed:%v", err)
+		return 0, err
+	}
+	recordUserMac(db, uid, in.Info.Usermac, specPhone)
+	addOnlineRecord(db, uid, specPhone, in.Info)
+	return uid, err
+}
+
+func (s *server) UnifyLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
+	log.Printf("UnifyLogin request:%v", in)
+	util.PubRPCRequest(w, "verify", "UnifyLogin")
+	var err error
+	var uid int64
+	if hasMacRecord(db, in.Info.Usermac) {
+		uid, err = oneClickLogin(db, in)
+	} else {
+		uid, err = portalLogin(db, in)
+	}
+	if err != nil {
+		log.Printf("unify login failed, req:%v", in)
+		return &verify.PortalLoginReply{
+			Head: &common.Head{
+				Retcode: common.ErrCode_ZTE_LOGIN}}, nil
+	}
+	token, _, _, err := util.RefreshTokenPrivdata(db, kv, uid, expiretime)
+	if err != nil {
+		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
+		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
+	}
+	adtype := util.GetAdType(db, in.Info.Apmac)
+	ptype := util.GetPortalType(db, in.Info.Apmac)
+	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
+	log.Printf("UnifyLogin succ request:%v uid:%d token:%s", in, uid, token)
+	util.PubRPCSuccRsp(w, "verify", "UnifyLogin")
+	return &verify.PortalLoginReply{
+		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
+		Portaltype: ptype, Adtype: adtype}, nil
 }
 
 func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*verify.PortalLoginReply, error) {

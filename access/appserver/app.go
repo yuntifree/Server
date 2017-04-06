@@ -1493,6 +1493,37 @@ func autoLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func unifyLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	acname := req.GetParamString("wlanacname")
+	acip := req.GetParamString("wlanacip")
+	userip := req.GetParamString("wlanuserip")
+	usermac := req.GetParamString("wlanusermac")
+	apmac := req.GetParamStringDef("wlanapmac", "")
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	log.Printf("unifyLogin acname:%s acip:%s userip:%s usermac:%s apmac:%s",
+		acname, acip, userip, usermac, apmac)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPCCallback(util.VerifyServerType,
+		0, "UnifyLogin", req.Callback,
+		&verify.PortalLoginRequest{Head: &common.Head{Sid: uuid},
+			Info: &verify.PortalInfo{
+				Acname: acname, Acip: acip, Usermac: usermac, Userip: userip,
+				Apmac: apmac}})
+	httpserver.CheckRPCErrCallback(rpcerr, "UnifyLogin", req.Callback)
+	res := resp.Interface().(*verify.PortalLoginReply)
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "UnifyLogin", req.Callback)
+
+	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
+	req.WriteRsp(w, body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	log.Printf("unifyLogin succ  acname:%s acip:%s userip:%s usermac:%s res:%v",
+		acname, acip, userip, usermac, res)
+	return nil
+}
+
 func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.Init(r)
@@ -2410,6 +2441,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/one_click_login", httpserver.AppHandler(oneClickLogin))
 	mux.Handle("/auto_login", httpserver.AppHandler(autoLogin))
 	mux.Handle("/portal_login", httpserver.AppHandler(portalLogin))
+	mux.Handle("/unify_login", httpserver.AppHandler(unifyLogin))
 	mux.Handle("/get_nearby_aps", httpserver.AppHandler(getAppAps))
 	mux.Handle("/get_all_aps", httpserver.AppHandler(getAllAps))
 	mux.Handle("/report_wifi", httpserver.AppHandler(reportWifi))

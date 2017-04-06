@@ -17,6 +17,7 @@ service Verify{
      rpc GetWxTicket(TicketRequest) returns (TicketReply) {}
      rpc GetCheckCode(PortalLoginRequest) returns (common.CommReply) {}
      rpc PortalLogin(PortalLoginRequest) returns (PortalLoginReply) {}
+     rpc UnifyLogin(PortalLoginRequest) returns (PortalLoginReply) {}
      rpc WifiAccess(AccessRequest) returns (common.CommReply) {}
      rpc checkLogin(AccessRequest) returns (CheckReply) {}
      rpc oneClickLogin(AccessRequest) returns (PortalLoginReply) {}
