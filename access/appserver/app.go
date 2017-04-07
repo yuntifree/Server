@@ -609,6 +609,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	usermac := req.GetParamString("wlanusermac")
 	acname := req.GetParamString("wlanacname")
 	apmac := req.GetParamStringDef("wlanapmac", "")
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
 	log.Printf("checkLogin usermac:%s acname:%s apmac:%s", usermac, acname, apmac)
 
 	uuid := util.GenUUID()
