@@ -165,7 +165,7 @@ func getHospital(db *sql.DB, hid int64) []*config.MediaInfo {
 
 func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
 	var infos []*config.MediaInfo
-	rows, err := db.Query("SELECT img, dst, id FROM advertise WHERE areaid = ? AND type = 0", adtype)
+	rows, err := db.Query("SELECT img, dst, id FROM advertise WHERE areaid = ? AND type = 0 AND online = 1 AND deleted = 0", adtype)
 	if err != nil {
 		log.Printf("getAdvertiseBanner query failed:%v", err)
 		return infos
