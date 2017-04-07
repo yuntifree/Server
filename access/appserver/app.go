@@ -2209,11 +2209,25 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
 	file := r.Form["echofile"]
+	ua := r.Header.Get("User-Agent")
 	var echostr string
 	if len(file) > 0 {
 		echostr = file[0]
 		if echostr[0] == '/' {
 			echostr = wxHost + echostr
+		}
+	}
+	if ua != "" {
+		agent := strings.ToLower(ua)
+		log.Printf("agent:%s", agent)
+		if !strings.Contains(agent, "micromessenger") && echostr != "" {
+			sym := "?"
+			if strings.Contains(echostr, "?") {
+				sym = "&"
+			}
+			dst := fmt.Sprintf("%s%suid=137&token=6ba9ac5a422d4473b337d57376dd3488", echostr, sym)
+			log.Printf("redirect:%s", dst)
+			http.Redirect(w, r, dst, http.StatusMovedPermanently)
 		}
 	}
 	ck, err := r.Cookie("UNION")
