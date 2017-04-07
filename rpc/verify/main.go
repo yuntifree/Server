@@ -757,9 +757,13 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	return 0
 }
 
-func getLoginImg(db *sql.DB) string {
+func getLoginImg(db *sql.DB, acname string) string {
 	img := defLoginImg
-	err := db.QueryRow("SELECT img FROM banner WHERE type = 3 AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1").Scan(&img)
+	btype := 3
+	if util.IsTestAcname(acname) {
+		btype = 5
+	}
+	err := db.QueryRow("SELECT img FROM banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1", btype).Scan(&img)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
 	}
@@ -788,7 +792,7 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
-	img := getLoginImg(db)
+	img := getLoginImg(db, in.Info.Acname)
 	var appid, secret, shopid, authurl string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
