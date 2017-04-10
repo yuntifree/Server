@@ -48,6 +48,13 @@ func kickOff(db *sql.DB, usermac, acname string) {
 	}
 }
 
+func updateSubscribe(db *sql.DB, openid string) {
+	_, err := db.Exec("UPDATE wx_conn SET subscribe = 1, stime = NOW() WHERE openid = ?", openid)
+	if err != nil {
+		log.Printf("updateSubscribe failed:%v", err)
+	}
+}
+
 func checkUserOnline(db *sql.DB, openid, usermac, acname string) {
 	defer wg.Done()
 	limit <- 1
@@ -56,19 +63,21 @@ func checkUserOnline(db *sql.DB, openid, usermac, acname string) {
 	subscribe := util.CheckSubscribe(accesstoken, openid)
 	if !subscribe {
 		kickOff(db, usermac, acname)
+	} else {
+		updateSubscribe(db, openid)
 	}
 	<-limit
 }
 
 func main() {
-	limit = make(chan int, 8)
+	limit = make(chan int, 128)
 	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("InitDB failed:%v", err)
 		os.Exit(1)
 	}
 
-	rows, err := db.Query("SELECT openid, usermac, acname FROM wx_conn WHERE etime > NOW() AND acname = 'AC_120_A_06'")
+	rows, err := db.Query("SELECT openid, usermac, acname FROM wx_conn WHERE etime > NOW() AND (subscribe = 0 OR (subscribe = 1 AND stime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)))")
 	if err != nil {
 		log.Printf("query failed:%v", err)
 	}

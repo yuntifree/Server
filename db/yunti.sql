@@ -614,10 +614,15 @@ CREATE TABLE IF NOT EXISTS wx_conn
     usermac varchar(32) NOT NULL,
     userip  varchar(32) NOT NULL,
     apmac   varchar(32) NOT NULL,
+    subscribe tinyint unsigned NOT NULL DEFAULT 0,
+    tid     varchar(128) NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     etime   datetime NOT NULL DEFAULT '2017-01-01',
+    stime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
-    UNIQUE KEY(openid)
+    UNIQUE KEY(openid),
+    KEY(etime),
+    KEY(stime)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS issue_record
