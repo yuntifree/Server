@@ -37,8 +37,8 @@ const (
 	wxHost       = "http://wx.yunxingzh.com/"
 	maxZipcode   = 820000
 	portalDst    = "http://120.25.133.234/"
-	postLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxpostlogin.html"
-	succLoginURL = "http://wx.yunxingzh.com/wx/wxlogin201703271528/wxloginsucc.html"
+	postLoginURL = "http://wx.yunxingzh.com/wx/h5/wxpostlogin.html"
+	succLoginURL = "http://wx.yunxingzh.com/scenestest201704071912/scenes.html?unid=195"
 	defLoginURL  = "http://192.168.100.4:8080/login201703171857/"
 )
 const (
@@ -2167,13 +2167,22 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
 	openids := r.Form["open"]
-	var openid string
+	uids := r.Form["uid"]
+	tokens := r.Form["token"]
+	var openid, uid, token string
 	if len(openids) > 0 {
 		openid = openids[0]
+	}
+	if len(uids) > 0 {
+		uid = uids[0]
+	}
+	if len(tokens) > 0 {
+		token = tokens[0]
 	}
 
 	dst := postLoginURL
 	if openid == "" {
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
 	uuid := util.GenUUID()
@@ -2181,12 +2190,15 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 		&verify.SubscribeRequest{Head: &common.Head{Sid: uuid}, Type: 0,
 			Openid: openid})
 	if rpcerr.Interface() != nil {
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
 	res := resp.Interface().(*verify.CheckReply)
 	if res.Head.Retcode != 0 {
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
+	dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
 	http.Redirect(w, r, res.Dst, http.StatusMovedPermanently)
 }
 
