@@ -1,6 +1,7 @@
 package util
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/url"
@@ -197,4 +198,33 @@ func GetWxJsapiTicket(token string) (ticket string, err error) {
 		log.Printf("json get ticket failed:%v", err)
 	}
 	return
+}
+
+//GetAccessToken  get access token
+func GetAccessToken(db *sql.DB, atype int64) string {
+	var accesstoken string
+	appid := WxDgAppid
+	appsec := WxDgAppkey
+	if atype == 1 {
+		appid = WxAppid
+		appsec = WxAppkey
+	}
+	err := db.QueryRow("SELECT access_token FROM wx_token WHERE appid = ? AND expire_time > NOW()", appid).Scan(&accesstoken)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getAccessToken failed:%v", err)
+	}
+	if accesstoken != "" {
+		return accesstoken
+	}
+	accesstoken, err = GetWxToken(appid, appsec)
+	if err != nil {
+		log.Printf("getAccessToken GetWxToken failed:%v", err)
+	}
+	log.Printf("getAccessToken appid:%s appsec:%s accesstoken:%s", appid, appsec, accesstoken)
+	_, err = db.Exec("INSERT INTO wx_token(appid, secret, access_token, expire_time) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 2 HOUR)) ON DUPLICATE KEY UPDATE access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 2 DAY)",
+		appid, appsec, accesstoken, accesstoken)
+	if err != nil {
+		log.Printf("getAccessToken record failed:%v", err)
+	}
+	return accesstoken
 }
