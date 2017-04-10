@@ -471,7 +471,7 @@ func unionToID(db *sql.DB, unionid string) (int64, error) {
 
 func getUserOpenid(db *sql.DB, uid int64) string {
 	var openid string
-	err := db.QueryRow("SELECT openid FROM wx_openid WHERE uid = ?", uid).Scan(&openid)
+	err := db.QueryRow("SELECT openid FROM wx_openid WHERE wtype = 1 AND uid = ?", uid).Scan(&openid)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getUserOpenid query failed:%v", err)
 	}
