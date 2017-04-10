@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -19,6 +20,9 @@ type portalInfo struct {
 }
 
 var db *sql.DB
+
+var limit chan int
+var wg sync.WaitGroup
 
 func getAcnameType(acname string) uint {
 	if util.IsWjjAcname(acname) {
@@ -45,15 +49,19 @@ func kickOff(db *sql.DB, usermac, acname string) {
 }
 
 func checkUserOnline(db *sql.DB, openid, usermac, acname string) {
+	defer wg.Done()
+	limit <- 1
 	log.Printf("checkUserOnline openid:%s usermac:%s acname:%s", openid, usermac, acname)
 	accesstoken := util.GetAccessToken(db, 0)
 	subscribe := util.CheckSubscribe(accesstoken, openid)
 	if !subscribe {
 		kickOff(db, usermac, acname)
 	}
+	<-limit
 }
 
 func main() {
+	limit = make(chan int, 8)
 	db, err := util.InitDB(false)
 	if err != nil {
 		log.Printf("InitDB failed:%v", err)
@@ -72,6 +80,8 @@ func main() {
 			log.Printf("scan failed:%v", err)
 			continue
 		}
-		checkUserOnline(db, openid, usermac, acname)
+		wg.Add(1)
+		go checkUserOnline(db, openid, usermac, acname)
 	}
+	wg.Wait()
 }
