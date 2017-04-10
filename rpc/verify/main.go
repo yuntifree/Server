@@ -469,6 +469,15 @@ func unionToID(db *sql.DB, unionid string) (int64, error) {
 	return uid, nil
 }
 
+func getUserOpenid(db *sql.DB, uid int64) string {
+	var openid string
+	err := db.QueryRow("SELECT openid FROM wx_openid WHERE uid = ?", uid).Scan(&openid)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("getUserOpenid query failed:%v", err)
+	}
+	return openid
+}
+
 func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*verify.LoginReply, error) {
 	util.PubRPCRequest(w, "verify", "UnionLogin")
 	uid, err := unionToID(db, in.Unionid)
@@ -481,10 +490,11 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 	util.SetCachedToken(kv, uid, token)
 	strTime := time.Now().Add(time.Duration(expiretime) * time.Second).
 		Format(util.TimeFormat)
+	openid := getUserOpenid(db, uid)
 	util.PubRPCSuccRsp(w, "verify", "UnionLogin")
 	return &verify.LoginReply{Head: &common.Head{Retcode: 0, Uid: uid},
 		Token: token, Privdata: privdata, Expire: expiretime,
-		Expiretime: strTime}, nil
+		Expiretime: strTime, Openid: openid}, nil
 }
 
 func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {

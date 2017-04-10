@@ -2166,6 +2166,7 @@ func jumpOnline(w http.ResponseWriter, r *http.Request) {
 func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
+	log.Printf("checkSubscribe form:%v", r.Form)
 	openids := r.Form["open"]
 	uids := r.Form["uid"]
 	tokens := r.Form["token"]
@@ -2291,7 +2292,8 @@ func jump(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(echostr, "?") {
 			sym = "&"
 		}
-		dst := fmt.Sprintf("%s%suid=%d&token=%s&s=1", echostr, sym, res.Head.Uid, res.Token)
+		dst := fmt.Sprintf("%s%suid=%d&token=%s&open=%s&s=1", echostr,
+			sym, res.Head.Uid, res.Token, res.Openid)
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 		return
 	}
