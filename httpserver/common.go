@@ -852,3 +852,23 @@ func GetConf(w http.ResponseWriter, r *http.Request, back bool) (apperr *util.Ap
 	w.Write(body)
 	return nil
 }
+
+//FileHandler wrapper for FileServer
+type FileHandler struct {
+	Dir string
+	h   http.Handler
+}
+
+//NewFileHandler return new FileHandler
+func NewFileHandler(dir string) *FileHandler {
+	return &FileHandler{
+		Dir: dir,
+		h:   http.FileServer(http.Dir(dir)),
+	}
+}
+
+//ServeHTTP FileHandler implemention
+func (f FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("url:%s", r.URL)
+	f.h.ServeHTTP(w, r)
+}

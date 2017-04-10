@@ -1509,6 +1509,7 @@ func getOssImagePolicy(w http.ResponseWriter, r *http.Request) (apperr *util.App
 //NewOssServer return oss http handler
 func NewOssServer() http.Handler {
 	mux := http.NewServeMux()
+	fh := httpserver.NewFileHandler("/data/server/oss")
 	mux.Handle("/login", httpserver.AppHandler(backLogin))
 	mux.Handle("/get_news", httpserver.AppHandler(getReviewNews))
 	mux.Handle("/get_tags", httpserver.AppHandler(getTags))
@@ -1569,6 +1570,6 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_channel_version", httpserver.AppHandler(addChannelVersion))
 	mux.Handle("/mod_channel_version", httpserver.AppHandler(modChannelVersion))
 	mux.Handle("/get_oss_image_policy", httpserver.AppHandler(getOssImagePolicy))
-	mux.Handle("/", http.FileServer(http.Dir("/data/server/oss")))
+	mux.Handle("/", fh)
 	return mux
 }
