@@ -221,7 +221,7 @@ func GetAccessToken(db *sql.DB, atype int64) string {
 		log.Printf("getAccessToken GetWxToken failed:%v", err)
 	}
 	log.Printf("getAccessToken appid:%s appsec:%s accesstoken:%s", appid, appsec, accesstoken)
-	_, err = db.Exec("INSERT INTO wx_token(appid, secret, access_token, expire_time) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 2 HOUR)) ON DUPLICATE KEY UPDATE access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 2 DAY)",
+	_, err = db.Exec("INSERT INTO wx_token(appid, secret, access_token, expire_time) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 2 HOUR)) ON DUPLICATE KEY UPDATE access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 2 HOUR)",
 		appid, appsec, accesstoken, accesstoken)
 	if err != nil {
 		log.Printf("getAccessToken record failed:%v", err)
