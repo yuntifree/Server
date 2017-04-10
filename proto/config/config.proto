@@ -14,6 +14,7 @@ service Config{
     rpc GetEducationVideo(common.CommRequest) returns (EducationVideoReply) {}
     rpc GetHospitalDepartment(common.CommRequest) returns (HospitalDepartmentReply){}
     rpc GetPortalDir(PortalDirRequest) returns (PortalDirReply) {}
+    rpc GetPortalContent(common.CommRequest) returns (PortalContentReply) {}
 }
 
 message PortalMenuInfo {
@@ -124,4 +125,11 @@ message PortalDirRequest {
 message PortalDirReply {
     common.Head head = 1;
     string dir = 2;
+}
+
+message PortalContentReply {
+    common.Head head = 1;
+    repeated MediaInfo banners = 2;
+    repeated PortalMenuInfo menulist = 3;
+    repeated PortalMenuInfo tablist = 4;
 }

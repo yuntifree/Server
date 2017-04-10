@@ -480,6 +480,18 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 		Dir:  dir}, nil
 }
 
+func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (*config.PortalContentReply, error) {
+	util.PubRPCRequest(w, "config", "GetPortalContent")
+	banners := getBanners(db, portalBannerType, false, false)
+	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
+	menulist := getPortalMenu(db, menuType, flag)
+	tablist := getPortalMenu(db, tabType, flag)
+	util.PubRPCSuccRsp(w, "config", "GetPortalContent")
+	return &config.PortalContentReply{
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Banners: banners, Menulist: menulist, Tablist: tablist}, nil
+}
+
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
 	util.PubRPCRequest(w, "config", "GetDiscovery")
 	dbgflag := util.IsWhiteUser(db, in.Head.Uid, util.BannerWhiteType)
