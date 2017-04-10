@@ -871,7 +871,7 @@ func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest
 func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*common.CommReply, error) {
 	log.Printf("RecordWxConn request:%v", in)
 	util.PubRPCRequest(w, "verify", "RecordWxConn")
-	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 5 MINUTE)",
+	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
 		in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid,
 		in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
 	if err != nil {
@@ -906,7 +906,7 @@ func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInf
 		log.Printf("addOnlineRecord online record failed:%d %s %v %v",
 			uid, phone, info, err)
 	}
-	_, err = db.Exec("INSERT INTO online_status(phone, mac, ip, apmac, acip, ctime, etime) VALUES (?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 4 HOUR)) ON DUPLICATE KEY UPDATE ip = ?, apmac = ?, acip = ?, etime = DATE_ADD(NOW(), INTERVAL 4 HOUR)",
+	_, err = db.Exec("INSERT INTO online_status(phone, mac, ip, apmac, acip, ctime, etime) VALUES (?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE ip = ?, apmac = ?, acip = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
 		phone, info.Usermac, info.Userip, info.Apmac, info.Acip, info.Userip,
 		info.Apmac, info.Acip)
 	if err != nil {
