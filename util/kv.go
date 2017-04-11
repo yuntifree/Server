@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"strconv"
@@ -17,7 +18,18 @@ const (
 	expireInterval = 300
 	redisHost      = "r-wz9191666aa18664.redis.rds.aliyuncs.com:6379"
 	redisPasswd    = "YXZHwifiredis01server"
+	kickTaskSet    = "task:kickonline:zset"
 )
+
+//OnlineInfo for kickonline task
+type OnlineInfo struct {
+	Openid  string
+	Phone   string
+	Usermac string
+	Userip  string
+	Acip    string
+	Acname  string
+}
 
 //InitRedis return initialed redis client
 func InitRedis() *redis.Client {
@@ -132,4 +144,15 @@ func SetSSDBVal(key, val string) (err error) {
 	defer cli.Close()
 	_, err = cli.Set(key, val)
 	return
+}
+
+//AddOnlineTask add online task
+func AddOnlineTask(client *redis.Client, info OnlineInfo) {
+	b, err := json.Marshal(info)
+	if err != nil {
+		log.Printf("AddOnlineTask Marshal failed:%v", err)
+		return
+	}
+	ts := time.Now().Unix() + 600
+	client.ZAdd(kickTaskSet, redis.Z{Member: string(b), Score: float64(ts)})
 }

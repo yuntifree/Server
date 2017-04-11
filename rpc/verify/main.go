@@ -835,6 +835,23 @@ func genPortalDst(db *sql.DB, openid string) string {
 	return dst
 }
 
+func updateSubscribe(db *sql.DB, openid string) {
+	_, err := db.Exec("UPDATE wx_conn SET subscribe = 1, stime = NOW() WHERE openid = ?", openid)
+	if err != nil {
+		log.Printf("updateSubscribe failed:%v", err)
+	}
+}
+
+func getOnlineInfo(db *sql.DB, openid string) (util.OnlineInfo, error) {
+	var info util.OnlineInfo
+	info.Openid = openid
+	err := db.QueryRow("SELECT w.usermac, w.acname, o.phone, o.ip, o.acip FROM wx_conn w, online_status o WHERE w.usermac = o.mac AND w.etime > NOW() AND w.openid = ?", openid).Scan(&info.Usermac, &info.Acname, &info.Phone, &info.Userip, &info.Acip)
+	if err != nil {
+		log.Printf("getOnlineInfo query failed:%v", err)
+	}
+	return info, err
+}
+
 func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest) (*verify.CheckReply, error) {
 	log.Printf("CheckSubscribe request:%v", in)
 	util.PubRPCRequest(w, "verify", "CheckSubscribe")
@@ -843,6 +860,12 @@ func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest
 	dst := mpURL
 	if subscribe {
 		dst = genPortalDst(db, in.Openid)
+		updateSubscribe(db, in.Openid)
+	} else {
+		info, err := getOnlineInfo(db, in.Openid)
+		if err == nil {
+			util.AddOnlineTask(kv, info)
+		}
 	}
 	util.PubRPCSuccRsp(w, "verify", "CheckSubscribe")
 	return &verify.CheckReply{
