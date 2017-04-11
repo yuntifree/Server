@@ -18,7 +18,6 @@ import (
 	"Server/proto/common"
 	"Server/proto/config"
 	"Server/proto/fetch"
-	"Server/proto/punch"
 	"Server/proto/userinfo"
 
 	"Server/proto/hot"
@@ -1666,61 +1665,6 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	return nil
 }
 
-func punchAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	apmac := req.GetParamString("apmac")
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, uid, "Punch",
-		&punch.PunchRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Apmac: apmac})
-	httpserver.CheckRPCErr(rpcerr, "Punch")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "Punch")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func correctAp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	aid := req.GetParamInt("aid")
-	etype := req.GetParamInt("type")
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, uid, "Correct",
-		&punch.ApRequest{Head: &common.Head{Uid: uid, Sid: uuid}, Aid: aid,
-			Etype: etype})
-	httpserver.CheckRPCErr(rpcerr, "Correct")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "Correct")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getMyPunch(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, uid, "GetPunch",
-		&common.CommRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "GetPunch")
-	res := resp.Interface().(*punch.PunchReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetPunch")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func getUserinfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1925,26 +1869,6 @@ func modUserInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
-func getPunchStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	apmac := req.GetParamString("apmac")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, uid, "GetStat",
-		&punch.PunchRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid}, Apmac: apmac})
-	httpserver.CheckRPCErr(rpcerr, "GetStat")
-	res := resp.Interface().(*punch.PunchStatReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetStat")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func reportIssue(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.Init(r)
@@ -1967,50 +1891,6 @@ func reportIssue(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 
 	body := httpserver.GenResponseBody(res, false)
 	req.WriteRsp(w, body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.Init(r)
-	code := req.GetParamString("code")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, 0, "SubmitCode",
-		&punch.CodeRequest{
-			Head: &common.Head{Sid: uuid}, Code: code})
-	httpserver.CheckRPCErr(rpcerr, "SubmitCode")
-	res := resp.Interface().(*punch.LoginReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "SubmitCode")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.Init(r)
-	sid := req.GetParamString("sid")
-	rawData := req.GetParamString("rawData")
-	signature := req.GetParamString("signature")
-	encryptedData := req.GetParamString("encryptedData")
-	iv := req.GetParamString("iv")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, 0, "Login",
-		&punch.LoginRequest{
-			Head: &common.Head{Sid: uuid}, Sid: sid,
-			Rawdata: rawData, Signature: signature,
-			Encrypteddata: encryptedData, Iv: iv})
-	httpserver.CheckRPCErr(rpcerr, "Login")
-	res := resp.Interface().(*punch.LoginReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "Login")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
@@ -2516,8 +2396,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/pingpp_pay", httpserver.AppHandler(pingppPay))
 	mux.Handle("/services", httpserver.AppHandler(getService))
 	mux.Handle("/get_discovery", httpserver.AppHandler(getDiscovery))
-	mux.Handle("/punch", httpserver.AppHandler(punchAp))
-	mux.Handle("/get_my_punch", httpserver.AppHandler(getMyPunch))
 	mux.Handle("/get_user_info", httpserver.AppHandler(getUserInfo))
 	mux.Handle("/get_rand_nick", httpserver.AppHandler(getRandNick))
 	mux.Handle("/mod_user_info", httpserver.AppHandler(modUserInfo))
@@ -2528,11 +2406,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_education_video", httpserver.AppHandler(getEducationVideo))
 	mux.Handle("/get_hospital_department", httpserver.AppHandler(getHospitalDepartment))
 	mux.Handle("/get_userinfo", httpserver.AppHandler(getUserinfo))
-	mux.Handle("/get_punch_stat", httpserver.AppHandler(getPunchStat))
-	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))
 	mux.Handle("/report_issue", httpserver.AppHandler(reportIssue))
-	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
-	mux.Handle("/correct_ap", httpserver.AppHandler(correctAp))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/auth", auth)
 	mux.HandleFunc("/jump_online", jumpOnline)
