@@ -2183,7 +2183,8 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 
 	dst := postLoginURL
 	if openid == "" {
-		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&ts=%d&s=1", dst, uid, token,
+			time.Now().Unix())
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
 	uuid := util.GenUUID()
@@ -2191,15 +2192,16 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 		&verify.SubscribeRequest{Head: &common.Head{Sid: uuid}, Type: 0,
 			Openid: openid})
 	if rpcerr.Interface() != nil {
-		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&ts=%d&s=1", dst, uid, token,
+			time.Now().Unix())
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
 	res := resp.Interface().(*verify.CheckReply)
 	if res.Head.Retcode != 0 {
-		dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
+		dst = fmt.Sprintf("%s?uid=%s&token=%s&ts=%d&s=1", dst, uid, token,
+			time.Now().Unix())
 		http.Redirect(w, r, dst, http.StatusMovedPermanently)
 	}
-	dst = fmt.Sprintf("%s?uid=%s&token=%s&s=1", dst, uid, token)
 	http.Redirect(w, r, res.Dst, http.StatusMovedPermanently)
 }
 
