@@ -4,7 +4,7 @@ use yunxing;
 CREATE TABLE IF NOT EXISTS portal_menu
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    -- type 0:menu 1:tab
+    -- type 0:menu 1:tab 2:menu v20170411 3:tab v20170411
     type    tinyint unsigned NOT NULL,
     name    varchar(32) NOT NULL,
     text    varchar(32) NOT NULL,

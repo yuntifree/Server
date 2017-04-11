@@ -21,6 +21,8 @@ import (
 const (
 	menuType         = 0
 	tabType          = 1
+	menuV2Type       = 2
+	tabV2Type        = 3
 	newsNum          = 10
 	hospitalIntro    = 0
 	hospitalService  = 1
@@ -484,8 +486,8 @@ func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (
 	util.PubRPCRequest(w, "config", "GetPortalContent")
 	banners := getBanners(db, portalBannerType, false, false)
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
-	menulist := getPortalMenu(db, menuType, flag)
-	tablist := getPortalMenu(db, tabType, flag)
+	menulist := getPortalMenu(db, menuV2Type, flag)
+	tablist := getPortalMenu(db, tabV2Type, flag)
 	util.PubRPCSuccRsp(w, "config", "GetPortalContent")
 	return &config.PortalContentReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
