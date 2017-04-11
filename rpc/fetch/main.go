@@ -11,8 +11,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"google.golang.org/grpc"
-
 	"Server/aliyun"
 	"Server/proto/common"
 	"Server/proto/fetch"
@@ -1718,7 +1716,7 @@ func main() {
 	//cli := util.InitEtcdCli()
 	//go util.ReportEtcd(cli, util.FetchServerName, util.FetchServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	fetch.RegisterFetchServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

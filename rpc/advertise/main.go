@@ -16,7 +16,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	nsq "github.com/nsqio/go-nsq"
-	"google.golang.org/grpc"
 )
 
 type server struct{}
@@ -559,7 +558,7 @@ func main() {
 	//cli := util.InitEtcdCli()
 	//go util.ReportEtcd(cli, util.AdvertiseServerName, util.AdvertiseServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	advertise.RegisterAdvertiseServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

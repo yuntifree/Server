@@ -16,7 +16,6 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -278,7 +277,7 @@ func main() {
 	//cli := util.InitEtcdCli()
 	//go util.ReportEtcd(cli, util.PunchServerName, util.PunchServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	punch.RegisterPunchServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

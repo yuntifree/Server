@@ -18,7 +18,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -869,7 +868,7 @@ func main() {
 	//cli := util.InitEtcdCli()
 	//go util.ReportEtcd(cli, util.ModifyServerName, util.ModifyServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	modify.RegisterModifyServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

@@ -15,7 +15,6 @@ import (
 	"Server/util"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -184,7 +183,7 @@ func main() {
 	cli := util.InitEtcdCli()
 	go watcher(cli)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	discover.RegisterDiscoverServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

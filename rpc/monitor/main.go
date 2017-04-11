@@ -14,7 +14,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	nsq "github.com/nsqio/go-nsq"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -131,7 +130,7 @@ func main() {
 	//cli := util.InitEtcdCli()
 	//go util.ReportEtcd(cli, util.ConfigServerName, util.ConfigServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	monitor.RegisterMonitorServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

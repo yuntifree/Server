@@ -5,9 +5,15 @@ import (
 	"math/rand"
 	"net"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+
+	"github.com/mercari/go-grpc-interceptor/panichandler"
+	"google.golang.org/grpc"
 )
 
 func init() {
@@ -99,4 +105,15 @@ func CheckTermVersion(term, version int64) bool {
 		return false
 	}
 	return true
+}
+
+//NewGrpcServer wrapper for grpc NewServer, add panic hanndler
+func NewGrpcServer() *grpc.Server {
+	panichandler.InstallPanicHandler(func(ctx context.Context, r interface{}) {
+		log.Printf(string(debug.Stack()))
+	})
+	uIntOpt := grpc.UnaryInterceptor(panichandler.UnaryServerInterceptor)
+	sIntOpt := grpc.StreamInterceptor(panichandler.StreamServerInterceptor)
+	s := grpc.NewServer(uIntOpt, sIntOpt)
+	return s
 }

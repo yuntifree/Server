@@ -11,7 +11,6 @@ import (
 	"Server/util"
 
 	context "golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -112,7 +111,7 @@ func main() {
 	cli := util.InitEtcdCli()
 	go util.ReportEtcd(cli, util.PushServerName, util.PushServerPort)
 
-	s := grpc.NewServer()
+	s := util.NewGrpcServer()
 	push.RegisterPushServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
