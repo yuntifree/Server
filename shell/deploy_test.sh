@@ -1,5 +1,5 @@
 #!/bin/bash
-RPCLIST="discover fetch hot modify verify push punch"
+RPCLIST="discover fetch hot modify verify push punch advertise config userinfo monitor"
 HTTPLIST="appserver ossserver"
 for srv in $HTTPLIST; do
     go build ../access/$srv
