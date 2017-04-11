@@ -156,3 +156,33 @@ func AddOnlineTask(client *redis.Client, info OnlineInfo) {
 	ts := time.Now().Unix() + 600
 	client.ZAdd(kickTaskSet, redis.Z{Member: string(b), Score: float64(ts)})
 }
+
+//GetOnlineTask get online task
+func GetOnlineTask(client *redis.Client) []*OnlineInfo {
+	ts := time.Now().Unix()
+	vals, err := client.ZRangeByScore(kickTaskSet,
+		redis.ZRangeBy{Min: "-inf", Max: strconv.Itoa(int(ts)),
+			Offset: 0, Count: 1000}).Result()
+	if err != nil {
+		log.Printf("GetOnlineTask ZRangeByScore failed:%v", err)
+		return nil
+	}
+
+	var infos []*OnlineInfo
+	for _, key := range vals {
+		var info OnlineInfo
+		err := json.Unmarshal([]byte(key), &info)
+		if err != nil {
+			log.Printf("GetOnlineTask Unmarshal failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+
+	_, err = client.ZRemRangeByScore(kickTaskSet, "-inf", strconv.Itoa(int(ts))).Result()
+	if err != nil {
+		log.Printf("GetOnlineTask ZRemRangeByScore failed:%v", err)
+	}
+
+	return infos
+}

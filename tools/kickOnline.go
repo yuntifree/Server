@@ -11,14 +11,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type portalInfo struct {
-	Phone   string
-	Usermac string
-	Userip  string
-	Acip    string
-	Stype   uint
-}
-
 var db *sql.DB
 
 var limit chan int
@@ -31,18 +23,10 @@ func getAcnameType(acname string) uint {
 	return 0
 }
 
-func kickOff(db *sql.DB, usermac, acname string) {
-	log.Printf("kickOff usermac:%s acname:%s", usermac, acname)
-	var info portalInfo
-	err := db.QueryRow("SELECT phone, ip, acip FROM online_status WHERE mac = ? AND etime > NOW()", usermac).Scan(&info.Phone, &info.Userip, &info.Acip)
-	if err != nil {
-		log.Printf("kickOff query failed:%v", err)
-		return
-	}
-	info.Usermac = usermac
-	info.Stype = getAcnameType(acname)
-	log.Printf("kickOff usermac:%s phone:%s", usermac, info.Phone)
-	flag := zte.Logout(info.Phone, info.Usermac, info.Userip, info.Acip, info.Stype)
+func kickOff(info *util.OnlineInfo) {
+	log.Printf("kickOff online info:%v", info)
+	stype := getAcnameType(info.Acname)
+	flag := zte.Logout(info.Phone, info.Usermac, info.Userip, info.Acip, stype)
 	if !flag {
 		log.Printf("zte Logout failed:%v", info)
 	}
@@ -55,16 +39,15 @@ func updateSubscribe(db *sql.DB, openid string) {
 	}
 }
 
-func checkUserOnline(db *sql.DB, openid, usermac, acname string) {
+func checkUserOnline(db *sql.DB, accesstoken string, info *util.OnlineInfo) {
 	defer wg.Done()
 	limit <- 1
-	log.Printf("checkUserOnline openid:%s usermac:%s acname:%s", openid, usermac, acname)
-	accesstoken := util.GetAccessToken(db, 0)
-	subscribe := util.CheckSubscribe(accesstoken, openid)
+	log.Printf("checkUserOnline accesstoken:%s onlineinfo:%v", accesstoken, info)
+	subscribe := util.CheckSubscribe(accesstoken, info.Openid)
 	if !subscribe {
-		kickOff(db, usermac, acname)
+		kickOff(info)
 	} else {
-		updateSubscribe(db, openid)
+		updateSubscribe(db, info.Openid)
 	}
 	<-limit
 }
@@ -76,21 +59,17 @@ func main() {
 		log.Printf("InitDB failed:%v", err)
 		os.Exit(1)
 	}
+	db.SetMaxOpenConns(100)
+	client := util.InitRedis()
 
-	rows, err := db.Query("SELECT openid, usermac, acname FROM wx_conn WHERE etime > NOW() AND etime < DATE_ADD(NOW(), INTERVAL 55 MINUTE) AND (subscribe = 0 OR (subscribe = 1 AND stime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)))")
-	if err != nil {
-		log.Printf("query failed:%v", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var openid, usermac, acname string
-		err = rows.Scan(&openid, &usermac, &acname)
-		if err != nil {
-			log.Printf("scan failed:%v", err)
+	tasks := util.GetOnlineTask(client)
+	accesstoken := util.GetAccessToken(db, 0)
+	for i := 0; i < len(tasks); i++ {
+		if tasks[i] == nil {
 			continue
 		}
 		wg.Add(1)
-		go checkUserOnline(db, openid, usermac, acname)
+		go checkUserOnline(db, accesstoken, tasks[i])
 	}
 	wg.Wait()
 }
