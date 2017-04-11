@@ -154,7 +154,7 @@ func (s *server) ModAdvertise(ctx context.Context, in *advertise.AdvertiseReques
 
 func fetchAdvertise(db *gorm.DB, seq, num int64) []*advertise.AdvertiseInfo {
 	var infos []*advertise.AdvertiseInfo
-	query := "SELECT a.id, a.name, a.version, a.adid, a.areaid, a.tsid, a.abstract, a.img, a.content, a.online, c.name, ar.name, ts.name, a.dst FROM advertise a, area ar, timeslot ts, customer c WHERE a.adid = c.id AND a.areaid = ar.id AND a.tsid = ts.id AND a.deleted = 0"
+	query := "SELECT a.id, a.name, a.version, a.adid, a.areaid, a.tsid, a.abstract, a.img, a.content, a.online, c.name, ar.name, ts.content, a.dst FROM advertise a, area ar, timeslot ts, customer c WHERE a.adid = c.id AND a.areaid = ar.id AND a.tsid = ts.id AND a.deleted = 0"
 	if seq != 0 {
 		query += fmt.Sprintf(" AND a.id < %d", seq)
 	}
