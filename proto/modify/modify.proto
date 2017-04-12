@@ -18,9 +18,6 @@ service Modify{
     rpc ModBanner(BannerRequest) returns (common.CommReply) {}
     rpc AddTags(AddTagRequest) returns (AddTagReply) {}
     rpc DelTags(DelTagRequest) returns (common.CommReply) {}
-    rpc AddAddress(AddressRequest) returns (common.CommReply) {}
-    rpc DelAddress(AddressRequest) returns (common.CommReply) {}
-    rpc ModAddress(AddressRequest) returns (common.CommReply) {}
     rpc AddConf(ConfRequest) returns (common.CommReply) {}
     rpc DelConf(DelConfRequest) returns (common.CommReply) {}
     rpc AddAdBan(AddBanRequest) returns (common.CommReply) {}
@@ -28,9 +25,6 @@ service Modify{
     rpc AddWhiteList(WhiteRequest) returns (common.CommReply) {}
     rpc DelWhiteList(WhiteRequest) returns (common.CommReply) {}
     rpc AddFeedback(FeedRequest) returns (common.CommReply) {}
-    rpc SetWinStatus(WinStatusRequest) returns (common.CommReply) {}
-    rpc AddShare(ShareRequest) returns (common.CommReply) {}
-    rpc PurchaseSales(common.CommRequest) returns (PurchaseReply) {}
     rpc DelZteAccount(ZteRequest) returns (common.CommReply) {}
     rpc AddPortalDir(PortalDirRequest) returns (common.CommReply) {}
     rpc OnlinePortalDir(common.CommRequest) returns (common.CommReply) {}
@@ -128,11 +122,6 @@ message DelTagRequest {
     repeated int64 ids = 2;
 }
 
-message AddressRequest {
-    common.Head head = 1;
-    common.AddressInfo info = 2;
-}
-
 message ConfRequest {
     common.Head head = 1;
     common.KvInfo info = 2;
@@ -163,35 +152,6 @@ message FeedRequest {
     common.Head head = 1;
     string content = 2;
     string contact = 3;
-}
-
-message WinStatusRequest {
-    common.Head head = 1;
-    int64 bid = 2;
-    int64 status = 3;
-    string account = 4;
-    int64 aid = 5;
-}
-
-message ShareRequest {
-    common.Head head = 1;
-    int64 bid = 2;
-    string title = 3;
-    string text = 4;
-    repeated string images = 5;
-}
-
-message PurchaseResult {
-    int64 code = 1;
-    bool phoneflag = 2;
-    bool notimes = 3;
-    bool nocoin = 4;
-    int64 remain = 5;
-}
-
-message PurchaseReply {
-    common.Head head = 1;
-    PurchaseResult info = 2;
 }
 
 message ZteRequest {

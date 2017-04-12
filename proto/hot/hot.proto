@@ -7,12 +7,6 @@ service Hot {
     rpc GetServices(common.CommRequest) returns (ServiceReply) {}
     rpc GetWeatherNews(common.CommRequest) returns (WeatherNewsReply) {}
     rpc GetFrontInfo(common.CommRequest) returns (FrontReply) {}
-    rpc GetOpening(common.CommRequest) returns (OpeningReply) {}
-    rpc GetOpened(common.CommRequest) returns (OpenedReply) {}
-    rpc GetMarquee(common.CommRequest) returns (MarqueeReply) {}
-    rpc GetRunning(common.CommRequest) returns (RunningReply) {}
-    rpc GetHotList(common.CommRequest) returns (HotListReply) {}
-    rpc GetDetail(DetailRequest) returns (DetailReply) {}
     rpc GetLive(common.CommRequest) returns (LiveReply) {}
     rpc GetJoke(common.CommRequest) returns (JokeReply) {}
     rpc GetHospitalNews(common.CommRequest) returns (HotsReply) {}
@@ -92,79 +86,6 @@ message FrontReply {
     common.Head head = 1;
     UseInfo user = 2;
     repeated common.BannerInfo banner = 3;
-}
-
-message OpeningReply {
-    common.Head head = 1;
-    repeated common.BidInfo opening = 2;
-    int64 reddot = 3;
-}
-
-message OpenedReply {
-    common.Head head = 1;
-    repeated common.BidInfo opened = 2;
-}
-
-message SlideInfo {
-    string image = 1;
-    string target = 2;
-}
-
-message MarqueeInfo {
-    int64 uid = 1;
-    int64 bid = 2;
-    string nickname = 3;
-    int64 type = 4;
-    string gname = 5;
-}
-
-message PromotionInfo {
-    string title = 1;
-    string target = 2;
-}
-
-message HotListReply {
-    common.Head head = 1;
-    repeated common.BidInfo opening = 2;
-    repeated SlideInfo slides = 3;
-    PromotionInfo promotion = 4;
-    int64 reddot = 5;
-}
-
-message MarqueeReply {
-    common.Head head = 1;
-    repeated MarqueeInfo marquee = 2;
-}
-
-message RunningReply {
-    common.Head head = 1;
-    repeated common.BidInfo running = 2;
-}
-
-message DetailRequest {
-    common.Head head = 1;
-    int64 bid = 2;
-    int64 gid = 3;
-}
-
-message JoinInfo {
-    int64 uid = 1;
-    int64 join = 2;
-    repeated int64 codes = 3;
-}
-
-message NextInfo {
-    int64 bid = 1;
-    int64 period = 2;
-}
-
-message DetailReply {
-    common.Head head = 1;
-    common.BidInfo bet = 2;
-    repeated string slides = 3;
-    common.AwardInfo award = 4;
-    JoinInfo mine = 5;
-    NextInfo next = 6;
 }
 
 message LiveInfo {

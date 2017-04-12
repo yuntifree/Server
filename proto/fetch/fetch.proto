@@ -17,22 +17,12 @@ service Fetch{
     rpc FetchBanners(common.CommRequest) returns (BannerReply) {}
     rpc FetchWifiPass(WifiPassRequest) returns (WifiPassReply) {}
     rpc FetchStsCredentials(common.CommRequest) returns (StsReply) {}
-    rpc FetchZipcode(ZipcodeRequest) returns (ZipcodeReply) {}
-    rpc FetchAddress(common.CommRequest) returns (AddressReply) {}
     rpc FetchFlashAd(AdRequest) returns (AdReply) {}
     rpc FetchConf(common.CommRequest) returns (ConfReply) {}
-    rpc FetchShare(ShareRequest) returns (ShareReply) {}
     rpc FetchKvConf(KvRequest) returns (KvReply) {}
     rpc FetchActivity(common.CommRequest) returns (ActivityReply) {}
-    rpc FetchGoodsIntro(common.CommRequest) returns (GoodsIntroReply) {}
-    rpc FetchPurchaseRecord(common.CommRequest) returns (PurchaseRecordReply) {}
-    rpc FetchBetHistory(common.CommRequest) returns (BetHistoryReply) {}
-    rpc FetchShareDetail(common.CommRequest) returns (ShareDetailReply) {}
-    rpc FetchUserInfo(common.CommRequest) returns (UserInfoReply) {}
-    rpc FetchUserBet(common.CommRequest) returns (UserBetReply) {}
     rpc FetchAdBan(common.CommRequest) returns (AdBanReply) {}
     rpc FetchWhiteList(common.CommRequest) returns (WhiteReply) {}
-    rpc FetchWinStatus(common.CommRequest) returns (WinStatusReply) {}
     rpc FetchFeedback(common.CommRequest) returns (FeedbackReply) {}
     rpc FetchMenu(common.CommRequest) returns (MenuReply) {}
     rpc FetchLatestVersion(VersionRequest) returns (VersionReply) {}
@@ -198,27 +188,6 @@ message StsReply {
     StsCredential credential = 2;
 }
 
-message ZipcodeRequest {
-    common.Head head = 1;
-    int64 type = 2;
-    int64 code = 3;
-}
-
-message ZipcodeInfo {
-    int64 code = 1;
-    string address = 2;
-}
-
-message ZipcodeReply {
-    common.Head head = 1;
-    repeated ZipcodeInfo zipcode = 2;
-}
-
-message AddressReply {
-    common.Head head = 1;
-    repeated common.AddressInfo address = 2;
-}
-
 message AdRequest{
     common.Head head = 1;
     int64 term = 2;
@@ -233,37 +202,6 @@ message AdReply {
 message ConfReply {
     common.Head head = 1;
     repeated common.KvInfo infos = 2;
-}
-
-message ShareRequest {
-    common.Head head = 1;
-    int64 type = 2;
-    int64 num = 3;
-    int64 seq = 4;
-    int64 id = 5;
-}
-
-message ShareInfo {
-    int64 seq = 1;
-    int64 sid = 2;
-    int64 bid = 3;
-    int64 uid = 4;
-    int64 gid = 5;
-    string title = 6;
-    string nickname = 7;
-    string head = 8;
-    int64 sharetime = 9;
-    string image = 10;
-    string text = 11;
-    int64 share = 12;
-    int64 period = 13;
-    repeated string images = 14;
-}
-
-message ShareReply {
-    common.Head head = 1;
-    repeated ShareInfo shares = 2;
-    int64 reddot = 3;
 }
 
 message KvRequest {
@@ -281,53 +219,6 @@ message ActivityReply {
     common.BannerInfo activity = 2;
 }
 
-message GoodsIntro {
-    repeated string images = 1;
-    string text = 2;
-}
-
-message GoodsIntroReply {
-    common.Head head = 1;
-    GoodsIntro info = 2;
-}
-
-message PurchaseRecord {
-    int64 rid = 1;
-    int64 ctime = 2;
-    int64 uid = 3;
-    string nickname = 4;
-    string head = 5;
-    int64 num = 6;
-    int64 seq = 7;
-}
-
-message PurchaseRecordReply {
-    common.Head head = 1;
-    repeated PurchaseRecord records = 2;
-}
-
-message BetHistoryReply {
-    common.Head head = 1;
-    repeated common.BidInfo bets = 2;
-}
-
-message ShareDetailReply {
-    common.Head head = 1;
-    ShareInfo share = 2;
-    common.BidInfo bet = 3;
-}
-
-message UserInfoReply {
-    common.Head head = 1;
-    UserInfo info = 2;
-    string banner = 3;
-}
-
-message UserBetReply {
-    common.Head head = 1;
-    repeated common.BidInfo infos = 2;
-}
-
 message AdBanReply {
     common.Head head = 1;
     repeated common.AdBan infos = 2;
@@ -342,32 +233,6 @@ message WhiteReply {
     common.Head head = 1;
     repeated WhiteUser infos = 2;
     int64 total = 3;
-}
-
-message WinInfo {
-    int64 wintime = 1;
-    int64 addresstime = 2;
-    int64 shiptime = 3;
-    int64 confirmtime = 4;
-    bool share = 5;
-    string vendor = 6;
-    string num = 7;
-    string account = 8;
-    string award = 9;
-}
-
-message AddressInfo {
-    int64 id = 1;
-    string name = 2;
-    string phone = 3;
-    string detail = 4;
-}
-
-message WinStatusReply {
-    common.Head head = 1;
-    WinInfo info = 2;
-    AddressInfo address = 3;
-    common.BidInfo bet = 4;
 }
 
 message FeedbackInfo {

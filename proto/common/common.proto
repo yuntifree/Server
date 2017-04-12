@@ -44,7 +44,6 @@ message CommReply {
     int64 id = 2;
 }
 
-
 message WifiInfo {
     string ssid = 1;
     string username = 2;
@@ -66,50 +65,9 @@ message BannerInfo {
     int64 dbg = 10;
 }
 
-message AddressInfo {
-    int64 aid = 1;
-    int64 province = 2;
-    int64 city = 3;
-    int64 zone = 4;
-    int64 zip = 5;
-    string addr = 6;
-    string detail = 7;
-    bool def = 8;
-    string user = 9;
-    string mobile = 10;
-}
-
 message KvInfo {
     string key = 1;
     string val = 2;
-}
-
-message AwardInfo {
-    int64 uid = 1;
-    string nickname = 2;
-    int64 awardcode = 3;
-    string head = 4;
-    int64 num = 5;
-    repeated int64 codes = 6;
-}
-
-message BidInfo {
-    int64 bid = 1;
-    int64 gid = 2;
-    int64 period = 3;
-    string title = 4;
-    string subtitle = 5;
-    int64 start = 6;
-    int64 end = 7;
-    int64 total = 8;
-    string image = 9;
-    int64 seq = 10;
-    int64 rest = 11;
-    int64 status = 12;
-    AwardInfo award = 13;
-    int64 remain = 14;
-    repeated int64 codes = 15;
-    int64 gtype = 16;
 }
 
 message AdBan {

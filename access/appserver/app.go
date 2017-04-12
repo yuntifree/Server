@@ -222,94 +222,6 @@ func connectWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
-func addAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	province := req.GetParamInt("province")
-	city := req.GetParamInt("city")
-	zone := req.GetParamInt("zone")
-	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{Code: httpserver.ErrInvalidParam,
-			Msg: "illegal zipcode"}
-	}
-	zip := req.GetParamInt("zip")
-	detail := req.GetParamString("detail")
-	mobile := req.GetParamString("mobile")
-	user := req.GetParamString("user")
-	addr := req.GetParamString("addr")
-	def := req.GetParamBoolDef("def", false)
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "AddAddress",
-		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.AddressInfo{Province: province, City: city,
-				Zone: zone, Zip: zip, Addr: addr, Detail: detail,
-				Def: def, User: user, Mobile: mobile}})
-	httpserver.CheckRPCErr(rpcerr, "AddAddress")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "AddAddress")
-
-	body := httpserver.GenResponseBody(res, false)
-
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func addShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	bid := req.GetParamInt("bid")
-	title := req.GetParamString("title")
-	text := req.GetParamString("text")
-	images, err := req.Post.Get("data").Get("images").Array()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInvalidParam,
-			Msg: err.Error()}
-	}
-	var imgs []string
-	for i := 0; i < len(images); i++ {
-		img := images[i].(string)
-		imgs = append(imgs, img)
-	}
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "AddShare",
-		&modify.ShareRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Bid: bid, Title: title, Text: text, Images: imgs})
-	httpserver.CheckRPCErr(rpcerr, "AddShare")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "AddShare")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func setWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	bid := req.GetParamInt("bid")
-	status := req.GetParamInt("status")
-	aid := req.GetParamIntDef("aid", 0)
-	account := req.GetParamStringDef("account", "")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "SetWinStatus",
-		&modify.WinStatusRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Bid: bid, Status: status, Aid: aid, Account: account})
-	httpserver.CheckRPCErr(rpcerr, "SetWinStatus")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "SetWinStatus")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -324,87 +236,6 @@ func addFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	httpserver.CheckRPCErr(rpcerr, "AddFeedback")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddFeedback")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func purchaseSales(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	bid := req.GetParamInt("bid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "PurchaseSales",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: bid})
-	httpserver.CheckRPCErr(rpcerr, "PurchaseSales")
-	res := resp.Interface().(*modify.PurchaseReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "PurchaseSales")
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
-	}
-	js.Set("data", res.Info)
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner, Msg: "marshal json failed"}
-	}
-
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func modAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	aid := req.GetParamInt("aid")
-	province := req.GetParamInt("province")
-	city := req.GetParamInt("city")
-	zone := req.GetParamInt("zone")
-	if province >= maxZipcode || city >= maxZipcode || zone >= maxZipcode {
-		return &util.AppError{Code: httpserver.ErrInvalidParam, Msg: "illegal zipcode"}
-	}
-	zip := req.GetParamInt("zip")
-	detail := req.GetParamString("detail")
-	mobile := req.GetParamString("mobile")
-	user := req.GetParamString("user")
-	addr := req.GetParamString("addr")
-	def := req.GetParamBoolDef("def", false)
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "ModAddress",
-		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.AddressInfo{Aid: aid, Province: province,
-				City: city, Zone: zone, Zip: zip, Addr: addr,
-				Detail: detail, Def: def, User: user, Mobile: mobile}})
-	httpserver.CheckRPCErr(rpcerr, "ModAddress")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "ModAddress")
-
-	w.Write([]byte(`{"errno":0}`))
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func delAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	aid := req.GetParamInt("aid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "DelAddress",
-		&modify.AddressRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &common.AddressInfo{Aid: aid}})
-	httpserver.CheckRPCErr(rpcerr, "DelAddress")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "DelAddress")
 
 	w.Write([]byte(`{"errno":0}`))
 	httpserver.ReportSuccResp(r.RequestURI)
@@ -681,129 +512,6 @@ func getFlashAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
-func getOpening(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetOpening",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "GetOpening")
-	res := resp.Interface().(*hot.OpeningReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetOpening")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getOpened(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetOpened",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num})
-	httpserver.CheckRPCErr(rpcerr, "GetOpened")
-	res := resp.Interface().(*hot.OpenedReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetOpened")
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "invalid param"}
-	}
-	js.SetPath([]string{"data", "opened"}, res.Opened)
-	if len(res.Opened) >= int(num) {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "marshal json failed"}
-	}
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getRunning(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetRunning",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num})
-	httpserver.CheckRPCErr(rpcerr, "GetRunning")
-	res := resp.Interface().(*hot.RunningReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetRunning")
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "invalid param"}
-	}
-	js.SetPath([]string{"data", "running"}, res.Running)
-	if len(res.Running) >= int(num) {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner, Msg: "marshal json failed"}
-	}
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getMarquee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetMarquee",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "GetMarquee")
-	res := resp.Interface().(*hot.MarqueeReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetMarquee")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getHotList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetHotList",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "GetHotList")
-	res := resp.Interface().(*hot.HotListReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetHotList")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -834,86 +542,6 @@ func getWifiPass(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	httpserver.CheckRPCErr(rpcerr, "FetchWifiPass")
 	res := resp.Interface().(*fetch.WifiPassReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "FetchWifiPass")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getShare(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	gid := req.GetParamIntDef("gid", 0)
-	seq := req.GetParamInt("seq")
-	num := req.GetParamIntDef("num", util.MaxListSize)
-	path := r.URL.Path
-	log.Printf("path:%s", path)
-	var stype int64
-	if path == "/get_share_gid" {
-		stype = util.GidShareType
-	} else if path == "/get_share_list" {
-		stype = util.ListShareType
-	} else if path == "/get_share_uid" {
-		stype = util.UidShareType
-	}
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchShare",
-		&fetch.ShareRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: stype, Seq: seq, Num: num, Id: gid})
-	httpserver.CheckRPCErr(rpcerr, "FetchShare")
-	res := resp.Interface().(*fetch.ShareReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchShare")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getShareDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	sid := req.GetParamInt("sid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchShareDetail",
-		&common.CommRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid},
-			Id:   sid})
-	httpserver.CheckRPCErr(rpcerr, "FetchShareDetail")
-	res := resp.Interface().(*fetch.ShareDetailReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchShareDetail")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getDetail(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	gid := req.GetParamIntDef("gid", 0)
-	bid := req.GetParamIntDef("bid", 0)
-	if gid == 0 && bid == 0 {
-		return &util.AppError{Code: httpserver.ErrInvalidParam,
-			Msg: "invalid param"}
-	}
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetDetail",
-		&hot.DetailRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid},
-			Bid:  bid, Gid: gid})
-	httpserver.CheckRPCErr(rpcerr, "GetDetail")
-	res := resp.Interface().(*hot.DetailReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetDetail")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
@@ -1054,27 +682,6 @@ func getJokes(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
-func getZipcode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	ziptype := req.GetParamInt("type")
-	code := req.GetParamInt("code")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchZipcode",
-		&fetch.ZipcodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: ziptype, Code: code})
-	httpserver.CheckRPCErr(rpcerr, "FetchZipcode")
-	res := resp.Interface().(*fetch.ZipcodeReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchZipcode")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1093,122 +700,6 @@ func getActivity(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 			Msg: "invalid param"}
 	}
 	js.Set("data", res.Activity)
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "marshal json failed"}
-	}
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getGoodsIntro(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	gid := req.GetParamInt("gid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchGoodsIntro",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: gid})
-	httpserver.CheckRPCErr(rpcerr, "FetchGoodsIntro")
-	res := resp.Interface().(*fetch.GoodsIntroReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchGoodsIntro")
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner, Msg: "invalid param"}
-	}
-	js.Set("data", res.Info)
-
-	body, err := js.MarshalJSON()
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "marshal json failed"}
-	}
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getBetHistory(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	gid := req.GetParamInt("gid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchBetHistory",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num, Id: gid})
-	httpserver.CheckRPCErr(rpcerr, "FetchBetHistory")
-	res := resp.Interface().(*fetch.BetHistoryReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchBetHistory")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getPurchaseRecord(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	bid := req.GetParamInt("bid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchPurchaseRecord",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num, Id: bid})
-	httpserver.CheckRPCErr(rpcerr, "FetchPurchaseRecord")
-	res := resp.Interface().(*fetch.PurchaseRecordReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchPurchaseRecord")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getUserBet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-	path := r.URL.Path
-	var stype int64
-	if path == "/get_user_award" {
-		stype = util.UserAwardType
-	} else {
-		stype = util.UserBetType
-	}
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchUserBet",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num, Type: stype})
-	httpserver.CheckRPCErr(rpcerr, "FetchUserBet")
-	res := resp.Interface().(*fetch.UserBetReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchUserBet")
-
-	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
-	if err != nil {
-		return &util.AppError{Code: httpserver.ErrInner,
-			Msg: "invalid param"}
-	}
-	js.SetPath([]string{"data", "infos"}, res.Infos)
-	if len(res.Infos) >= util.MaxListSize {
-		js.SetPath([]string{"data", "hasmore"}, 1)
-	}
 
 	body, err := js.MarshalJSON()
 	if err != nil {
@@ -1254,44 +745,6 @@ func getMenu(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	httpserver.CheckRPCErr(rpcerr, "FetchMenu")
 	res := resp.Interface().(*fetch.MenuReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "FetchMenu")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getAddress(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchAddress",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "FetchAddress")
-	res := resp.Interface().(*fetch.AddressReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchAddress")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getWinStatus(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-	bid := req.GetParamInt("bid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchWinStatus",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Id: bid})
-	httpserver.CheckRPCErr(rpcerr, "FetchWinStatus")
-	res := resp.Interface().(*fetch.WinStatusReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchWinStatus")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
@@ -1661,24 +1114,6 @@ func getDiscovery(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getUserinfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitCheckApp(r)
-	uid := req.GetParamInt("uid")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchUserInfo",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
-	httpserver.CheckRPCErr(rpcerr, "FetchUserInfo")
-	res := resp.Interface().(*fetch.UserInfoReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "FetchUserInfo")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
@@ -2350,31 +1785,9 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_menu", httpserver.AppHandler(getMenu))
 	mux.Handle("/get_front_info", httpserver.AppHandler(getFrontInfo))
 	mux.Handle("/get_flash_ad", httpserver.AppHandler(getFlashAd))
-	mux.Handle("/get_opening", httpserver.AppHandler(getOpening))
-	mux.Handle("/get_opened", httpserver.AppHandler(getOpened))
-	mux.Handle("/get_hotlist", httpserver.AppHandler(getHotList))
 	mux.Handle("/get_wifi_pass", httpserver.AppHandler(getWifiPass))
-	mux.Handle("/get_zipcode", httpserver.AppHandler(getZipcode))
 	mux.Handle("/get_activity", httpserver.AppHandler(getActivity))
-	mux.Handle("/get_intro", httpserver.AppHandler(getGoodsIntro))
-	mux.Handle("/get_bet_history", httpserver.AppHandler(getBetHistory))
-	mux.Handle("/get_record", httpserver.AppHandler(getPurchaseRecord))
-	mux.Handle("/get_user_bet", httpserver.AppHandler(getUserBet))
-	mux.Handle("/get_user_award", httpserver.AppHandler(getUserBet))
-	mux.Handle("/get_address", httpserver.AppHandler(getAddress))
-	mux.Handle("/get_win_status", httpserver.AppHandler(getWinStatus))
-	mux.Handle("/post_share", httpserver.AppHandler(addShare))
-	mux.Handle("/set_win_status", httpserver.AppHandler(setWinStatus))
-	mux.Handle("/get_share_gid", httpserver.AppHandler(getShare))
-	mux.Handle("/get_share_list", httpserver.AppHandler(getShare))
-	mux.Handle("/get_share_uid", httpserver.AppHandler(getShare))
-	mux.Handle("/get_share_detail", httpserver.AppHandler(getShareDetail))
-	mux.Handle("/get_detail", httpserver.AppHandler(getDetail))
-	mux.Handle("/get_detail_gid", httpserver.AppHandler(getDetail))
-	mux.Handle("/add_address", httpserver.AppHandler(addAddress))
 	mux.Handle("/feedback", httpserver.AppHandler(addFeedback))
-	mux.Handle("/delete_address", httpserver.AppHandler(delAddress))
-	mux.Handle("/update_address", httpserver.AppHandler(modAddress))
 	mux.Handle("/get_image_token", httpserver.AppHandler(getImageToken))
 	mux.Handle("/fetch_wifi", httpserver.AppHandler(fetchWifi))
 	mux.Handle("/check_update", httpserver.AppHandler(checkUpdate))
@@ -2391,7 +1804,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_apmac", httpserver.AppHandler(reportApmac))
 	mux.Handle("/connect_wifi", httpserver.AppHandler(connectWifi))
 	mux.Handle("/upload_callback", httpserver.AppHandler(uploadCallback))
-	mux.Handle("/purchase_sales", httpserver.AppHandler(purchaseSales))
 	mux.Handle("/apply_image_upload", httpserver.AppHandler(applyImageUpload))
 	mux.Handle("/pingpp_pay", httpserver.AppHandler(pingppPay))
 	mux.Handle("/services", httpserver.AppHandler(getService))
@@ -2405,7 +1817,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_portal_content", httpserver.AppHandler(getPortalContent))
 	mux.Handle("/get_education_video", httpserver.AppHandler(getEducationVideo))
 	mux.Handle("/get_hospital_department", httpserver.AppHandler(getHospitalDepartment))
-	mux.Handle("/get_userinfo", httpserver.AppHandler(getUserinfo))
 	mux.Handle("/report_issue", httpserver.AppHandler(reportIssue))
 	mux.HandleFunc("/jump", jump)
 	mux.HandleFunc("/auth", auth)
