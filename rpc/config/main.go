@@ -18,15 +18,16 @@ import (
 )
 
 const (
-	menuType         = 0
-	tabType          = 1
-	menuV2Type       = 2
-	tabV2Type        = 3
-	newsNum          = 10
-	hospitalIntro    = 0
-	hospitalService  = 1
-	appBannerType    = 0
-	portalBannerType = 4
+	menuType           = 0
+	tabType            = 1
+	menuV2Type         = 2
+	tabV2Type          = 3
+	newsNum            = 10
+	hospitalIntro      = 0
+	hospitalService    = 1
+	appBannerType      = 0
+	portalBannerType   = 4
+	portalBannerV2Type = 6
 )
 
 type server struct{}
@@ -483,7 +484,7 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 
 func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (*config.PortalContentReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalContent")
-	banners := getBanners(db, portalBannerType, false, false)
+	banners := getBanners(db, portalBannerV2Type, false, false)
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
 	menulist := getPortalMenu(db, menuV2Type, flag)
 	tablist := getPortalMenu(db, tabV2Type, flag)
