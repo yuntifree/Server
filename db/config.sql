@@ -143,3 +143,31 @@ CREATE TABLE IF NOT EXISTS custom_portal
     ctime       datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY kEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS wx_mp_info
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- type 0: local 1: hot
+    type    int unsigned NOT NULL,
+    name    varchar(256) NOT NULL,
+    abstract    varchar(1024) NOT NULL,
+    icon    varchar(256) NOT NULL,
+    dst     varchar(256) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY kEY(id),
+    KEY(type)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS wx_mp_article
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    wid     int unsigned NOT NULL,
+    title   varchar(256) NOT NULL,
+    img     varchar(256) NOT NULL,
+    dst     varchar(256) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY kEY(id),
+    KEY(wid)
+) ENGINE = InnoDB;

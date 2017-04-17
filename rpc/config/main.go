@@ -509,6 +509,54 @@ func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*con
 		Services: services}, nil
 }
 
+func getMpArticle(db *sql.DB, id int64) *config.Article {
+	var art config.Article
+	err := db.QueryRow("SELECT title, img, dst, ctime FROM wx_mp_article WHERE wid = ? ORDER BY id DESC LIMIT 1", id).Scan(&art.Title, &art.Img, &art.Dst, &art.Ctime)
+	if err != nil {
+		return nil
+	}
+	return &art
+}
+
+func getMpwxInfo(db *sql.DB, wtype int64) []*config.MpwxInfo {
+	var infos []*config.MpwxInfo
+	rows, err := db.Query("SELECT id, name, icon, abstract, dst FROM wx_mp_info WHERE deleted = 0 AND type = ?", wtype)
+	if err != nil {
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MpwxInfo
+		err := rows.Scan(&info.Id, &info.Name, &info.Icon, &info.Abstract, &info.Dst)
+		if err != nil {
+			log.Printf("getMpwxInfo scan failed:%v", err)
+			continue
+		}
+		info.Article = getMpArticle(db, info.Id)
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getLocalMpwx(db *sql.DB) []*config.MpwxInfo {
+	return getMpwxInfo(db, 0)
+}
+func getHotMpwx(db *sql.DB) []*config.MpwxInfo {
+	return getMpwxInfo(db, 1)
+}
+
+func (s *server) GetMpwxInfo(ctx context.Context, in *common.CommRequest) (*config.MpwxInfoReply, error) {
+	util.PubRPCRequest(w, "config", "GetDiscovery")
+	local := getLocalMpwx(db)
+	hot := getHotMpwx(db)
+	util.PubRPCSuccRsp(w, "config", "GetDiscovery")
+	return &config.MpwxInfoReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Local: local, Hot: hot,
+	}, nil
+}
+
 func fetchPortalMenu(db *sql.DB, stype int64) []*config.PortalMenuInfo {
 	var infos []*config.PortalMenuInfo
 	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ? ORDER BY priority DESC", stype)

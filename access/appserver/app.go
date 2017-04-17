@@ -1237,6 +1237,25 @@ func getPortalContent(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	return nil
 }
 
+func getMpwxInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetMpwxInfo",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetMpwxInfo")
+	res := resp.Interface().(*config.MpwxInfoReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetMpwxInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getEducationVideo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1815,6 +1834,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_portal_menu", httpserver.AppHandler(getPortalMenu))
 	mux.Handle("/get_portal_conf", httpserver.AppHandler(getPortalConf))
 	mux.Handle("/get_portal_content", httpserver.AppHandler(getPortalContent))
+	mux.Handle("/get_mpwx_info", httpserver.AppHandler(getMpwxInfo))
 	mux.Handle("/get_education_video", httpserver.AppHandler(getEducationVideo))
 	mux.Handle("/get_hospital_department", httpserver.AppHandler(getHospitalDepartment))
 	mux.Handle("/report_issue", httpserver.AppHandler(reportIssue))

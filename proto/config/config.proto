@@ -15,6 +15,7 @@ service Config{
     rpc GetHospitalDepartment(common.CommRequest) returns (HospitalDepartmentReply){}
     rpc GetPortalDir(PortalDirRequest) returns (PortalDirReply) {}
     rpc GetPortalContent(common.CommRequest) returns (PortalContentReply) {}
+    rpc GetMpwxInfo(common.CommRequest) returns (MpwxInfoReply) {}
 }
 
 message PortalMenuInfo {
@@ -132,4 +133,26 @@ message PortalContentReply {
     repeated MediaInfo banners = 2;
     repeated PortalMenuInfo menulist = 3;
     repeated PortalMenuInfo tablist = 4;
+}
+
+message Article {
+    string title = 1;
+    string img = 2;
+    string ctime = 3;
+    string dst = 4;
+}
+
+message MpwxInfo {
+    int64 id = 1;
+    string name = 2;
+    string abstract = 3;
+    string dst = 4;
+    string icon = 5;
+    Article article = 6;
+}
+
+message MpwxInfoReply {
+    common.Head head = 1;
+    repeated MpwxInfo local = 2;
+    repeated MpwxInfo hot = 3;
 }
