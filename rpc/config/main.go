@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"database/sql"
 
@@ -482,11 +483,30 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 		Dir:  dir}, nil
 }
 
+func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.PortalMenuInfo {
+	for i := 0; i < len(menulist); i++ {
+		arr := strings.Split(menulist[i].Url, ";")
+		if len(arr) >= 2 {
+			if flag {
+				menulist[i].Url = arr[1]
+			} else {
+				menulist[i].Url = arr[0]
+			}
+		}
+	}
+	return menulist
+}
+
 func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (*config.PortalContentReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalContent")
 	banners := getBanners(db, portalBannerV2Type, false, false)
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
 	menulist := getPortalMenu(db, menuV2Type, flag)
+	var termflag bool
+	if in.Head.Term > 0 {
+		termflag = true
+	}
+	menulist = extractTermContent(menulist, termflag)
 	tablist := getPortalMenu(db, tabV2Type, flag)
 	util.PubRPCSuccRsp(w, "config", "GetPortalContent")
 	return &config.PortalContentReply{

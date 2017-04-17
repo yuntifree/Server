@@ -1222,11 +1222,12 @@ func getPortalContent(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
+	term := req.GetParamIntDef("phoneterm", 0)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetPortalContent",
 		&common.CommRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid}})
+			Head: &common.Head{Sid: uuid, Uid: uid, Term: term}})
 	httpserver.CheckRPCErr(rpcerr, "GetPortalContent")
 	res := resp.Interface().(*config.PortalContentReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetPortalContent")
