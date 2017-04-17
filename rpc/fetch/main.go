@@ -1133,8 +1133,8 @@ func main() {
 	w = util.NewNsqProducer()
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.FetchServerName, util.FetchServerPort)
-	//cli := util.InitEtcdCli()
-	//go util.ReportEtcd(cli, util.FetchServerName, util.FetchServerPort)
+	cli := util.InitEtcdCli()
+	go util.ReportEtcd(cli, util.FetchServerName, util.FetchServerPort)
 
 	s := util.NewGrpcServer()
 	fetch.RegisterFetchServer(s, &server{})

@@ -632,8 +632,8 @@ func main() {
 
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.ModifyServerName, util.ModifyServerPort)
-	//cli := util.InitEtcdCli()
-	//go util.ReportEtcd(cli, util.ModifyServerName, util.ModifyServerPort)
+	cli := util.InitEtcdCli()
+	go util.ReportEtcd(cli, util.ModifyServerName, util.ModifyServerPort)
 
 	s := util.NewGrpcServer()
 	modify.RegisterModifyServer(s, &server{})

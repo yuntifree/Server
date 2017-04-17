@@ -136,6 +136,9 @@ func fetchServers(name string) []string {
 }
 
 func isEtcdTestUid(uid int64) bool {
+	if uid == 1 {
+		return true
+	}
 	return false
 }
 
@@ -158,6 +161,7 @@ func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*disc
 	} else {
 		name := convertServerName(in.Sname)
 		servers = srvMap[name]
+		log.Printf("use etcd name:%s servers:%v", name, servers)
 	}
 	if len(servers) == 0 {
 		log.Printf("fetch servers failed:%s", in.Sname)
