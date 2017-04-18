@@ -788,10 +788,16 @@ func getAdImg(db *sql.DB, area int64) string {
 	return img
 }
 
-func getWxAppinfo(db *sql.DB, apmac string) (appid, secret, shopid, authurl string) {
+func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
 	err := db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
+	}
+	if appid == "" && acname != "AC_SSH_B_10" {
+		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = 1 LIMIT 1").Scan(&appid, &secret, &shopid, &authurl)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("getWxAppinfo get default failed:%v", err)
+		}
 	}
 	return
 }
@@ -809,7 +815,8 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		if ad != "" {
 			img = ad
 		}
-		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Apmac)
+		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
+			in.Info.Apmac)
 	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{

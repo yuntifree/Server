@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS wx_appinfo (
     authurl varchar(128) NOT NULL,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     unid    int unsigned NOT NULL DEFAULT 0,
+    def     tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(appid)
