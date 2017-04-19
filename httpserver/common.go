@@ -681,6 +681,12 @@ func GenResponseBodyCallback(res interface{}, callback string, flag bool) []byte
 			} else {
 				continue
 			}
+		} else if typeField.Name == "Infos" {
+			js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
+				valueField.Interface())
+			if valueField.Len() >= util.MaxListSize {
+				js.SetPath([]string{"data", "hasmore"}, 1)
+			}
 		} else {
 			js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
 				valueField.Interface())
