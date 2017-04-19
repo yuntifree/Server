@@ -38,7 +38,7 @@ var kv *redis.Client
 var w *nsq.Producer
 
 func getPortalMenu(db *sql.DB, stype int64, flag bool) []*config.PortalMenuInfo {
-	query := fmt.Sprintf("SELECT icon, text, name, routername, url FROM portal_menu WHERE type = %d AND deleted = 0 ", stype)
+	query := fmt.Sprintf("SELECT icon, text, name, routername, url, subtype FROM portal_menu WHERE type = %d AND deleted = 0 ", stype)
 	if !flag {
 		query += " AND dbg = 0 "
 	}
@@ -54,7 +54,7 @@ func getPortalMenu(db *sql.DB, stype int64, flag bool) []*config.PortalMenuInfo 
 	for rows.Next() {
 		var info config.PortalMenuInfo
 		err := rows.Scan(&info.Icon, &info.Text, &info.Name, &info.Routername,
-			&info.Url)
+			&info.Url, &info.Type)
 		if err != nil {
 			log.Printf("getPortalMenu scan failed:%v", err)
 			continue
