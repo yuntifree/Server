@@ -149,6 +149,9 @@ CREATE TABLE IF NOT EXISTS wx_mp_info
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     -- type 0: local 1: hot
     type    int unsigned NOT NULL,
+    -- subtype  0-东莞 1-生活 2-媒体 3-娱乐 4-美食 5-教育 
+    -- 6-科技 7-金融 8-电影 9-音乐 10-汽车 11-读书
+    subtype int unsigned NOT NULL DEFAULT 0,
     wxid    varchar(64) NOT NULL,
     name    varchar(256) NOT NULL,
     abstract    varchar(1024) NOT NULL,
@@ -165,6 +168,8 @@ CREATE TABLE IF NOT EXISTS wx_mp_article
 (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     wid     int unsigned NOT NULL,
+    -- type 对应wx_mp_info中subtype字段 
+    type    int unsigned NOT NULL,
     title   varchar(256) NOT NULL,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,

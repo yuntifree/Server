@@ -577,6 +577,43 @@ func (s *server) GetMpwxInfo(ctx context.Context, in *common.CommRequest) (*conf
 	}, nil
 }
 
+func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
+	var infos []*config.Article
+	query := fmt.Sprintf("SELECT id, title, img, dst, ctime FROM wx_mp_article WHERE type = %d ", stype)
+	if seq != 0 {
+		query += fmt.Sprintf(" AND id < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getMpwxArticle query failed:%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info config.Article
+		err := rows.Scan(&info.Id, &info.Title, &info.Img, &info.Dst, &info.Ctime)
+		if err != nil {
+			log.Printf("getMpwxArticle scan failed:%v", err)
+			continue
+		}
+		info.Seq = info.Id
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetMpwxArticle(ctx context.Context, in *common.CommRequest) (*config.MpwxArticleReply, error) {
+	util.PubRPCRequest(w, "config", "GetMpwxArticle")
+	infos := getMpwxArticle(db, in.Type, in.Seq, in.Num)
+	util.PubRPCSuccRsp(w, "config", "GetMpwxArticle")
+	return &config.MpwxArticleReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Infos: infos,
+	}, nil
+}
+
 func fetchPortalMenu(db *sql.DB, stype int64) []*config.PortalMenuInfo {
 	var infos []*config.PortalMenuInfo
 	rows, err := db.Query("SELECT id, icon, text, name, routername, url, priority, dbg, deleted FROM portal_menu WHERE type = ? ORDER BY priority DESC", stype)

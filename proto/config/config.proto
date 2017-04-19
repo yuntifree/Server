@@ -16,6 +16,7 @@ service Config{
     rpc GetPortalDir(PortalDirRequest) returns (PortalDirReply) {}
     rpc GetPortalContent(common.CommRequest) returns (PortalContentReply) {}
     rpc GetMpwxInfo(common.CommRequest) returns (MpwxInfoReply) {}
+    rpc GetMpwxArticle(common.CommRequest) returns (MpwxArticleReply) {}
 }
 
 message PortalMenuInfo {
@@ -140,6 +141,8 @@ message Article {
     string img = 2;
     string ctime = 3;
     string dst = 4;
+    int64 id = 5;
+    int64 seq = 6;
 }
 
 message MpwxInfo {
@@ -155,4 +158,9 @@ message MpwxInfoReply {
     common.Head head = 1;
     repeated MpwxInfo local = 2;
     repeated MpwxInfo hot = 3;
+}
+
+message MpwxArticleReply {
+    common.Head head = 1;
+    repeated Article infos = 2;
 }
