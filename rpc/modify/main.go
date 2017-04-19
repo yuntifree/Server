@@ -42,6 +42,7 @@ const (
 	hospitalServiceType
 	onlineServiceType
 	educationVideoType
+	mpwxArticleType
 )
 
 type server struct{}
@@ -195,6 +196,8 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 		case educationVideoType:
 			_, err = db.Exec("UPDATE education_video SET click = click + 1 WHERE id = ?",
 				in.Id)
+		case mpwxArticleType:
+			_, err = db.Exec("UPDATE wx_mp_article SET click = click + 1 WHERE id = ?", in.Id)
 		default:
 			log.Printf("illegal type:%d, id:%d uid:%d", in.Type, in.Id, in.Head.Uid)
 
