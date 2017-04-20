@@ -788,12 +788,23 @@ func getAdImg(db *sql.DB, area int64) string {
 	return img
 }
 
+func checkSpareTime() bool {
+	t := time.Now()
+	hour := t.Hour()
+	minute := t.Minute()
+	ms := hour*100 + minute
+	if ms >= 1500 && ms < 1600 {
+		return true
+	}
+	return false
+}
+
 func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
 	err := db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
-	if appid == "" && acname != "AC_SSH_B_10" {
+	if appid == "" && acname != "AC_SSH_B_10" && checkSpareTime() {
 		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = 1 LIMIT 1").Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
