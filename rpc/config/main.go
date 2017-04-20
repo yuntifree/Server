@@ -187,6 +187,27 @@ func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
 	return infos
 }
 
+func getAdvertise(db *sql.DB, adtype int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT img, dst, id, name FROM advertise WHERE areaid = ? AND type = 1 AND online = 1 AND deleted = 0", adtype)
+	if err != nil {
+		log.Printf("getAdvertiseBanner query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id, &info.Title)
+		if err != nil {
+			log.Printf("getAdvertiseBanner scan failed:%v", err)
+			continue
+		}
+		info.Type = 1
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func getCustomPortal(db *sql.DB, id int64) (stype, tid int64) {
 	err := db.QueryRow("SELECT type, tid FROM custom_portal WHERE id = ?", id).
 		Scan(&stype, &tid)
@@ -512,10 +533,11 @@ func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (
 	}
 	menulist = extractTermContent(menulist, termflag)
 	tablist := getPortalMenu(db, tabV2Type, flag)
+	ads := getAdvertise(db, in.Type)
 	util.PubRPCSuccRsp(w, "config", "GetPortalContent")
 	return &config.PortalContentReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Banners: banners, Menulist: menulist, Tablist: tablist}, nil
+		Banners: banners, Menulist: menulist, Tablist: tablist, Ads: ads}, nil
 }
 
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {

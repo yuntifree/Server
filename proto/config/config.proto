@@ -134,6 +134,7 @@ message PortalContentReply {
     repeated MediaInfo banners = 2;
     repeated PortalMenuInfo menulist = 3;
     repeated PortalMenuInfo tablist = 4;
+    repeated MediaInfo ads = 5;
 }
 
 message Article {
