@@ -500,6 +500,10 @@ func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.
 func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (*config.PortalContentReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalContent")
 	banners := getBanners(db, portalBannerV2Type, false, false)
+	if in.Type != 0 {
+		ads := getAdvertiseBanner(db, in.Type)
+		banners = append(ads, banners...)
+	}
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
 	menulist := getPortalMenu(db, menuV2Type, flag)
 	var termflag bool
