@@ -804,7 +804,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
-	if appid == "" && acname != "AC_SSH_B_10" && checkSpareTime() {
+	if appid == "" && acname != "AC_SSH_B_10" {
 		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = 1 LIMIT 1").Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
