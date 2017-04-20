@@ -163,4 +163,5 @@ message MpwxInfoReply {
 message MpwxArticleReply {
     common.Head head = 1;
     repeated Article infos = 2;
+    int64 hasmore = 3;
 }

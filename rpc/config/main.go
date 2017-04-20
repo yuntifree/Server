@@ -488,9 +488,9 @@ func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.
 		arr := strings.Split(menulist[i].Url, ";")
 		if len(arr) >= 2 {
 			if flag {
-				menulist[i].Url = arr[1]
-			} else {
 				menulist[i].Url = arr[0]
+			} else {
+				menulist[i].Url = arr[1]
 			}
 		}
 	}
@@ -607,10 +607,14 @@ func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
 func (s *server) GetMpwxArticle(ctx context.Context, in *common.CommRequest) (*config.MpwxArticleReply, error) {
 	util.PubRPCRequest(w, "config", "GetMpwxArticle")
 	infos := getMpwxArticle(db, in.Type, in.Seq, in.Num)
+	var hasmore int64
+	if len(infos) >= int(in.Num) {
+		hasmore = 1
+	}
 	util.PubRPCSuccRsp(w, "config", "GetMpwxArticle")
 	return &config.MpwxArticleReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Infos: infos,
+		Infos: infos, Hasmore: hasmore,
 	}, nil
 }
 
