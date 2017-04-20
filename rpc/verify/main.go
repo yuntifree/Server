@@ -684,7 +684,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
-	adtype := util.GetAdType(db, in.Info.Apmac)
+	var adtype int64
+	if util.IsWjjAcname(in.Info.Acname) {
+		adtype = 1
+	} else {
+		adtype = util.GetAdType(db, in.Info.Apmac)
+	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
@@ -771,6 +776,8 @@ func getLoginImg(db *sql.DB, acname string) string {
 	btype := 3
 	if util.IsTestAcname(acname) {
 		btype = 5
+	} else if util.IsWjjAcname(acname) {
+		btype = 7
 	}
 	err := db.QueryRow("SELECT img FROM banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1", btype).Scan(&img)
 	if err != nil && err != sql.ErrNoRows {
@@ -1078,7 +1085,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	adtype := util.GetAdType(db, in.Info.Apmac)
+	var adtype int64
+	if util.IsWjjAcname(in.Info.Acname) {
+		adtype = 1
+	} else {
+		adtype = util.GetAdType(db, in.Info.Apmac)
+	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
