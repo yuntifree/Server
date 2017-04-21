@@ -605,7 +605,7 @@ func (s *server) GetMpwxInfo(ctx context.Context, in *common.CommRequest) (*conf
 
 func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
 	var infos []*config.Article
-	query := fmt.Sprintf("SELECT id, title, img, dst, ctime FROM wx_mp_article WHERE type = %d ", stype)
+	query := fmt.Sprintf("SELECT id, title, img, dst, ctime, wid FROM wx_mp_article WHERE type = %d ", stype)
 	if seq != 0 {
 		query += fmt.Sprintf(" AND id < %d ", seq)
 	}
@@ -619,15 +619,35 @@ func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.Article
-		err := rows.Scan(&info.Id, &info.Title, &info.Img, &info.Dst, &info.Ctime)
+		var wid int64
+		err := rows.Scan(&info.Id, &info.Title, &info.Img, &info.Dst, &info.Ctime,
+			&wid)
 		if err != nil {
 			log.Printf("getMpwxArticle scan failed:%v", err)
 			continue
 		}
 		info.Seq = info.Id
+		if !isInnerWxid(wid) {
+			info.Dst = extractArticleDst(info.Dst)
+		}
 		infos = append(infos, &info)
 	}
 	return infos
+}
+
+func extractArticleDst(dst string) string {
+	pos := strings.Index(dst, "#wechat_redirect")
+	if pos != -1 {
+		return dst[0:pos]
+	}
+	return dst
+}
+
+func isInnerWxid(wid int64) bool {
+	if wid == 1 || wid == 1299 {
+		return true
+	}
+	return false
 }
 
 func (s *server) GetMpwxArticle(ctx context.Context, in *common.CommRequest) (*config.MpwxArticleReply, error) {
