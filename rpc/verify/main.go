@@ -775,7 +775,7 @@ func getLoginImg(db *sql.DB, acname string) string {
 	img := defLoginImg
 	btype := 3
 	if util.IsTestAcname(acname) {
-		btype = 5
+		btype = 3
 	} else if util.IsWjjAcname(acname) {
 		btype = 7
 	}
@@ -814,7 +814,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 	if appid == "" {
 		var def int64
 		if util.IsWjjAcname(acname) {
-			def = 1
+			def = 2
 		} else if acname != "AC_SSH_B_10" {
 			def = 2
 		} else {
