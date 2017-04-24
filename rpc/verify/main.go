@@ -816,7 +816,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		if util.IsWjjAcname(acname) {
 			def = 2
 		} else if acname != "AC_SSH_B_10" {
-			def = 2
+			def = 1
 		} else {
 			return
 		}
