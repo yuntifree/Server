@@ -178,3 +178,14 @@ CREATE TABLE IF NOT EXISTS wx_mp_article
     PRIMARY kEY(id),
     KEY(wid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS login_img
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    unid    int unsigned NOT NULL,
+    img     varchar(128) NOT NULL,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY kEY(id),
+    UNIQUE KEY(unid)
+) ENGINE = InnoDB;
