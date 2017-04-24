@@ -806,8 +806,8 @@ func checkSpareTime() bool {
 	return false
 }
 
-func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
-	err := db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
+func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl, loginimg string) {
+	err := db.QueryRow("SELECT appid, secret, shopid, authurl, loginimg FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl, &loginimg)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
@@ -820,7 +820,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else {
 			return
 		}
-		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
+		err = db.QueryRow("SELECT appid, secret, shopid, authurl, loginimg FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
 		}
@@ -834,15 +834,18 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
 	img := getLoginImg(db, in.Info.Acname)
-	var appid, secret, shopid, authurl string
+	var appid, secret, shopid, authurl, loginimg string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
 		ad := getAdImg(db, adtype)
 		if ad != "" {
 			img = ad
 		}
-		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
+		appid, secret, shopid, authurl, loginimg = getWxAppinfo(db, in.Info.Acname,
 			in.Info.Apmac)
+		if loginimg != "" {
+			img = loginimg
+		}
 	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
