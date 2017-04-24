@@ -24,6 +24,7 @@ import (
 	"Server/proto/hot"
 	"Server/proto/modify"
 	"Server/proto/monitor"
+	"Server/proto/punch"
 	"Server/proto/push"
 	"Server/proto/userinfo"
 	"Server/proto/verify"
@@ -791,6 +792,8 @@ func genClient(rtype int64, conn *grpc.ClientConn, callback string) interface{} 
 		cli = modify.NewModifyClient(conn)
 	case util.PushServerType:
 		cli = push.NewPushClient(conn)
+	case util.PunchServerType:
+		cli = punch.NewPunchClient(conn)
 	case util.UserinfoServerType:
 		cli = userinfo.NewUserinfoClient(conn)
 	case util.ConfigServerType:
