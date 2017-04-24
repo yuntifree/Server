@@ -1705,10 +1705,8 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
 	if apmac == "a85840cdf2a0" {
 		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
-	} else if acname == "AC_SSH_B_10" {
+	} else if util.IsKongguAcname(acname) {
 		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
-	} else if acname == "AC_120_A_06" || acname == "AC_120_A_02" {
-		dst = "http://192.168.200.4:8080/login201704131541/" + postfix
 	} else if util.IsWjjAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
