@@ -773,7 +773,7 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 
 func getLoginImg(db *sql.DB, acname, apmac string) string {
 	var img string
-	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ?", apmac).Scan(&img)
+	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
 	if img != "" {
 		return img
 	}
