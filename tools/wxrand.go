@@ -274,6 +274,9 @@ func getWxContent(id string) []WxContent {
 		picurl, _ := article.Get("data-hash").String()
 
 		items[i].Image = getImageUrl(url.QueryEscape(picurl))
+		if items[i].Image == "" {
+			items[i].Image, _ = article.Get("picurl").String()
+		}
 	}
 
 	return items
@@ -296,7 +299,12 @@ func getImageUrl(qurl string) string {
 		return ""
 	}
 
-	js, err := simplejson.NewJson(str[2 : len(str)-1])
+	t := string(str)
+	pos := strings.Index(t, "(")
+	if pos == -1 {
+		pos = 2
+	}
+	js, err := simplejson.NewJson(str[pos+1 : len(str)-1])
 	if err != nil {
 		log.Printf("parse imageurl json failed:%v", err)
 		log.Printf("%v", string(str))
@@ -348,7 +356,7 @@ func main() {
 	fmt.Println(fmtHeader())
 	w := bufio.NewWriter(f)
 
-	limit = make(chan int, 2)
+	limit = make(chan int, 8)
 	chs := make([]chan string, len(ids))
 	for i, v := range ids {
 		chs[i] = make(chan string, 2)
