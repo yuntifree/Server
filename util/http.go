@@ -27,10 +27,10 @@ func HTTPRequestWithHeaders(url, reqbody string, headers map[string]string) (str
 		req.Header.Set(k, v)
 	}
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	rspbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
