@@ -38,7 +38,7 @@ var kv *redis.Client
 var w *nsq.Producer
 
 func getPortalMenu(db *sql.DB, stype int64, flag bool) []*config.PortalMenuInfo {
-	query := fmt.Sprintf("SELECT icon, text, name, routername, url FROM portal_menu WHERE type = %d AND deleted = 0 ", stype)
+	query := fmt.Sprintf("SELECT icon, text, name, routername, url, subtype FROM portal_menu WHERE type = %d AND deleted = 0 ", stype)
 	if !flag {
 		query += " AND dbg = 0 "
 	}
@@ -54,7 +54,7 @@ func getPortalMenu(db *sql.DB, stype int64, flag bool) []*config.PortalMenuInfo 
 	for rows.Next() {
 		var info config.PortalMenuInfo
 		err := rows.Scan(&info.Icon, &info.Text, &info.Name, &info.Routername,
-			&info.Url)
+			&info.Url, &info.Type)
 		if err != nil {
 			log.Printf("getPortalMenu scan failed:%v", err)
 			continue
@@ -177,6 +177,27 @@ func getAdvertiseBanner(db *sql.DB, adtype int64) []*config.MediaInfo {
 	for rows.Next() {
 		var info config.MediaInfo
 		err := rows.Scan(&info.Img, &info.Dst, &info.Id)
+		if err != nil {
+			log.Printf("getAdvertiseBanner scan failed:%v", err)
+			continue
+		}
+		info.Type = 1
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func getAdvertise(db *sql.DB, adtype int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT img, dst, id, name FROM advertise WHERE areaid = ? AND type = 1 AND online = 1 AND deleted = 0", adtype)
+	if err != nil {
+		log.Printf("getAdvertiseBanner query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id, &info.Title)
 		if err != nil {
 			log.Printf("getAdvertiseBanner scan failed:%v", err)
 			continue
@@ -488,9 +509,9 @@ func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.
 		arr := strings.Split(menulist[i].Url, ";")
 		if len(arr) >= 2 {
 			if flag {
-				menulist[i].Url = arr[1]
-			} else {
 				menulist[i].Url = arr[0]
+			} else {
+				menulist[i].Url = arr[1]
 			}
 		}
 	}
@@ -500,6 +521,10 @@ func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.
 func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (*config.PortalContentReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalContent")
 	banners := getBanners(db, portalBannerV2Type, false, false)
+	if in.Type != 0 {
+		ads := getAdvertiseBanner(db, in.Type)
+		banners = append(ads, banners...)
+	}
 	flag := util.IsWhiteUser(db, in.Head.Uid, util.PortalMenuDbgType)
 	menulist := getPortalMenu(db, menuV2Type, flag)
 	var termflag bool
@@ -508,10 +533,11 @@ func (s *server) GetPortalContent(ctx context.Context, in *common.CommRequest) (
 	}
 	menulist = extractTermContent(menulist, termflag)
 	tablist := getPortalMenu(db, tabV2Type, flag)
+	ads := getAdvertise(db, in.Type)
 	util.PubRPCSuccRsp(w, "config", "GetPortalContent")
 	return &config.PortalContentReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Banners: banners, Menulist: menulist, Tablist: tablist}, nil
+		Banners: banners, Menulist: menulist, Tablist: tablist, Ads: ads}, nil
 }
 
 func (s *server) GetDiscovery(ctx context.Context, in *common.CommRequest) (*config.DiscoveryReply, error) {
@@ -579,7 +605,7 @@ func (s *server) GetMpwxInfo(ctx context.Context, in *common.CommRequest) (*conf
 
 func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
 	var infos []*config.Article
-	query := fmt.Sprintf("SELECT id, title, img, dst, ctime FROM wx_mp_article WHERE type = %d ", stype)
+	query := fmt.Sprintf("SELECT id, title, img, dst, ctime, wid FROM wx_mp_article WHERE type = %d ", stype)
 	if seq != 0 {
 		query += fmt.Sprintf(" AND id < %d ", seq)
 	}
@@ -593,24 +619,48 @@ func getMpwxArticle(db *sql.DB, stype, seq, num int64) []*config.Article {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.Article
-		err := rows.Scan(&info.Id, &info.Title, &info.Img, &info.Dst, &info.Ctime)
+		var wid int64
+		err := rows.Scan(&info.Id, &info.Title, &info.Img, &info.Dst, &info.Ctime,
+			&wid)
 		if err != nil {
 			log.Printf("getMpwxArticle scan failed:%v", err)
 			continue
 		}
 		info.Seq = info.Id
+		if !isInnerWxid(wid) {
+			info.Dst = extractArticleDst(info.Dst)
+		}
 		infos = append(infos, &info)
 	}
 	return infos
 }
 
+func extractArticleDst(dst string) string {
+	pos := strings.Index(dst, "#wechat_redirect")
+	if pos != -1 {
+		return dst[0:pos]
+	}
+	return dst
+}
+
+func isInnerWxid(wid int64) bool {
+	if wid == 1 || wid == 1299 {
+		return true
+	}
+	return false
+}
+
 func (s *server) GetMpwxArticle(ctx context.Context, in *common.CommRequest) (*config.MpwxArticleReply, error) {
 	util.PubRPCRequest(w, "config", "GetMpwxArticle")
 	infos := getMpwxArticle(db, in.Type, in.Seq, in.Num)
+	var hasmore int64
+	if len(infos) >= int(in.Num) {
+		hasmore = 1
+	}
 	util.PubRPCSuccRsp(w, "config", "GetMpwxArticle")
 	return &config.MpwxArticleReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Infos: infos,
+		Infos: infos, Hasmore: hasmore,
 	}, nil
 }
 

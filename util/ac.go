@@ -85,6 +85,14 @@ func IsTestAcname(acname string) bool {
 	return false
 }
 
+//IsKongguAcname check konggu acname
+func IsKongguAcname(acname string) bool {
+	if acname == "AC_SSH_B_10" {
+		return true
+	}
+	return false
+}
+
 //IsTestUsermac check test user mac
 func IsTestUsermac(usermac string) bool {
 	for i := 0; i < len(testUsermacs); i++ {
@@ -133,9 +141,14 @@ func GetPortalPath(db *sql.DB, acname string, portaltype int64) string {
 			ptype = SceneType
 		}
 	}
-	dir, err := GetPortalDir(db, ptype)
-	if err != nil {
-		log.Printf("getPortalPath failed:%v", err)
+	var err error
+	if IsKongguAcname(acname) {
+		dir = "portal201703212030/"
+	} else {
+		dir, err = GetPortalDir(db, ptype)
+		if err != nil {
+			log.Printf("getPortalPath failed:%v", err)
+		}
 	}
 	return host + dir
 }

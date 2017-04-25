@@ -18,6 +18,7 @@ import (
 	"Server/proto/common"
 	"Server/proto/config"
 	"Server/proto/fetch"
+	"Server/proto/punch"
 	"Server/proto/userinfo"
 
 	"Server/proto/hot"
@@ -1223,11 +1224,12 @@ func getPortalContent(w http.ResponseWriter, r *http.Request) (apperr *util.AppE
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
 	term := req.GetParamIntDef("phoneterm", 0)
+	adtype := req.GetParamIntDef("adtype", 0)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetPortalContent",
 		&common.CommRequest{
-			Head: &common.Head{Sid: uuid, Uid: uid, Term: term}})
+			Head: &common.Head{Sid: uuid, Uid: uid, Term: term}, Type: adtype})
 	httpserver.CheckRPCErr(rpcerr, "GetPortalContent")
 	res := resp.Interface().(*config.PortalContentReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetPortalContent")
@@ -1701,8 +1703,11 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		postfix = r.RequestURI[pos:]
 	}
 	var dst string
-	if acname == "AC_SSH_B_10" {
-		dst = "http://192.168.100.4:8080/login201703171857/" + postfix
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	if apmac == "a85840cdf2a0" {
+		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
+	} else if util.IsKongguAcname(acname) {
+		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
 	} else if util.IsWjjAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
@@ -1811,6 +1816,50 @@ func getAppConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return httpserver.GetConf(w, r, false)
 }
 
+func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	code := req.GetParamString("code")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, 0, "SubmitCode",
+		&punch.CodeRequest{
+			Head: &common.Head{Sid: uuid}, Code: code})
+	httpserver.CheckRPCErr(rpcerr, "SubmitCode")
+	res := resp.Interface().(*punch.LoginReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SubmitCode")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
+func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	sid := req.GetParamString("sid")
+	rawData := req.GetParamString("rawData")
+	signature := req.GetParamString("signature")
+	encryptedData := req.GetParamString("encryptedData")
+	iv := req.GetParamString("iv")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.PunchServerType, 0, "Login",
+		&punch.LoginRequest{
+			Head: &common.Head{Sid: uuid}, Sid: sid,
+			Rawdata: rawData, Signature: signature,
+			Encrypteddata: encryptedData, Iv: iv})
+	httpserver.CheckRPCErr(rpcerr, "Login")
+	res := resp.Interface().(*punch.LoginReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "Login")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 //NewAppServer return app http handler
 func NewAppServer() http.Handler {
 	mux := http.NewServeMux()
@@ -1872,6 +1921,8 @@ func NewAppServer() http.Handler {
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
 	mux.HandleFunc("/pingpp_webhook", pingppWebhook)
+	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))
+	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux
 }

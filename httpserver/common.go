@@ -24,6 +24,7 @@ import (
 	"Server/proto/hot"
 	"Server/proto/modify"
 	"Server/proto/monitor"
+	"Server/proto/punch"
 	"Server/proto/push"
 	"Server/proto/userinfo"
 	"Server/proto/verify"
@@ -681,6 +682,12 @@ func GenResponseBodyCallback(res interface{}, callback string, flag bool) []byte
 			} else {
 				continue
 			}
+		} else if typeField.Name == "Infos" {
+			js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
+				valueField.Interface())
+			if valueField.Len() >= util.MaxListSize {
+				js.SetPath([]string{"data", "hasmore"}, 1)
+			}
 		} else {
 			js.SetPath([]string{"data", strings.ToLower(typeField.Name)},
 				valueField.Interface())
@@ -785,6 +792,8 @@ func genClient(rtype int64, conn *grpc.ClientConn, callback string) interface{} 
 		cli = modify.NewModifyClient(conn)
 	case util.PushServerType:
 		cli = push.NewPushClient(conn)
+	case util.PunchServerType:
+		cli = punch.NewPunchClient(conn)
 	case util.UserinfoServerType:
 		cli = userinfo.NewUserinfoClient(conn)
 	case util.ConfigServerType:

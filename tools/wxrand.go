@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/trace"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -38,7 +39,161 @@ type WxContent struct {
 }
 
 var ids = []string{
-	"mimeng7",
+	"America_hq          ",
+	"apptoday            ",
+	"BAIKE0769           ",
+	"bamaying            ",
+	"bfaner              ",
+	"bixiakaifanle       ",
+	"bmsh_dg             ",
+	"Buyerkey            ",
+	"cbn_tglj            ",
+	"cctvnewscenter      ",
+	"cctvyscj            ",
+	"chaping321          ",
+	"chetuteng-com       ",
+	"chuangyezuiqianxian ",
+	"cmm445              ",
+	"cmo1967             ",
+	"coollabs            ",
+	"cypuzi              ",
+	"dazhengjing         ",
+	"dg2050              ",
+	"dgdalaba            ",
+	"dgrb22008278        ",
+	"dgzhcs              ",
+	"dianyingbake        ",
+	"DingXiangYiSheng    ",
+	"DJ00123987          ",
+	"DouguoCom           ",
+	"dsmovie             ",
+	"duhaoshu            ",
+	"duliyumovie         ",
+	"dxloveplay          ",
+	"dyp833              ",
+	"eemovie             ",
+	"fengyuhuangshan     ",
+	"fgzadmin            ",
+	"foodvideo           ",
+	"Food_Lab            ",
+	"gaichezhi           ",
+	"gqtzy2014           ",
+	"guanzhutvb          ",
+	"gudianshucheng      ",
+	"Guokr42             ",
+	"gushequ             ",
+	"gxjhshys            ",
+	"gzwcjs              ",
+	"heimagongshe        ",
+	"hereinuk            ",
+	"hibetterme          ",
+	"hkstocks            ",
+	"huazhuangshimk      ",
+	"huxiu_com           ",
+	"Iamasinger_hntv     ",
+	"ibaoman             ",
+	"ichuangyebang       ",
+	"icuiyutao           ",
+	"idongche            ",
+	"ifeng-news          ",
+	"iiiher              ",
+	"ilianyue            ",
+	"iModifiedCar        ",
+	"iphone-apple-ipad   ",
+	"iyourcar            ",
+	"jiaosushi           ",
+	"jiedawang-zhi       ",
+	"kawa01              ",
+	"kejimx              ",
+	"kidsfood            ",
+	"kongfuf             ",
+	"lang-club           ",
+	"lengtoo             ",
+	"lengxiaohua2012     ",
+	"LinkedIn-China      ",
+	"liuxb0929           ",
+	"lol_helper          ",
+	"lwwuwuwu            ",
+	"m-a-dmen            ",
+	"mh4565              ",
+	"miaofafoyin520      ",
+	"microhugo           ",
+	"mimeng7             ",
+	"mofzpy              ",
+	"movieiii            ",
+	"movpuzi             ",
+	"MusicClassic        ",
+	"mymoney888          ",
+	"newcaimi            ",
+	"newWhatYouNeed      ",
+	"OurDongguan         ",
+	"popdgwx             ",
+	"popland100          ",
+	"Pydp888             ",
+	"qqmusic             ",
+	"QQ_shijuezhi        ",
+	"rmrbwx              ",
+	"Rockerfm            ",
+	"rosemarytv          ",
+	"rzt317              ",
+	"sdimov              ",
+	"shejizone           ",
+	"shen1dian           ",
+	"shenyefachi         ",
+	"shenyeshitang521    ",
+	"shicishijie         ",
+	"shicitiandi         ",
+	"shiguangmm01        ",
+	"shudanlaile         ",
+	"sisterinlaw         ",
+	"sun0769-com         ",
+	"super_misse         ",
+	"SZLife0755          ",
+	"tancaijing          ",
+	"taolumusic          ",
+	"tcdy007             ",
+	"thepoemforyou       ",
+	"timedg              ",
+	"vipidy              ",
+	"vistaweek           ",
+	"v_movier            ",
+	"wangyixinwen163     ",
+	"wanzilove1218       ",
+	"webthinking         ",
+	"weixinlukuang       ",
+	"weloveuk            ",
+	"wenyijcc            ",
+	"whbzh520            ",
+	"Win_in_Japan        ",
+	"witheating          ",
+	"wonderful_picture   ",
+	"woshitongdao        ",
+	"wow36kr             ",
+	"wudaoone            ",
+	"wuxiaobopd          ",
+	"xfd0769             ",
+	"xiachufang          ",
+	"xiami_music         ",
+	"xiaogdnw            ",
+	"xinli01             ",
+	"xxbmm123            ",
+	"yesdg0769           ",
+	"yingdanlaile        ",
+	"yixuejiezazhi       ",
+	"youshucc            ",
+	"youthmba            ",
+	"yuedu58             ",
+	"yummydg             ",
+	"yunyinyue163        ",
+	"zcdq520             ",
+	"zg5201949           ",
+	"zhangzhaozhong45    ",
+	"zhanhao668          ",
+	"zimeiti-sogou       ",
+	"zmscook             ",
+	"zsnc-ok             ",
+	"zuiheikeji          ",
+	"zuofaniii           ",
 }
 
 var limit chan int
@@ -141,9 +296,10 @@ func getImageUrl(qurl string) string {
 		return ""
 	}
 
-	js, err := simplejson.NewJson([]byte(str[2 : len(str)-1]))
+	js, err := simplejson.NewJson(str[2 : len(str)-1])
 	if err != nil {
-		log.Printf("parse url json failed:%v", err)
+		log.Printf("parse imageurl json failed:%v", err)
+		log.Printf("%v", string(str))
 		return ""
 	}
 
@@ -174,6 +330,16 @@ func fmtContent(wxInfo WxInfo, wxList []WxContent) string {
 }
 
 func main() {
+	g, err := os.Create("trace.out")
+	if err != nil {
+		panic(err)
+	}
+	defer g.Close()
+	err = trace.Start(g)
+	if err != nil {
+		panic(err)
+	}
+	defer trace.Stop()
 
 	f, err := os.Create("wxData.csv")
 	checkerr(err)
@@ -185,8 +351,9 @@ func main() {
 	limit = make(chan int, 2)
 	chs := make([]chan string, len(ids))
 	for i, v := range ids {
-		chs[i] = make(chan string)
-		go getWxInfo(v, chs[i])
+		chs[i] = make(chan string, 2)
+		str := strings.Replace(v, " ", "", -1)
+		go getWxInfo(str, chs[i])
 	}
 	content := ""
 	for _, ch := range chs {

@@ -684,7 +684,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	recordUserMac(db, uid, in.Info.Usermac, in.Info.Phone)
 	addOnlineRecord(db, uid, in.Info.Phone, in.Info)
-	adtype := util.GetAdType(db, in.Info.Apmac)
+	var adtype int64
+	if util.IsWjjAcname(in.Info.Acname) {
+		adtype = 1
+	} else {
+		adtype = util.GetAdType(db, in.Info.Apmac)
+	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
@@ -766,11 +771,19 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	return 0
 }
 
-func getLoginImg(db *sql.DB, acname string) string {
-	img := defLoginImg
+func getLoginImg(db *sql.DB, acname, apmac string) string {
+	var img string
+	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ?", apmac).Scan(&img)
+	if img != "" {
+		return img
+	}
+
+	img = defLoginImg
 	btype := 3
 	if util.IsTestAcname(acname) {
-		btype = 5
+		btype = 3
+	} else if util.IsWjjAcname(acname) {
+		btype = 7
 	}
 	err := db.QueryRow("SELECT img FROM banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1", btype).Scan(&img)
 	if err != nil && err != sql.ErrNoRows {
@@ -788,13 +801,32 @@ func getAdImg(db *sql.DB, area int64) string {
 	return img
 }
 
+func checkSpareTime() bool {
+	t := time.Now()
+	hour := t.Hour()
+	minute := t.Minute()
+	ms := hour*100 + minute
+	if ms >= 1500 && ms < 1600 {
+		return true
+	}
+	return false
+}
+
 func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
-	err := db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
+	err := db.QueryRow("SELECT appid, secret, shopid, authurl, loginimg FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
-	if appid == "" && acname != "AC_SSH_B_10" {
-		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = 1 LIMIT 1").Scan(&appid, &secret, &shopid, &authurl)
+	if appid == "" {
+		var def int64
+		if util.IsWjjAcname(acname) {
+			def = 2
+		} else if acname != "AC_SSH_B_10" {
+			def = 1
+		} else {
+			return
+		}
+		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
 		}
@@ -807,7 +839,7 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
-	img := getLoginImg(db, in.Info.Acname)
+	img := getLoginImg(db, in.Info.Acname, in.Info.Apmac)
 	var appid, secret, shopid, authurl string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
@@ -1067,7 +1099,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 		log.Printf("Register refreshTokenPrivdata user info failed:%v", err)
 		return &verify.PortalLoginReply{Head: &common.Head{Retcode: 1}}, err
 	}
-	adtype := util.GetAdType(db, in.Info.Apmac)
+	var adtype int64
+	if util.IsWjjAcname(in.Info.Acname) {
+		adtype = 1
+	} else {
+		adtype = util.GetAdType(db, in.Info.Apmac)
+	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
