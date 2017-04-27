@@ -801,23 +801,29 @@ func getAdImg(db *sql.DB, area int64) string {
 	return img
 }
 
-func checkSpareTime() bool {
+func checkSpareTime(stime, etime int64) bool {
+	if stime == 0 && etime == 0 {
+		return true
+	}
 	t := time.Now()
 	hour := t.Hour()
 	minute := t.Minute()
 	ms := hour*100 + minute
-	if ms >= 1500 && ms < 1600 {
+	if ms >= int(stime) && ms <= int(etime) {
 		return true
 	}
 	return false
 }
 
 func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
-	err := db.QueryRow("SELECT appid, secret, shopid, authurl, loginimg FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).Scan(&appid, &secret, &shopid, &authurl)
+	var stime, etime int64
+	err := db.QueryRow("SELECT appid, secret, shopid, authurl, w.stime, w.etime FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).
+		Scan(&appid, &secret, &shopid, &authurl, &stime, &etime)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
-	if appid == "" {
+
+	if appid == "" || !checkSpareTime(stime, etime) {
 		var def int64
 		if util.IsWjjAcname(acname) {
 			def = 2

@@ -128,6 +128,8 @@ CREATE TABLE IF NOT EXISTS wx_appinfo (
     unid    int unsigned NOT NULL DEFAULT 0,
     def     tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    stime   int unsigned NOT NULL DEFAULT 0,
+    etime   int unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(id),
     UNIQUE KEY(appid)
 ) ENGINE = InnoDB;
