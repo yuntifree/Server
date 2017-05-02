@@ -827,10 +827,12 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		var def int64
 		if util.IsWjjAcname(acname) {
 			def = 2
-		} else if acname != "AC_SSH_B_10" {
-			def = 1
-		} else {
+		} else if util.IsKongguAcname(acname) {
 			return
+		} else if util.IsLzfAcname(acname) {
+			def = 3
+		} else {
+			def = 1
 		}
 		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {

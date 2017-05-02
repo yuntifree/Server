@@ -93,6 +93,16 @@ func IsKongguAcname(acname string) bool {
 	return false
 }
 
+//IsLzfAcname chec lianzufang acname
+func IsLzfAcname(acname string) bool {
+	if acname == "AC_SSH_A_06" || acname == "AC_SSH_A_07" ||
+		acname == "AC_SSH_A_08" || acname == "AC_SSH_A_09" ||
+		acname == "AC_SSH_A_10" {
+		return true
+	}
+	return false
+}
+
 //IsTestUsermac check test user mac
 func IsTestUsermac(usermac string) bool {
 	for i := 0; i < len(testUsermacs); i++ {
