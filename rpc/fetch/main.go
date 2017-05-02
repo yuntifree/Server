@@ -1118,6 +1118,55 @@ func (s *server) FetchChannelVersion(ctx context.Context, in *common.CommRequest
 		Infos: infos, Total: total}, nil
 }
 
+func getTotalMonitor(db *sql.DB, name string) int64 {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM monitor.api_stat WHERE name = ?", name).Scan(&cnt)
+	if err != nil {
+		log.Printf("getTotalMonitor failed:%v", err)
+	}
+	return cnt
+}
+
+func getMonitor(db *sql.DB, seq, num int64, name string) []*fetch.MonitorInfo {
+	var infos []*fetch.MonitorInfo
+	query := fmt.Sprintf("SELECT id, req, succrsp, ctime FROM monitor.api_stat WHERE name = '%s' ", name)
+	if seq != 0 {
+		query += fmt.Sprintf(" AND id < %d ", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
+	log.Printf("getMonitor query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getMonitor query failed;%v", err)
+		return infos
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var info fetch.MonitorInfo
+		err := rows.Scan(&info.Id, &info.Req, &info.Succrsp, &info.Ctime)
+		if err != nil {
+			log.Printf("getMonitor scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+
+}
+
+func (s *server) FetchMonitor(ctx context.Context, in *fetch.MonitorRequest) (*fetch.MonitorReply, error) {
+	util.PubRPCRequest(w, "fetch", "FetchMonitor")
+	log.Printf("FetchMonitor seq:%d num:%d uid:%d",
+		in.Seq, in.Num, in.Head.Uid)
+	infos := getMonitor(db, in.Seq, in.Num, in.Name)
+	total := getTotalMonitor(db, in.Name)
+	util.PubRPCSuccRsp(w, "fetch", "FetchMonitor")
+	return &fetch.MonitorReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
+		Infos: infos, Total: total}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.FetchServerPort)
 	if err != nil {

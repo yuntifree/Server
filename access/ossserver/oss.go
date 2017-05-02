@@ -1375,6 +1375,28 @@ func getFeedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getApiStat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	num := req.GetParamInt("num")
+	seq := req.GetParamInt("seq")
+	name := req.GetParamString("name")
+	num = genReqNum(num)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.FetchServerType, uid, "FetchMonitor",
+		&fetch.MonitorRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: num, Name: name})
+	httpserver.CheckRPCErr(rpcerr, "FetchMonitor")
+	res := resp.Interface().(*fetch.MonitorReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchMonitor")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	return nil
+}
+
 func getPortalDirList(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckOss(r)
@@ -1565,6 +1587,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/get_videos", httpserver.AppHandler(getVideos))
 	mux.Handle("/get_banners", httpserver.AppHandler(getBanners))
 	mux.Handle("/get_feedback", httpserver.AppHandler(getFeedback))
+	mux.Handle("/get_api_stat", httpserver.AppHandler(getApiStat))
 	mux.Handle("/get_portal_dir", httpserver.AppHandler(getPortalDirList))
 	mux.Handle("/get_channel_version", httpserver.AppHandler(getChannelVersion))
 	mux.Handle("/add_channel_version", httpserver.AppHandler(addChannelVersion))

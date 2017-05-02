@@ -29,6 +29,8 @@ service Fetch{
     rpc FetchPortal(common.CommRequest) returns (PortalReply) {}
     rpc FetchPortalDir(common.CommRequest) returns (PortalDirReply) {}
     rpc FetchChannelVersion(common.CommRequest) returns (ChannelVersionReply) {}
+    rpc FetchMonitor(MonitorRequest) returns (MonitorReply) {}
+    
 }
 
 message NewsInfo {
@@ -285,5 +287,25 @@ message PortalDirReply {
 message ChannelVersionReply {
     common.Head head = 1;
     repeated common.ChannelVersionInfo infos = 2;
+    int64 total = 3;
+}
+
+message MonitorRequest {
+    common.Head head = 1;
+    int64 seq = 2;
+    int64 num = 3;
+    string name = 4;
+}
+
+message MonitorInfo {
+    int64 id = 1;
+    int64 req = 2;
+    int64 succrsp = 3;
+    string ctime = 4;
+}
+
+message MonitorReply {
+    common.Head head = 1;
+    repeated MonitorInfo infos = 2;
     int64 total = 3;
 }
