@@ -1130,10 +1130,7 @@ func getTotalMonitor(db *sql.DB, name string) int64 {
 func getMonitor(db *sql.DB, seq, num int64, name string) []*fetch.MonitorInfo {
 	var infos []*fetch.MonitorInfo
 	query := fmt.Sprintf("SELECT id, req, succrsp, ctime FROM monitor.api_stat WHERE name = '%s' ", name)
-	if seq != 0 {
-		query += fmt.Sprintf(" AND id < %d ", seq)
-	}
-	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d, %d", seq, num)
 	log.Printf("getMonitor query:%s", query)
 	rows, err := db.Query(query)
 	if err != nil {
