@@ -1680,6 +1680,23 @@ func getPortalDir(acname, apmac string) string {
 	return res.Dir
 }
 
+func getRedirectDst(ctype int) string {
+	return "https://jinshuju.net/f/XxGrCw"
+}
+
+func redirect(w http.ResponseWriter, r *http.Request) {
+	httpserver.ReportRequest(r.RequestURI)
+	r.ParseForm()
+	types := r.Form["type"]
+	var ctype int
+	if len(types) > 0 {
+		ctype, _ = strconv.Atoi(types[0])
+	}
+	dst := getRedirectDst(ctype)
+	w.Header().Set("Cache-Control", "no-cache")
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
@@ -1918,6 +1935,7 @@ func NewAppServer() http.Handler {
 	mux.HandleFunc("/check_subscribe", checkSubscribe)
 	mux.Handle("/test", httpserver.AppHandler(printHead))
 	mux.HandleFunc("/portal", portal)
+	mux.HandleFunc("/redirect", redirect)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
 	mux.HandleFunc("/pingpp_webhook", pingppWebhook)
