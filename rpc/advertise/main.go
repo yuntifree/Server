@@ -555,8 +555,6 @@ func main() {
 	db.DB().SetMaxIdleConns(util.MaxIdleConns)
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.AdvertiseServerName, util.AdvertiseServerPort)
-	//cli := util.InitEtcdCli()
-	//go util.ReportEtcd(cli, util.AdvertiseServerName, util.AdvertiseServerPort)
 
 	s := util.NewGrpcServer()
 	advertise.RegisterAdvertiseServer(s, &server{})

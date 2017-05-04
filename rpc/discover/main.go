@@ -135,10 +135,6 @@ func fetchServers(name string) []string {
 	return servers
 }
 
-func isEtcdTestUid(uid int64) bool {
-	return false
-}
-
 func convertServerName(name string) string {
 	arr := strings.Split(name, ":")
 	var server string
@@ -153,13 +149,7 @@ func convertServerName(name string) string {
 func (s *server) Resolve(ctx context.Context, in *discover.ServerRequest) (*discover.ServerReply, error) {
 	util.PubRPCRequest(w, "discover", "Resolve")
 	var servers []string
-	if !isEtcdTestUid(in.Head.Uid) {
-		servers = fetchServers(in.Sname)
-	} else {
-		name := convertServerName(in.Sname)
-		servers = srvMap[name]
-		log.Printf("use etcd name:%s servers:%v", name, servers)
-	}
+	servers = fetchServers(in.Sname)
 	if len(servers) == 0 {
 		log.Printf("fetch servers failed:%s", in.Sname)
 		return &discover.ServerReply{
@@ -181,8 +171,6 @@ func main() {
 
 	kv = util.InitRedis()
 	go util.ReportHandler(kv, util.DiscoverServerName, util.DiscoverServerPort)
-	cli := util.InitEtcdCli()
-	go watcher(cli)
 
 	s := util.NewGrpcServer()
 	discover.RegisterDiscoverServer(s, &server{})

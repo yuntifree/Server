@@ -162,8 +162,6 @@ func main() {
 	db.SetMaxIdleConns(util.MaxIdleConns)
 	kv := util.InitRedis()
 	go util.ReportHandler(kv, util.UserinfoServerName, util.UserinfoServerPort)
-	//cli := util.InitEtcdCli()
-	//go util.ReportEtcd(cli, util.UserinfoServerName, util.UserinfoServerPort)
 
 	s := util.NewGrpcServer()
 	userinfo.RegisterUserinfoServer(s, &server{})
