@@ -652,3 +652,23 @@ CREATE TABLE IF NOT EXISTS issue
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS redirect
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    int unsigned NOT NULL,
+    dst     varchar(256) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS redirect_cnt
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    int unsigned NOT NULL,
+    cnt     int unsigned NOT NULL DEFAULT 0,
+    ctime   date NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(type, ctime)
+) ENGINE = InnoDB;

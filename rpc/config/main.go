@@ -694,6 +694,28 @@ func (s *server) FetchPortalMenu(ctx context.Context, in *common.CommRequest) (*
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
 }
 
+func getRedirect(db *sql.DB, id int64) string {
+	var dst string
+	err := db.QueryRow("SELECT dst FROM redirect WHERE type = ?", id).Scan(&dst)
+	if err != nil {
+		log.Printf("getRedirect scan failed:%v", err)
+		return dst
+	}
+	_, err = db.Exec("INSERT INTO redirect_cnt(type, ctime, cnt) VALUES (?, NOW(), 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1", id)
+	if err != nil {
+		log.Printf("getRedirect add count failed:%v", err)
+	}
+	return dst
+}
+
+func (s *server) Redirect(ctx context.Context, in *common.CommRequest) (*config.RedirectReply, error) {
+	util.PubRPCRequest(w, "config", "Redirect")
+	dst := getRedirect(db, in.Id)
+	util.PubRPCSuccRsp(w, "config", "Redirect")
+	return &config.RedirectReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
+}
+
 func (s *server) AddPortalMenu(ctx context.Context, in *config.MenuRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "config", "AddPortalMenu")
 	res, err := db.Exec("INSERT INTO portal_menu(type, icon, text, name, routername, url, priority, dbg, deleted, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",

@@ -1681,7 +1681,19 @@ func getPortalDir(acname, apmac string) string {
 }
 
 func getRedirectDst(ctype int) string {
-	return "https://jinshuju.net/f/XxGrCw"
+	dst := "https://jinshuju.net/f/XxGrCw"
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "Redirect",
+		&common.CommRequest{Head: &common.Head{Sid: uuid},
+			Id: int64(ctype)})
+	if rpcerr.Interface() != nil {
+		return dst
+	}
+	res := resp.Interface().(*config.RedirectReply)
+	if res.Head.Retcode != 0 {
+		return dst
+	}
+	return res.Dst
 }
 
 func redirect(w http.ResponseWriter, r *http.Request) {

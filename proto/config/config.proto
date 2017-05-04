@@ -17,6 +17,7 @@ service Config{
     rpc GetPortalContent(common.CommRequest) returns (PortalContentReply) {}
     rpc GetMpwxInfo(common.CommRequest) returns (MpwxInfoReply) {}
     rpc GetMpwxArticle(common.CommRequest) returns (MpwxArticleReply) {}
+    rpc Redirect(common.CommRequest) returns (RedirectReply) {}
 }
 
 message PortalMenuInfo {
@@ -165,4 +166,9 @@ message MpwxArticleReply {
     common.Head head = 1;
     repeated Article infos = 2;
     int64 hasmore = 3;
+}
+
+message RedirectReply {
+    common.Head head = 1;
+    string dst = 2;
 }
