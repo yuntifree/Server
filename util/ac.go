@@ -57,6 +57,11 @@ var testUsermacs = []string{
 	"D065CA2F5BC6",
 }
 
+var wjjKongguAcnames = []string{
+	"AC_SSH_A_04",
+	"AC_SSH_A_05",
+}
+
 //IsSshAcname check ssh acname
 func IsSshAcname(acname string) bool {
 	for i := 0; i < len(sshAcnames); i++ {
@@ -89,6 +94,16 @@ func IsTestAcname(acname string) bool {
 func IsKongguAcname(acname string) bool {
 	if acname == "AC_SSH_B_10" {
 		return true
+	}
+	return false
+}
+
+//IsWjjKongguAcname check konggu acname
+func IsWjjKongguAcname(acname string) bool {
+	for i := 0; i < len(wjjKongguAcnames); i++ {
+		if wjjKongguAcnames[i] == acname {
+			return true
+		}
 	}
 	return false
 }

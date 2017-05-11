@@ -825,7 +825,9 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 
 	if appid == "" || !checkSpareTime(stime, etime) {
 		var def int64
-		if util.IsWjjAcname(acname) {
+		if util.IsWjjKongguAcname(acname) {
+			def = 4
+		} else if util.IsWjjAcname(acname) {
 			def = 2
 		} else if util.IsKongguAcname(acname) {
 			return
