@@ -58,8 +58,8 @@ var testUsermacs = []string{
 }
 
 var wjjKongguAcnames = []string{
-	"AC_SSH_A_04",
-	"AC_SSH_A_05",
+	"AC_120_A_04",
+	"AC_120_A_05",
 }
 
 //IsSshAcname check ssh acname
