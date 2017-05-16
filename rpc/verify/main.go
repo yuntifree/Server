@@ -655,11 +655,15 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	log.Printf("PortalLogin info:%v", in.Info)
 	if !isTestParam(in.Info) {
-		flag := zteLogin(in.Info.Phone, in.Info.Userip,
+		flag, err := zteLogin(in.Info.Phone, in.Info.Userip,
 			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 		if !flag {
 			log.Printf("PortalLogin zteLogin retry failed, phone:%s code:%s",
 				in.Info.Phone, in.Info.Code)
+			if err == zte.ErrForbid {
+				return &verify.PortalLoginReply{
+					Head: &common.Head{Retcode: common.ErrCode_LOGIN_FORBID}}, nil
+			}
 			return &verify.PortalLoginReply{
 				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 		}
@@ -732,10 +736,15 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN,
 				Uid: in.Head.Uid}}, nil
 	}
-	if !zteLogin(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
-		in.Info.Acname, stype) {
+	flag, err := zteLogin(phone, in.Info.Userip, in.Info.Usermac, in.Info.Acip,
+		in.Info.Acname, stype)
+	if !flag {
 		log.Printf("WifiAccess zte loginnopass retry failed, phone:%s code:%s",
 			phone, in.Info.Code)
+		if err == zte.ErrForbid {
+			return &common.CommReply{
+				Head: &common.Head{Retcode: common.ErrCode_LOGIN_FORBID}}, nil
+		}
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1}}, nil
 	}
@@ -938,14 +947,14 @@ func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*c
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
-func zteLogin(phone, userip, usermac, acip, acname string, stype uint) bool {
-	flag := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
+func zteLogin(phone, userip, usermac, acip, acname string, stype uint) (bool, error) {
+	flag, err := zte.Loginnopass(phone, userip, usermac, acip, acname, stype)
 	if flag {
-		return true
+		return true, nil
 	}
 	log.Printf("PortalLogin zte loginnopass failed, phone:%s stype:%d",
 		phone, stype)
-	return flag
+	return flag, err
 }
 
 func refreshActiveTime(db *sql.DB, uid int64) {
@@ -1003,7 +1012,7 @@ func oneClickLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 		return uid, err
 	}
 	if !isTestParam(in.Info) {
-		flag := zteLogin(phone, in.Info.Userip,
+		flag, err := zteLogin(phone, in.Info.Userip,
 			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 		if !flag {
 			log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
@@ -1020,10 +1029,13 @@ func oneClickLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 func portalLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 	stype := getAcSys(db, in.Info.Acname)
 	if !isTestParam(in.Info) {
-		flag := zteLogin(specPhone, in.Info.Userip,
+		flag, err := zteLogin(specPhone, in.Info.Userip,
 			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 		if !flag {
 			log.Printf("portalLogin zteLogin retry failed, request:%v", in)
+			if err == zte.ErrForbid {
+				return 0, err
+			}
 			return 0, errors.New("zteLogin login failed")
 		}
 	}
@@ -1098,11 +1110,15 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 			Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 	}
 	if !isTestParam(in.Info) {
-		flag := zteLogin(phone, in.Info.Userip,
+		flag, err := zteLogin(phone, in.Info.Userip,
 			in.Info.Usermac, in.Info.Acip, in.Info.Acname, stype)
 		if !flag {
 			log.Printf("OneClickLogin zte loginnopass retry failed, phone:%s",
 				phone)
+			if err == zte.ErrForbid {
+				return &verify.PortalLoginReply{
+					Head: &common.Head{Retcode: common.ErrCode_LOGIN_FORBID}}, nil
+			}
 			return &verify.PortalLoginReply{
 				Head: &common.Head{Retcode: common.ErrCode_ZTE_LOGIN}}, nil
 		}

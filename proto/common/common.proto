@@ -17,6 +17,7 @@ enum ErrCode{
     HAS_PUNCH = 10011;
     ILLEGAL_CODE = 10012;
     FREQUENCY_LIMIT = 10013;
+    LOGIN_FORBID = 10014;
 }
 
 message Head {

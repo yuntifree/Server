@@ -24,6 +24,7 @@ const (
 )
 
 var errStatus = errors.New("zte op failed")
+var ErrForbid = errors.New("login forbid")
 
 func genHead(action string) *simplejson.Json {
 	js, err := simplejson.NewJson([]byte(`{}`))
@@ -200,11 +201,11 @@ func genLoginnopassBody(phone, userip, usermac, acip, acname string) (string, er
 }
 
 //Loginnopass user login without password
-func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
+func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) (bool, error) {
 	body, err := genLoginnopassBody(phone, userip, usermac, acip, acname)
 	if err != nil {
 		log.Printf("Login genLoginBody failed:%v", err)
-		return false
+		return false, nil
 	}
 
 	log.Printf("Loginnopass reqbody:%s", body)
@@ -215,21 +216,23 @@ func Loginnopass(phone, userip, usermac, acip, acname string, stype uint) bool {
 			reason, err := js.Get("head").Get("reason").String()
 			if err != nil {
 				log.Printf("Loginnopass get reason failed:%v", err)
-				return false
+				return false, nil
 			}
 			log.Printf("reason:%s", reason)
 			if reason == "无线接入控制失败或限制接入" {
 				if QueryOnline(phone, stype) {
 					log.Printf("Loginnopass queryonline succ:%s", phone)
-					return true
+					return true, nil
 				}
 				log.Printf("Loginnopass QueryOnline failed phone:%s", phone)
+			} else if reason == "您的帐号或者设备被禁止访问网络" {
+				return false, ErrForbid
 			}
 		}
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func genLogoutBody(phone, mac, userip, acip string) (string, error) {

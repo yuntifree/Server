@@ -1001,6 +1001,10 @@ func portalLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 				Phone: phone, Code: code, Apmac: apmac}})
 	httpserver.CheckRPCErrCallback(rpcerr, "PortalLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
+	if res.Head.Retcode == common.ErrCode_LOGIN_FORBID {
+		req.WriteRsp(w, []byte(`{errno:0,"data":{"portaldir":"http://120.25.133.234/safety.html"}}`))
+		return nil
+	}
 	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "PortalLogin", req.Callback)
 
 	body := httpserver.GenResponseBodyCallback(res, req.Callback, true)
@@ -1032,6 +1036,10 @@ func oneClickLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 				Userip: userip, Apmac: apmac}})
 	httpserver.CheckRPCErrCallback(rpcerr, "OneClickLogin", req.Callback)
 	res := resp.Interface().(*verify.PortalLoginReply)
+	if res.Head.Retcode == common.ErrCode_LOGIN_FORBID {
+		req.WriteRsp(w, []byte(`{errno:0,"data":{"portaldir":"http://120.25.133.234/safety.html"}}`))
+		return nil
+	}
 	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "OneClickLogin",
 		req.Callback)
 
