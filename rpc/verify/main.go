@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"database/sql"
@@ -624,6 +625,7 @@ func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
 }
 
 func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
+	mac = strings.Replace(mac, ":", "", -1)
 	_, err := db.Exec("INSERT INTO user_mac(mac, uid, phone, ctime, etime) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
 		mac, uid, phone, uid, phone)
 	if err != nil {
@@ -754,7 +756,8 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	recordPortalMac(db, mac)
 	var phone string
 	var uid int64
-	err := db.QueryRow("SELECT phone, uid FROM user_mac WHERE mac = ?", mac).
+	emac := strings.Replace(mac, ":", "", -1)
+	err := db.QueryRow("SELECT phone, uid FROM user_mac WHERE mac = ?", emac).
 		Scan(&phone, &uid)
 	if err != nil {
 		return 0
@@ -984,7 +987,9 @@ func hasMacRecord(db *sql.DB, usermac string) bool {
 func oneClickLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 	var uid int64
 	var phone string
-	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
+	usermac := strings.Replace(in.Info.Usermac, ":", "", -1)
+	log.Printf("usermac:%s", usermac)
+	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", usermac).
 		Scan(&phone, &uid)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
@@ -1075,7 +1080,8 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	util.PubRPCRequest(w, "verify", "OneClickLogin")
 	var uid int64
 	var phone string
-	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", in.Info.Usermac).
+	usermac := strings.Replace(in.Info.Usermac, ":", "", -1)
+	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", usermac).
 		Scan(&phone, &uid)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
