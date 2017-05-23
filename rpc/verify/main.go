@@ -642,6 +642,15 @@ func isTestParam(info *verify.PortalInfo) bool {
 	return false
 }
 
+func getTaobaoInfo(db *sql.DB) (img, dst string) {
+	err := db.QueryRow("SELECT img, dst FROM banner WHERE type = 9").
+		Scan(&img, &dst)
+	if err != nil {
+		log.Printf("getTaobaoInfo failed:%v", err)
+	}
+	return
+}
+
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
 	log.Printf("PortalLogin request:%v", in)
 	util.PubRPCRequest(w, "verify", "PortalLogin")
@@ -698,11 +707,13 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
+	img, dst := getTaobaoInfo(db)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Portaltype: ptype, Adtype: adtype}, nil
+		Portaltype: ptype, Adtype: adtype, Cover: img,
+		Dst: dst}, nil
 }
 
 func checkZteReg(db *sql.DB, bitmap, stype uint, uid int64, phone string) error {
@@ -856,6 +867,17 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 	return
 }
 
+func isTaobaoTime() int64 {
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	v := hour*100 + min
+	if (v > 800 && v < 1030) || (v > 1400 && v < 1830) {
+		return 1
+	}
+	return 0
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
@@ -872,11 +894,12 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
 			in.Info.Apmac)
 	}
+	//taobao := isTaobaoTime()
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
 		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
-		Wxauthurl: authurl}, nil
+		Wxauthurl: authurl, Taobao: 1}, nil
 }
 
 func genPortalDst(db *sql.DB, openid string) string {
@@ -1139,11 +1162,13 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
+	img, dst := getTaobaoInfo(db)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
-		Portaltype: ptype, Adtype: adtype}, nil
+		Portaltype: ptype, Adtype: adtype, Cover: img,
+		Dst: dst}, nil
 }
 
 func main() {

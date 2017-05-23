@@ -65,6 +65,8 @@ message PortalLoginReply {
     string live = 4;
     int64 adtype = 5;
     int64 portaltype = 6;
+    string cover = 7;
+    string dst = 8;
 }
 
 message VerifyReply {
@@ -152,6 +154,7 @@ message CheckReply {
     string wxsecret = 7;
     string wxshopid = 8;
     string wxauthurl = 9;
+    int64 taobao = 10;
 }
 
 message SubscribeRequest {
