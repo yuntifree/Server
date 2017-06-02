@@ -155,6 +155,7 @@ message CheckReply {
     string wxshopid = 8;
     string wxauthurl = 9;
     int64 taobao = 10;
+    string cover = 11;
 }
 
 message SubscribeRequest {

@@ -894,12 +894,17 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
 			in.Info.Apmac)
 	}
-	//taobao := isTaobaoTime()
+	var taobao int64
+	var cover string
+	if in.Info.Acname == "AC_SSH_A_09" {
+		taobao = 1
+		cover, _ = getTaobaoInfo(db)
+	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
 		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
-		Wxauthurl: authurl, Taobao: 1}, nil
+		Wxauthurl: authurl, Taobao: taobao, Cover: cover}, nil
 }
 
 func genPortalDst(db *sql.DB, openid string) string {

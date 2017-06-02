@@ -1741,10 +1741,14 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	}
 	var dst string
 	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
-	if apmac == "a85840cdf2a0" {
+	/*if apmac == "a85840cdf2a0" {
 		dst = "http://192.168.100.4:8080/login201704131541/" + postfix
-	} else if util.IsKongguAcname(acname) {
+	} else
+	*/
+	if util.IsKongguAcname(acname) {
 		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
+	} else if acname == "AC_SSH_A_09" {
+		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
 	} else if util.IsWjjAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
