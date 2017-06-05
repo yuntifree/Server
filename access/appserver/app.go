@@ -1965,6 +1965,8 @@ func NewAppServer() http.Handler {
 	mux.HandleFunc("/pingpp_webhook", pingppWebhook)
 	mux.Handle("/submit_xcx_code", httpserver.AppHandler(submitXcxCode))
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
+	mux.Handle("/get_stations", httpserver.AppHandler(getStations))
+	mux.Handle("/submit_reserve_info", httpserver.AppHandler(submitReserveInfo))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux
 }

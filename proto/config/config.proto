@@ -18,6 +18,7 @@ service Config{
     rpc GetMpwxInfo(common.CommRequest) returns (MpwxInfoReply) {}
     rpc GetMpwxArticle(common.CommRequest) returns (MpwxArticleReply) {}
     rpc Redirect(common.CommRequest) returns (RedirectReply) {}
+    rpc SubmitReserveInfo(ReserveRequest) returns (ReserveReply) {}
 }
 
 message PortalMenuInfo {
@@ -171,4 +172,19 @@ message MpwxArticleReply {
 message RedirectReply {
     common.Head head = 1;
     string dst = 2;
+}
+
+message ReserveRequest {
+    common.Head head = 1;
+    string name = 2;
+    string phone = 3;
+    int64 sid = 4;
+    string date = 5;
+    int64 btype = 6;
+    int64 pillow = 7;
+}
+
+message ReserveReply {
+    common.Head head = 1;
+    int64 code = 2;
 }

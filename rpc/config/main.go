@@ -716,6 +716,66 @@ func (s *server) Redirect(ctx context.Context, in *common.CommRequest) (*config.
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
 }
 
+func genReserveCode() int64 {
+	r := util.Rand()
+	n := (r % 9) + 1
+	m := r % 100000
+	return int64(n*100000 + m)
+}
+
+func getCodeCnt(db *sql.DB, code int64) int64 {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM reserve_info WHERE code = ?", code).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("getCodeCnt failed:%v", err)
+	}
+	return cnt
+}
+
+func genCode(db *sql.DB) int64 {
+	for i := 0; i < 10; i++ {
+		code := genReserveCode()
+		cnt := getCodeCnt(db, code)
+		if cnt == 0 {
+			return code
+		}
+	}
+	return 0
+}
+
+func (s *server) SubmitReserveInfo(ctx context.Context, in *config.ReserveRequest) (*config.ReserveReply, error) {
+	util.PubRPCRequest(w, "config", "SubmitReserveInfo")
+	code := genCode(db)
+	if code == 0 {
+		log.Printf("SubmitReserveInfo genCode failed phone:%s", in.Phone)
+		return &config.ReserveReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+
+	}
+	res, err := db.Exec("INSERT IGNORE INTO reserve_info(name, phone, sid, reserve_date, btype, pillow, code, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+		in.Name, in.Phone, in.Sid, in.Date, in.Btype, in.Pillow, code)
+	if err != nil {
+		log.Printf("SubmitReserveInfo insert failed:%v", err)
+		return &config.ReserveReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("SubmitReserveInfo get affected rows failed:%v", err)
+		return &config.ReserveReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if cnt == 0 {
+		log.Printf("SubmitReserveInfo insert ignored phone:%s", in.Phone)
+		return &config.ReserveReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "SubmitReserveInfo")
+	return &config.ReserveReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Code: code}, nil
+}
+
 func (s *server) AddPortalMenu(ctx context.Context, in *config.MenuRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "config", "AddPortalMenu")
 	res, err := db.Exec("INSERT INTO portal_menu(type, icon, text, name, routername, url, priority, dbg, deleted, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
