@@ -1967,6 +1967,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/get_stations", httpserver.AppHandler(getStations))
 	mux.Handle("/submit_reserve_info", httpserver.AppHandler(submitReserveInfo))
+	mux.Handle("/get_reserve_info", httpserver.AppHandler(getReserveInfo))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux
 }

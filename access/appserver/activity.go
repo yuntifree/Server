@@ -126,3 +126,22 @@ func submitReserveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
+
+func getReserveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	code := req.GetParamInt("code")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "GetReserveInfo",
+		&config.GetReserveRequest{Head: &common.Head{Sid: uuid},
+			Code: code})
+	httpserver.CheckRPCErr(rpcerr, "GetReserveInfo")
+	res := resp.Interface().(*config.ReserveInfoReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetReserveInfo")
+
+	body := httpserver.GenResponseBody(res, true)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}

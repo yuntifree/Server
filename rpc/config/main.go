@@ -744,6 +744,21 @@ func genCode(db *sql.DB) int64 {
 	return 0
 }
 
+func (s *server) GetReserveInfo(ctx context.Context, in *config.GetReserveRequest) (*config.ReserveInfoReply, error) {
+	util.PubRPCRequest(w, "config", "GetReserveInfo")
+	var name, phone string
+	err := db.QueryRow("SELECT name, phone FROM reserve_info WHERE code = ?", in.Code)
+	if err != nil {
+		log.Printf("GetReserveInfo query failed:%d %v", in.Code, err)
+		return &config.ReserveInfoReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "GetReserveInfo")
+	return &config.ReserveInfoReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Name: name,
+		Phone: phone}, nil
+}
+
 func (s *server) SubmitReserveInfo(ctx context.Context, in *config.ReserveRequest) (*config.ReserveReply, error) {
 	util.PubRPCRequest(w, "config", "SubmitReserveInfo")
 	code := genCode(db)
