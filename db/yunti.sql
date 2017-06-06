@@ -193,6 +193,8 @@ CREATE TABLE IF NOT EXISTS ap_info (
     UNIQUE KEY(mac)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS edu_ap_info LIKE ap_info;
+
 CREATE TABLE IF NOT EXISTS ap_stat (
     sid     bigint unsigned NOT NULL AUTO_INCREMENT,
     aid     int unsigned NOT NULL,

@@ -794,6 +794,20 @@ func checkLoginMac(db *sql.DB, mac string, stype uint) int64 {
 	return 0
 }
 
+func isEduAp(db *sql.DB, apmac string) bool {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM edu_ap_info WHERE mac = ?", apmac).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("isEduAp scan failed:%s %v", apmac, err)
+		return false
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
 func getLoginImg(db *sql.DB, acname, apmac string) string {
 	var img string
 	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
@@ -805,6 +819,8 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 	btype := 3
 	if util.IsTestAcname(acname) {
 		btype = 3
+	} else if isEduAp(db, apmac) {
+		btype = 10
 	} else if util.IsWjjAcname(acname) {
 		btype = 7
 	}
