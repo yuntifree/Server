@@ -867,15 +867,16 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 	return
 }
 
-func isTaobaoTime() int64 {
+func isTaobaoTime() bool {
 	now := time.Now()
 	hour := now.Hour()
 	min := now.Minute()
 	v := hour*100 + min
-	if (v > 800 && v < 1030) || (v > 1400 && v < 1830) {
-		return 1
+	if (v >= 1750 && v < 1805) || (v >= 1829 && v < 1836) ||
+		(v >= 2035 && v < 2050) {
+		return true
 	}
-	return 0
+	return false
 }
 
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
@@ -896,7 +897,8 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	}
 	var taobao int64
 	var cover string
-	if in.Info.Acname == "AC_SSH_A_09" {
+	if in.Info.Acname == "AC_SSH_A_09" ||
+		(util.IsWjjAcname(in.Info.Acname) && isTaobaoTime()) {
 		taobao = 1
 		cover, _ = getTaobaoInfo(db)
 	}
