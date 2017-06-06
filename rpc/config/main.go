@@ -747,7 +747,8 @@ func genCode(db *sql.DB) int64 {
 func (s *server) GetReserveInfo(ctx context.Context, in *config.GetReserveRequest) (*config.ReserveInfoReply, error) {
 	util.PubRPCRequest(w, "config", "GetReserveInfo")
 	var name, phone string
-	err := db.QueryRow("SELECT name, phone FROM reserve_info WHERE code = ?", in.Code)
+	err := db.QueryRow("SELECT name, phone FROM reserve_info WHERE code = ?", in.Code).
+		Scan(&name, &phone)
 	if err != nil {
 		log.Printf("GetReserveInfo query failed:%d %v", in.Code, err)
 		return &config.ReserveInfoReply{
@@ -757,6 +758,52 @@ func (s *server) GetReserveInfo(ctx context.Context, in *config.GetReserveReques
 	return &config.ReserveInfoReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Name: name,
 		Phone: phone}, nil
+}
+
+func isUsedDonateCode(db *sql.DB, code int64) bool {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM reserve_info WHERE donate = ?", code).
+		Scan(&cnt)
+	if err != nil {
+		log.Printf("isUsedDonateCode query failed:%d %v", code, err)
+		return false
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
+func (s *server) SubmitDonateInfo(ctx context.Context, in *config.DonateRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "SubmitDonateInfo")
+	if isUsedDonateCode(db, in.Donatecode) {
+		log.Printf("used donate code:%d %d", in.Donatecode, in.Reservecode)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	var id, code int64
+	err := db.QueryRow("SELECT id, donate FROM reserve_info WHERE code = ?", in.Reservecode).
+		Scan(&id, &code)
+	if err != nil {
+		log.Printf("SubmitDonateInfo query info failed:%d %v", in.Reservecode, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if code != 0 {
+		log.Printf("has bind donate:%d %d", in.Reservecode, in.Donatecode)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE reserve_info SET donate = ?, dtime = NOW() WHERE id = ?",
+		in.Donatecode, id)
+	if err != nil {
+		log.Printf("SubmitDonateInfo update info failed:%d %v", id, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "SubmitDonateInfo")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
 func (s *server) SubmitReserveInfo(ctx context.Context, in *config.ReserveRequest) (*config.ReserveReply, error) {

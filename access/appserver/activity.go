@@ -145,3 +145,23 @@ func getReserveInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
+
+func submitDonateInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	reserve := req.GetParamInt("reserve_code")
+	donate := req.GetParamInt("donate_code")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "SubmitDonateInfo",
+		&config.DonateRequest{Head: &common.Head{Sid: uuid},
+			Reservecode: reserve, Donatecode: donate})
+	httpserver.CheckRPCErr(rpcerr, "SubmitDonateInfo")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SubmitDonateInfo")
+
+	body := httpserver.GenResponseBody(res, true)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
