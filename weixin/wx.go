@@ -2,6 +2,7 @@ package weixin
 
 import (
 	"Server/util"
+	"encoding/base64"
 	"fmt"
 	"log"
 
@@ -15,6 +16,25 @@ const (
 	inquiryAppid     = "wx22f7ce89ec239c32"
 	inquiryAppsecret = "0a126ec36e6b99da43cb1740d52f7d90"
 )
+
+//WaterMark watermark
+type WaterMark struct {
+	Appid     string `json:"appid"`
+	Timestamp int    `json:"timestamp"`
+}
+
+//UserInfo user info
+type UserInfo struct {
+	OpenId     string    `json:"openId"`
+	NickName   string    `json:"nickName"`
+	Gender     string    `json:"gender"`
+	City       string    `json:"city"`
+	Province   string    `json:"province"`
+	Country    string    `json:"country"`
+	AvartarUrl string    `json:"avatarUrl"`
+	UnionId    string    `json:"unionId"`
+	Watermark  WaterMark `json:"watermark"`
+}
 
 //GetSession get wifi session key and openid
 func GetSession(code string) (openid, sessionkey string, err error) {
@@ -52,4 +72,25 @@ func getAppSession(code, appid, appsecret string) (openid, sessionkey string, er
 		return
 	}
 	return
+}
+
+//DecryptData decrypt user raw data
+func DecryptData(skey, encrypted, iv string) ([]byte, error) {
+	src, err := base64.StdEncoding.DecodeString(encrypted)
+	if err != nil {
+		return []byte(""), err
+	}
+	key, err := base64.StdEncoding.DecodeString(skey)
+	if err != nil {
+		return []byte(""), err
+	}
+	vec, err := base64.StdEncoding.DecodeString(iv)
+	if err != nil {
+		return []byte(""), err
+	}
+	dst, err := util.AesDecrypt(src, key, vec)
+	if err != nil {
+		return []byte(""), err
+	}
+	return dst, nil
 }

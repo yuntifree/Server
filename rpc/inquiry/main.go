@@ -6,6 +6,8 @@ import (
 	"Server/util"
 	"Server/weixin"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"log"
 	"net"
 
@@ -62,6 +64,95 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token,
 		Hasphone: hasphone, Role: role}, nil
+}
+
+func checkSign(skey, rawdata, signature string) bool {
+	data := rawdata + skey
+	sign := util.Sha1(data)
+	return sign == signature
+}
+
+func extractUserInfo(skey, encrypted, iv string) (weixin.UserInfo, error) {
+	var uinfo weixin.UserInfo
+	dst, err := weixin.DecryptData(skey, encrypted, iv)
+	if err != nil {
+		log.Printf("aes decrypt failed skey:%s", skey)
+		return uinfo, err
+	}
+	err = json.Unmarshal(dst, &uinfo)
+	if err != nil {
+		log.Printf("parse json failed:%s", string(dst))
+		return uinfo, err
+	}
+	if uinfo.UnionId == "" {
+		log.Printf("get unionid failed:%v", err)
+		return uinfo, errors.New("get unionid failed")
+	}
+	return uinfo, nil
+}
+
+func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.LoginReply, error) {
+	log.Printf("Login request:%v", in)
+	var skey, unionid, openid string
+	err := db.QueryRow("SELECT skey, unionid, openid FROM wx_openid WHERE sid = ?", in.Sid).
+		Scan(&skey, &unionid, &openid)
+	if err != nil {
+		log.Printf("illegal sid:%s", in.Sid)
+		return &inquiry.LoginReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	if !checkSign(skey, in.Rawdata, in.Signature) {
+		log.Printf("check signature failed sid:%s", in.Sid)
+		return &inquiry.LoginReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	var uid, role int64
+	var phone string
+	if unionid == "" { //has login
+		uinfo, err := extractUserInfo(skey, in.Encrypteddata, in.Iv)
+		if err != nil {
+			log.Printf("extract user info failed sid:%s", in.Sid)
+			return &inquiry.LoginReply{
+				Head: &common.Head{Retcode: 1}}, nil
+		}
+		_, err = db.Exec("UPDATE wx_openid SET unionid = ? WHERE openid = ?",
+			uinfo.UnionId, openid)
+		if err != nil {
+			log.Printf("update unionid failed:%v", err)
+			return &inquiry.LoginReply{
+				Head: &common.Head{Retcode: 1}}, nil
+		}
+		db.QueryRow("SELECT uid, phone, role FROM users WHERE username = ?",
+			uinfo.UnionId).
+			Scan(&uid, &phone, &role)
+		if uid == 0 {
+			res, err := db.Exec("INSERT IGNORE INTO user(username, nickname, headurl, gender, ctime) VALUES (?, ?, ?, ?, NOW())",
+				uinfo.UnionId, uinfo.NickName, uinfo.AvartarUrl, uinfo.Gender)
+			if err != nil {
+				log.Printf("create user failed:%v", err)
+				return &inquiry.LoginReply{
+					Head: &common.Head{Retcode: 1}}, nil
+			}
+			uid, _ = res.LastInsertId()
+		}
+	} else {
+		db.QueryRow("SELECT uid FROM user WHERE username = ?", unionid).Scan(&uid)
+	}
+	if uid == 0 {
+		log.Printf("select user failed sid:%s", in.Sid)
+		return &inquiry.LoginReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	token := util.GenSalt()
+	_, err = db.Exec("UPDATE users SET token = ? WHERE uid = ?", token)
+	if err != nil {
+		log.Printf("update token failed sid:%s", in.Sid)
+		return &inquiry.LoginReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+
+	return &inquiry.LoginReply{
+		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token}, nil
 }
 
 func main() {

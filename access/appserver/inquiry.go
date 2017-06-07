@@ -4,6 +4,7 @@ import (
 	"Server/httpserver"
 	"Server/proto/common"
 	"Server/proto/inquiry"
+	"Server/proto/punch"
 	"Server/util"
 	"log"
 	"net/http"
@@ -37,12 +38,38 @@ func submitCode(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportSuccResp(r.RequestURI)
 }
 
+func inquiryLogin(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.Init(r)
+	sid := req.GetParamString("sid")
+	rawData := req.GetParamString("rawData")
+	signature := req.GetParamString("signature")
+	encryptedData := req.GetParamString("encryptedData")
+	iv := req.GetParamString("iv")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, 0, "Login",
+		&punch.LoginRequest{
+			Head: &common.Head{Sid: uuid}, Sid: sid,
+			Rawdata: rawData, Signature: signature,
+			Encrypteddata: encryptedData, Iv: iv})
+	httpserver.CheckRPCErr(rpcerr, "Login")
+	res := resp.Interface().(*punch.LoginReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "Login")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
 	switch action {
 	case "submit_code":
 		submitCode(w, r)
+	case "login":
+		inquiryLogin(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

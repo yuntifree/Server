@@ -1,4 +1,4 @@
-use yunxing;
+use inquiry;
 
 CREATE TABLE IF NOT EXISTS users (
     uid     bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     token   varchar(32) NOT NULL DEFAULT '',
     nickname    varchar(128) NOT NULL DEFAULT '',
     headurl     varchar(256) NOT NULL DEFAULT '',
+    gender      tinyint unsigned NOT NULL DEFAULT 0,
     role        tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(uid),

@@ -6,6 +6,7 @@ package inquiry;
 
 service Inquiry {
     rpc SubmitCode(CodeRequest) returns (LoginReply) {}
+    rpc Login(LoginRequest) returns (LoginReply) {}
 }
 
 message CodeRequest {
@@ -21,4 +22,13 @@ message LoginReply {
     int64 hasphone = 5;
     string sid = 6;
     int64 role = 7;
+}
+
+message LoginRequest {
+    common.Head head = 1;
+    string rawdata = 2;
+    string signature = 3;
+    string encrypteddata = 4;
+    string iv = 5;
+    string sid = 6;
 }
