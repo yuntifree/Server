@@ -752,7 +752,7 @@ func (s *server) GetReserveInfo(ctx context.Context, in *config.GetReserveReques
 	if err != nil {
 		log.Printf("GetReserveInfo query failed:%d %v", in.Code, err)
 		return &config.ReserveInfoReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+			Head: &common.Head{Retcode: common.ErrCode_NOT_EXIST, Uid: in.Head.Uid}}, nil
 	}
 	util.PubRPCSuccRsp(w, "config", "GetReserveInfo")
 	return &config.ReserveInfoReply{
@@ -779,7 +779,7 @@ func (s *server) SubmitDonateInfo(ctx context.Context, in *config.DonateRequest)
 	if isUsedDonateCode(db, in.Donatecode) {
 		log.Printf("used donate code:%d %d", in.Donatecode, in.Reservecode)
 		return &common.CommReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+			Head: &common.Head{Retcode: common.ErrCode_USED_DONATE_CODE, Uid: in.Head.Uid}}, nil
 	}
 	var id, code int64
 	err := db.QueryRow("SELECT id, donate FROM reserve_info WHERE code = ?", in.Reservecode).
@@ -787,12 +787,12 @@ func (s *server) SubmitDonateInfo(ctx context.Context, in *config.DonateRequest)
 	if err != nil {
 		log.Printf("SubmitDonateInfo query info failed:%d %v", in.Reservecode, err)
 		return &common.CommReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+			Head: &common.Head{Retcode: common.ErrCode_NOT_EXIST, Uid: in.Head.Uid}}, nil
 	}
 	if code != 0 {
 		log.Printf("has bind donate:%d %d", in.Reservecode, in.Donatecode)
 		return &common.CommReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+			Head: &common.Head{Retcode: common.ErrCode_USED_RESERVE_CODE, Uid: in.Head.Uid}}, nil
 	}
 	_, err = db.Exec("UPDATE reserve_info SET donate = ?, dtime = NOW() WHERE id = ?",
 		in.Donatecode, id)
@@ -831,8 +831,10 @@ func (s *server) SubmitReserveInfo(ctx context.Context, in *config.ReserveReques
 	if cnt == 0 {
 		log.Printf("SubmitReserveInfo insert ignored phone:%s", in.Phone)
 		return &config.ReserveReply{
-			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+			Head: &common.Head{Retcode: common.ErrCode_DUPLICATE,
+				Uid: in.Head.Uid}}, nil
 	}
+	util.SendReserveSMS(in.Phone, fmt.Sprintf("%d", code), in.Date)
 	util.PubRPCSuccRsp(w, "config", "SubmitReserveInfo")
 	return &config.ReserveReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Code: code}, nil

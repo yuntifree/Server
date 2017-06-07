@@ -58,6 +58,8 @@ const (
 	ErrHasPunch
 	ErrIllegalCode
 	ErrFrequencyLimit
+	ErrDuplicate
+	ErrUsed
 )
 
 var w *nsq.Producer
@@ -743,6 +745,12 @@ func CheckRPCCodeCallback(retcode common.ErrCode, method, callback string) {
 		panic(util.AppError{ErrIllegalCode, "code已过期", callback})
 	} else if retcode == common.ErrCode_FREQUENCY_LIMIT {
 		panic(util.AppError{ErrFrequencyLimit, "请求太频繁", callback})
+	} else if retcode == common.ErrCode_DUPLICATE {
+		panic(util.AppError{ErrDuplicate, "请不要重复提交信息", callback})
+	} else if retcode == common.ErrCode_USED_RESERVE_CODE {
+		panic(util.AppError{ErrUsed, "预约码已使用", callback})
+	} else if retcode == common.ErrCode_USED_DONATE_CODE {
+		panic(util.AppError{ErrUsed, "献血码已使用", callback})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~", callback})
 	}

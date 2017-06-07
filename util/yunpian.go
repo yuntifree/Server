@@ -16,6 +16,11 @@ const (
 	tplURL = "https://sms.yunpian.com/v2/sms/tpl_single_send.json"
 )
 
+//SendReserveSMS send reserve info sms
+func SendReserveSMS(mobile, verifycode, stime string) error {
+	return SendYPSMS(mobile, verifycode, stime, tplID)
+}
+
 //SendYPSMS use yunpian to send sms
 func SendYPSMS(mobile, verifycode, stime string, tmpID int64) error {
 	tplValue := url.Values{"#code#": {verifycode}, "#time#": {stime}}.Encode()
