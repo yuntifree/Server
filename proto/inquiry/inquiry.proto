@@ -14,6 +14,7 @@ service Inquiry {
     rpc SetFee(FeeRequest) returns (common.CommReply) {}
     rpc GetPatientInfo(common.CommRequest) returns (PatientInfoReply) {}
     rpc BindOp(common.CommRequest) returns (common.CommReply) {}
+    rpc GetPatients(common.CommRequest) returns (PatientsReply) {}
 }
 
 message CodeRequest {
@@ -92,4 +93,9 @@ message PatientInfo {
 message PatientInfoReply {
     common.Head head = 1;
     PatientInfo info = 2;
+}
+
+message PatientsReply {
+    common.Head head = 1;
+    repeated PatientInfo infos = 2;
 }

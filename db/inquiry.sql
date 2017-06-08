@@ -11,10 +11,6 @@ CREATE TABLE IF NOT EXISTS users (
     gender      tinyint unsigned NOT NULL DEFAULT 0,
     role        tinyint unsigned NOT NULL DEFAULT 0,
     doctor         int unsigned NOT NULL DEFAULT 0,
-    -- mcard 医疗卡号
-    mcard       varchar(32) NOT NULL DEFAULT '',
-    -- name 真实姓名
-    name        varchar(64) NOT NULL DEFAULT '',
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(uid),
     UNIQUE KEY(username),
@@ -42,9 +38,24 @@ CREATE TABLE IF NOT EXISTS doctor (
     department varchar(128) NOT NULL,
     headurl    varchar(128) NOT NULL,
     fee     int unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(phone)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS patient (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    phone   varchar(16) NOT NULL,
+    -- name 真实姓名
+    name        varchar(64) NOT NULL DEFAULT '',
+    -- mcard 医疗卡号
+    mcard       varchar(32) NOT NULL DEFAULT '',
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS phone_code (
