@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS doctor (
     hospital varchar(256) NOT NULL,
     department varchar(128) NOT NULL,
     headurl    varchar(128) NOT NULL,
+    fee     int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(phone)

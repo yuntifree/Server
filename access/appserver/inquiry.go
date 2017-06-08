@@ -157,6 +157,25 @@ func getDoctorInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func setFee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	fee := req.GetParamInt("fee")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "SetFee",
+		&inquiry.FeeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Fee: fee})
+	httpserver.CheckRPCErr(rpcerr, "SetFee")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SetFee")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -171,6 +190,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return bindPhone(w, r)
 	case "get_doctor_info":
 		return getDoctorInfo(w, r)
+	case "set_fee":
+		return setFee(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
