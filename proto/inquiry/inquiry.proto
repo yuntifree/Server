@@ -12,6 +12,8 @@ service Inquiry {
     rpc BindPhone(PhoneCodeRequest) returns (RoleReply) {}
     rpc GetDoctorInfo(common.CommRequest) returns (DoctorInfoReply) {}
     rpc SetFee(FeeRequest) returns (common.CommReply) {}
+    rpc GetPatientInfo(common.CommRequest) returns (PatientInfoReply) {}
+    rpc BindOp(common.CommRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -78,4 +80,16 @@ message DoctorInfoReply {
 message FeeRequest {
     common.Head head = 1;
     int64 fee = 2;
+}
+
+message PatientInfo {
+    int64 id = 1;
+    string name = 2;
+    string mcard = 3;
+    string phone = 4;
+}
+
+message PatientInfoReply {
+    common.Head head = 1;
+    PatientInfo info = 2;
 }

@@ -5,14 +5,20 @@ CREATE TABLE IF NOT EXISTS users (
     username    varchar(32) NOT NULL,
     phone   varchar(16) NOT NULL DEFAULT '',
     token   varchar(32) NOT NULL DEFAULT '',
+    -- nickname 微信昵称
     nickname    varchar(128) NOT NULL DEFAULT '',
     headurl     varchar(256) NOT NULL DEFAULT '',
     gender      tinyint unsigned NOT NULL DEFAULT 0,
     role        tinyint unsigned NOT NULL DEFAULT 0,
     doctor         int unsigned NOT NULL DEFAULT 0,
+    -- mcard 医疗卡号
+    mcard       varchar(32) NOT NULL DEFAULT '',
+    -- name 真实姓名
+    name        varchar(64) NOT NULL DEFAULT '',
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(uid),
-    UNIQUE KEY(username)
+    UNIQUE KEY(username),
+    KEY(phone)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS wx_openid (
@@ -52,5 +58,17 @@ CREATE TABLE IF NOT EXISTS phone_code (
     used    tinyint unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(pid),
     KEY(phone, uid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS relations (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    doctor  int unsigned NOT NULL,
+    patient int unsigned NOT NULL,
+    -- status 0-未问诊 1-问诊中 2-问诊结束
+    status  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(doctor, patient)
 ) ENGINE = InnoDB;
 

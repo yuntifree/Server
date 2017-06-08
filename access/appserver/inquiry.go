@@ -157,6 +157,25 @@ func getDoctorInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func getPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	tuid := req.GetParamInt("tuid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetPatientInfo",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: tuid})
+	httpserver.CheckRPCErr(rpcerr, "GetPatientInfo")
+	res := resp.Interface().(*inquiry.PatientInfoReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetPatientInfo")
+
+	writeInfoResp(w, res.Info)
+	return nil
+}
+
 func setFee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -176,6 +195,26 @@ func setFee(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func bindOp(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	otype := req.GetParamInt("type")
+	tuid := req.GetParamInt("tuid")
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "BindOp",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Type: otype, Id: tuid})
+	httpserver.CheckRPCErr(rpcerr, "BindOp")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "BindOp")
+
+	w.Write([]byte(`{"errno":0}`))
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -190,8 +229,12 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return bindPhone(w, r)
 	case "get_doctor_info":
 		return getDoctorInfo(w, r)
+	case "get_patient_info":
+		return getPatientInfo(w, r)
 	case "set_fee":
 		return setFee(w, r)
+	case "bind_op":
+		return bindOp(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

@@ -48,6 +48,30 @@ func (s *server) GetDoctorInfo(ctx context.Context, in *common.CommRequest) (*in
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Info: info}, nil
 }
 
+func getPatientInfo(db *sql.DB, uid int64) (*inquiry.PatientInfo, error) {
+	var info inquiry.PatientInfo
+	err := db.QueryRow("SELECT name, mcard, phone FROM users WHERE uid = ?", uid).
+		Scan(&info.Name, &info.Mcard, &info.Phone)
+	if err != nil {
+		log.Printf("getPatientInfo query failed:%d %v", uid, err)
+		return nil, err
+	}
+	return &info, nil
+}
+
+func (s *server) GetPatientInfo(ctx context.Context, in *common.CommRequest) (*inquiry.PatientInfoReply, error) {
+	util.PubRPCRequest(w, "inquiry", "GetPatientInfo")
+	info, err := getPatientInfo(db, in.Id)
+	if err != nil {
+		log.Printf("getPatientInfo failed:%d %v", in.Id, err)
+		return &inquiry.PatientInfoReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "GetPatientInfo")
+	return &inquiry.PatientInfoReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Info: info}, nil
+}
+
 func (s *server) SetFee(ctx context.Context, in *inquiry.FeeRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "SetFee")
 	var role, doctor int64
