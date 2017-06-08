@@ -238,17 +238,16 @@ func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
 	return true
 }
 
-func isDoctorPhone(db *sql.DB, phone string) bool {
-	var cnt int
-	err := db.QueryRow("SELECT COUNT(id) FROM doctor WHERE phone = ?", phone).
-		Scan(&cnt)
+func getPhoneRole(db *sql.DB, phone string) (doctor, role int64) {
+	err := db.QueryRow("SELECT id FROM doctor WHERE phone = ?", phone).
+		Scan(&doctor)
 	if err != nil {
-		return false
+		return
 	}
-	if cnt > 0 {
-		return true
+	if doctor > 0 {
+		role = 1
 	}
-	return false
+	return
 }
 
 func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*inquiry.RoleReply, error) {
@@ -258,12 +257,10 @@ func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*
 			Head: &common.Head{
 				Retcode: common.ErrCode_CHECK_CODE}}, nil
 	}
-	var role int64
-	if isDoctorPhone(db, in.Phone) {
-		role = 1
-	}
-	_, err := db.Exec("UPDATE users SET phone = ?, role = ? WHERE uid = ?",
-		in.Phone, role, in.Head.Uid)
+
+	doctor, role := getPhoneRole(db, in.Phone)
+	_, err := db.Exec("UPDATE users SET phone = ?, role = ?, doctor = ? WHERE uid = ?",
+		in.Phone, role, doctor, in.Head.Uid)
 	if err != nil {
 		log.Printf("BindPhone update user info failed:%d %v", in.Head.Uid,
 			err)
