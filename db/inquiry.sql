@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     headurl     varchar(256) NOT NULL DEFAULT '',
     gender      tinyint unsigned NOT NULL DEFAULT 0,
     role        tinyint unsigned NOT NULL DEFAULT 0,
+    doctor         int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(uid),
     UNIQUE KEY(username)

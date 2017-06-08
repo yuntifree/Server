@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	simplejson "github.com/bitly/go-simplejson"
 )
 
 func extractAction(path string) string {
@@ -118,6 +120,43 @@ func bindPhone(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func writeInfoResp(w http.ResponseWriter, info interface{}) {
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		log.Printf("writeInfoResp NewJson failed: %v", err)
+		w.Write([]byte(`{"errno":103,"desc":"inner failed"}`))
+		return
+	}
+	js.Set("data", info)
+
+	resp, err := js.Encode()
+	if err != nil {
+		log.Printf("writeInfoResp NewJson search failed: %v", err)
+		w.Write([]byte(`{"errno":103,"desc":"inner failed"}`))
+		return
+	}
+	w.Write(resp)
+}
+
+func getDoctorInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	tuid := req.GetParamInt("tuid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetDoctorInfo",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Id: tuid})
+	httpserver.CheckRPCErr(rpcerr, "GetDoctorInfo")
+	res := resp.Interface().(*inquiry.DoctorInfoReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetDoctorInfo")
+
+	writeInfoResp(w, res.Info)
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -130,6 +169,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return getInquiryPhoneCode(w, r)
 	case "bind_phone":
 		return bindPhone(w, r)
+	case "get_doctor_info":
+		return getDoctorInfo(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

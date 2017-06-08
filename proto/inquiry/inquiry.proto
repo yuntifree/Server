@@ -10,6 +10,7 @@ service Inquiry {
     rpc CheckToken(TokenRequest) returns (common.CommReply) {}
     rpc GetPhoneCode(PhoneRequest) returns (common.CommReply) {}
     rpc BindPhone(PhoneCodeRequest) returns (RoleReply) {}
+    rpc GetDoctorInfo(common.CommRequest) returns (DoctorInfoReply) {}
 }
 
 message CodeRequest {
@@ -56,4 +57,19 @@ message PhoneCodeRequest {
 message RoleReply {
     common.Head head = 1;
     int64 role = 2;
+}
+
+message DoctorInfo {
+    int64 id = 1;
+    string name = 2;
+    string headurl = 3;
+    string title = 4;
+    string hospital = 5;
+    string department = 6;
+    int64 fee = 7;
+}
+
+message DoctorInfoReply {
+    common.Head head = 1;
+    DoctorInfo info = 2;
 }
