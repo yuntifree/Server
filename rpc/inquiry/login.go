@@ -5,6 +5,7 @@ import (
 	"Server/proto/inquiry"
 	"Server/util"
 	"Server/weixin"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -220,4 +221,57 @@ func (s *server) GetPhoneCode(ctx context.Context, in *inquiry.PhoneRequest) (*c
 
 	util.PubRPCSuccRsp(w, "inquiry", "GetPhoneCode")
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
+func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
+	var ecode int64
+	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND etime > NOW() LIMIT 1", phone).
+		Scan(&ecode)
+	if err != nil {
+		log.Printf("checkPhoneCode get code failed:%s %v", phone, err)
+		return false
+	}
+	if ecode != code {
+		log.Printf("code not match, phone:%s code:%d - %d", phone, code, ecode)
+		return false
+	}
+	return true
+}
+
+func isDoctorPhone(db *sql.DB, phone string) bool {
+	var cnt int
+	err := db.QueryRow("SELECT COUNT(id) FROM doctor WHERE phone = ?", phone).
+		Scan(&cnt)
+	if err != nil {
+		return false
+	}
+	if cnt > 0 {
+		return true
+	}
+	return false
+}
+
+func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*inquiry.RoleReply, error) {
+	util.PubRPCRequest(w, "inquiry", "BindPhone")
+	if !checkPhoneCode(db, in.Phone, in.Code) {
+		return &inquiry.RoleReply{
+			Head: &common.Head{
+				Retcode: common.ErrCode_CHECK_CODE}}, nil
+	}
+	var role int64
+	if isDoctorPhone(db, in.Phone) {
+		role = 1
+	}
+	_, err := db.Exec("UPDATE users SET phone = ?, role = ? WHERE uid = ?",
+		in.Phone, role, in.Head.Uid)
+	if err != nil {
+		log.Printf("BindPhone update user info failed:%d %v", in.Head.Uid,
+			err)
+		return &inquiry.RoleReply{
+			Head: &common.Head{
+				Retcode: 1}}, nil
+	}
+
+	util.PubRPCSuccRsp(w, "inquiry", "BindPhone")
+	return &inquiry.RoleReply{Head: &common.Head{Retcode: 0}, Role: role}, nil
 }

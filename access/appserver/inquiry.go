@@ -90,6 +90,34 @@ func getInquiryPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.A
 	return nil
 }
 
+func bindPhone(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	phone := req.GetParamString("phone")
+	uid := req.GetParamInt("uid")
+	code := req.GetParamInt("code")
+
+	if !util.IsIllegalPhone(phone) {
+		log.Printf("getPhoneCode illegal phone:%s", phone)
+		return &util.AppError{Code: httpserver.ErrIllegalPhone,
+			Msg: "请输入正确的手机号"}
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "BindPhone",
+		&inquiry.PhoneCodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Phone: phone, Code: code})
+	httpserver.CheckRPCErr(rpcerr, "BindPhone")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "BindPhone")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -99,7 +127,9 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	case "login":
 		inquiryLogin(w, r)
 	case "get_phone_code":
-		getInquiryPhoneCode(w, r)
+		return getInquiryPhoneCode(w, r)
+	case "bind_phone":
+		return bindPhone(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
