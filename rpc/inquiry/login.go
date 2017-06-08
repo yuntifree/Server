@@ -224,8 +224,8 @@ func (s *server) GetPhoneCode(ctx context.Context, in *inquiry.PhoneRequest) (*c
 }
 
 func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
-	var ecode int64
-	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND etime > NOW() LIMIT 1", phone).
+	var id, ecode int64
+	err := db.QueryRow("SELECT id, code FROM phone_code WHERE phone = ? AND etime > NOW() LIMIT 1", phone).
 		Scan(&ecode)
 	if err != nil {
 		log.Printf("checkPhoneCode get code failed:%s %v", phone, err)
@@ -234,6 +234,11 @@ func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
 	if ecode != code {
 		log.Printf("code not match, phone:%s code:%d - %d", phone, code, ecode)
 		return false
+	}
+	_, err = db.Exec("UPDATE phone_code SET used = 1 WHERE id = ?", id)
+	if err != nil {
+		log.Printf("checkPhoneCode set used failed, id:%d phone:%s", id,
+			phone)
 	}
 	return true
 }

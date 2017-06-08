@@ -111,7 +111,7 @@ func bindPhone(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 		&inquiry.PhoneCodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Phone: phone, Code: code})
 	httpserver.CheckRPCErr(rpcerr, "BindPhone")
-	res := resp.Interface().(*common.CommReply)
+	res := resp.Interface().(*inquiry.RoleReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "BindPhone")
 
 	body := httpserver.GenResponseBody(res, false)
