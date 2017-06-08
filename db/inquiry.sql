@@ -38,3 +38,17 @@ CREATE TABLE IF NOT EXISTS doctor (
     PRIMARY KEY(id),
     UNIQUE KEY(phone)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS phone_code (
+    pid     bigint unsigned NOT NULL AUTO_INCREMENT,
+    phone   varchar(16) NOT NULL DEFAULT '',
+    uid     int unsigned NOT NULL DEFAULT 0,
+    code    int unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    stime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    etime   datetime NOT NULL DEFAULT '2016-01-01 00:00:00',
+    used    tinyint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(pid),
+    KEY(phone, uid)
+) ENGINE = InnoDB;
+

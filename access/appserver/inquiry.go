@@ -62,6 +62,34 @@ func inquiryLogin(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportSuccResp(r.RequestURI)
 }
 
+func getInquiryPhoneCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	phone := req.GetParamString("phone")
+	uid := req.GetParamInt("uid")
+
+	if !util.IsIllegalPhone(phone) {
+		log.Printf("getPhoneCode illegal phone:%s", phone)
+		return &util.AppError{Code: httpserver.ErrIllegalPhone,
+			Msg: "请输入正确的手机号"}
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetPhoneCode",
+		&inquiry.PhoneRequest{Head: &common.Head{Sid: uuid},
+			Phone: phone})
+	httpserver.CheckRPCErr(rpcerr, "GetPhoneCode")
+	res := resp.Interface().(*common.CommReply)
+
+	if res.Head.Retcode != 0 {
+		return &util.AppError{Code: httpserver.ErrCode, Msg: "获取验证码失败"}
+	}
+	w.Write([]byte(`{"errno":0}`))
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -70,6 +98,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		submitCode(w, r)
 	case "login":
 		inquiryLogin(w, r)
+	case "get_phone_code":
+		getInquiryPhoneCode(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

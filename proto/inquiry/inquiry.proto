@@ -7,6 +7,8 @@ package inquiry;
 service Inquiry {
     rpc SubmitCode(CodeRequest) returns (LoginReply) {}
     rpc Login(LoginRequest) returns (LoginReply) {}
+    rpc CheckToken(TokenRequest) returns (common.CommReply) {}
+    rpc GetPhoneCode(PhoneRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -31,4 +33,15 @@ message LoginRequest {
     string encrypteddata = 4;
     string iv = 5;
     string sid = 6;
+}
+
+message TokenRequest {
+    common.Head head = 1;
+    int64 type = 2;
+    string token = 3;
+}
+
+message PhoneRequest {
+    common.Head head = 1;
+    string phone = 2;
 }

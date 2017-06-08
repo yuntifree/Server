@@ -353,6 +353,19 @@ func (r *Request) InitCheck(req *http.Request, back bool) {
 	}
 }
 
+//InitInquiry init request and check token for inquiry
+func (r *Request) InitInquiry(req *http.Request) {
+	r.Init(req)
+	uid := r.GetParamInt("uid")
+	token := r.GetParamString("token")
+
+	flag := checkInquiryToken(uid, token)
+	if !flag {
+		log.Printf("checkInquiryToken failed, uid:%d token:%s\n", uid, token)
+		panic(util.AppError{ErrToken, "token验证失败", r.Callback})
+	}
+}
+
 //InitCheckApp init request and check token for app
 func (r *Request) InitCheckApp(req *http.Request) {
 	r.InitCheck(req, false)
@@ -483,6 +496,33 @@ func checkToken(uid int64, token string, ctype int64) bool {
 
 	if res.Head.Retcode != 0 {
 		log.Printf("check token failed")
+		return false
+	}
+
+	return true
+}
+
+func checkInquiryToken(uid int64, token string) bool {
+	address := GetNameServer(uid, util.InquiryServerName)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("did not connect: %v", err)
+		return false
+	}
+	defer conn.Close()
+	c := inquiry.NewInquiryClient(conn)
+
+	uuid := util.GenUUID()
+	res, err := c.CheckToken(context.Background(),
+		&inquiry.TokenRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Token: token})
+	if err != nil {
+		log.Printf("failed: %v", err)
+		return false
+	}
+
+	if res.Head.Retcode != 0 {
+		log.Printf("checkInquiryToken check token failed:%d %s", uid, token)
 		return false
 	}
 
