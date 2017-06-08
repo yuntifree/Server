@@ -15,6 +15,8 @@ service Inquiry {
     rpc GetPatientInfo(common.CommRequest) returns (PatientInfoReply) {}
     rpc BindOp(common.CommRequest) returns (common.CommReply) {}
     rpc GetPatients(common.CommRequest) returns (PatientsReply) {}
+    rpc AddPatient(PatientRequest) returns (common.CommReply) {}
+    rpc ModPatient(PatientRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -88,6 +90,7 @@ message PatientInfo {
     string name = 2;
     string mcard = 3;
     string phone = 4;
+    int64 deleted = 5;
 }
 
 message PatientInfoReply {
@@ -98,4 +101,9 @@ message PatientInfoReply {
 message PatientsReply {
     common.Head head = 1;
     repeated PatientInfo infos = 2;
+}
+
+message PatientRequest {
+    common.Head head = 1;
+    PatientInfo info = 2;
 }

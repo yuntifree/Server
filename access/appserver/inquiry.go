@@ -234,6 +234,56 @@ func getPatients(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func addPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	name := req.GetParamString("name")
+	phone := req.GetParamString("phone")
+	mcard := req.GetParamString("mcard")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "AddPatient",
+		&inquiry.PatientRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &inquiry.PatientInfo{Name: name, Phone: phone,
+				Mcard: mcard}})
+	httpserver.CheckRPCErr(rpcerr, "AddPatient")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddPatient")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
+func modPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	deleted := req.GetParamInt("deleted")
+	name := req.GetParamString("name")
+	phone := req.GetParamString("phone")
+	mcard := req.GetParamString("mcard")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "ModPatient",
+		&inquiry.PatientRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &inquiry.PatientInfo{Name: name, Phone: phone,
+				Mcard: mcard, Id: id, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModPatient")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "MoPatient")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -256,6 +306,10 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return bindOp(w, r)
 	case "get_patients":
 		return getPatients(w, r)
+	case "add_patient_info":
+		return addPatientInfo(w, r)
+	case "mod_patient_info":
+		return modPatientInfo(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
