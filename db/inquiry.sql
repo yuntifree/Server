@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS wx_openid (
     id      int unsigned NOT NULL AUTO_INCREMENT,
     unionid varchar(36) NOT NULL,
     openid  varchar(32) NOT NULL,
+    skey varchar(64) NOT NULL,
     sid     varchar(32) NOT NULL,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
