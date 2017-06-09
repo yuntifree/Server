@@ -31,13 +31,23 @@ const (
 
 //UploadOssFile upload content to aliyun oss
 func UploadOssFile(filename, content string) bool {
+	return uploadOssBucket(filename, content, yuntiBucket)
+}
+
+//UploadOssImg upload img to aliyun oss
+func UploadOssImg(filename, content string) bool {
+	return uploadOssBucket(filename, content, imageBucket)
+}
+
+//uploadOssBucket upload file to alioss bucket
+func uploadOssBucket(filename, content, ossbucket string) bool {
 	client, err := oss.New(endpoint, accessKeyID, accessKeySecret)
 	if err != nil {
 		log.Printf("oss init failed:%v", err)
 		return false
 	}
 
-	bucket, err := client.Bucket(yuntiBucket)
+	bucket, err := client.Bucket(ossbucket)
 	if err != nil {
 		log.Printf("bucket init failed:%v", err)
 		return false

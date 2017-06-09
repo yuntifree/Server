@@ -1,10 +1,12 @@
 package main
 
 import (
+	"Server/aliyun"
 	"Server/httpserver"
 	"Server/proto/common"
 	"Server/proto/inquiry"
 	"Server/util"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -283,6 +285,35 @@ func modPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	return nil
 }
 
+func uploadImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	r.ParseMultipartForm(10 * 1024 * 1024)
+	values := r.MultipartForm.Value["name"]
+	log.Printf("values:%v", values)
+	files := r.MultipartForm.File["file"]
+	var buf []byte
+	if len(files) > 0 {
+		f, err := files[0].Open()
+		if err != nil {
+			log.Printf("open file failed:%v", err)
+			return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
+		}
+		buf, err = ioutil.ReadAll(f)
+		if err != nil {
+			log.Printf("read file failed:%v", err)
+			return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
+		}
+	} else {
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "empty file"}
+	}
+	filename := util.GenUUID() + ".jpg"
+	flag := aliyun.UploadOssImg(filename, string(buf))
+	if !flag {
+		log.Printf("UploadOssImg failed")
+		return &util.AppError{Code: httpserver.ErrInner, Msg: "upload image failed"}
+	}
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -309,6 +340,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return addPatientInfo(w, r)
 	case "mod_patient_info":
 		return modPatientInfo(w, r)
+	case "upload_img":
+		return uploadImg(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
