@@ -27,7 +27,7 @@ type WaterMark struct {
 type UserInfo struct {
 	OpenId     string    `json:"openId"`
 	NickName   string    `json:"nickName"`
-	Gender     string    `json:"gender"`
+	Gender     int64     `json:"gender"`
 	City       string    `json:"city"`
 	Province   string    `json:"province"`
 	Country    string    `json:"country"`

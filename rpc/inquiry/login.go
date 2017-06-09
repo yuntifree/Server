@@ -77,7 +77,7 @@ func extractUserInfo(skey, encrypted, iv string) (weixin.UserInfo, error) {
 	}
 	err = json.Unmarshal(dst, &uinfo)
 	if err != nil {
-		log.Printf("parse json failed:%s", string(dst))
+		log.Printf("parse json failed:%s %v", string(dst), err)
 		return uinfo, err
 	}
 	if uinfo.UnionId == "" {
@@ -107,7 +107,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 	if unionid == "" { //has login
 		uinfo, err := extractUserInfo(skey, in.Encrypteddata, in.Iv)
 		if err != nil {
-			log.Printf("extract user info failed sid:%s", in.Sid)
+			log.Printf("extract user info failed sid:%s %v", in.Sid, err)
 			return &inquiry.LoginReply{
 				Head: &common.Head{Retcode: 1}}, nil
 		}
@@ -122,7 +122,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			uinfo.UnionId).
 			Scan(&uid, &phone, &role)
 		if uid == 0 {
-			res, err := db.Exec("INSERT IGNORE INTO user(username, nickname, headurl, gender, ctime) VALUES (?, ?, ?, ?, NOW())",
+			res, err := db.Exec("INSERT IGNORE INTO users(username, nickname, headurl, gender, ctime) VALUES (?, ?, ?, ?, NOW())",
 				uinfo.UnionId, uinfo.NickName, uinfo.AvartarUrl, uinfo.Gender)
 			if err != nil {
 				log.Printf("create user failed:%v", err)
@@ -132,7 +132,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			uid, _ = res.LastInsertId()
 		}
 	} else {
-		db.QueryRow("SELECT uid FROM user WHERE username = ?", unionid).Scan(&uid)
+		db.QueryRow("SELECT uid FROM users WHERE username = ?", unionid).Scan(&uid)
 	}
 	if uid == 0 {
 		log.Printf("select user failed sid:%s", in.Sid)
@@ -140,9 +140,9 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			Head: &common.Head{Retcode: 1}}, nil
 	}
 	token := util.GenSalt()
-	_, err = db.Exec("UPDATE users SET token = ? WHERE uid = ?", token)
+	_, err = db.Exec("UPDATE users SET token = ? WHERE uid = ?", token, uid)
 	if err != nil {
-		log.Printf("update token failed sid:%s", in.Sid)
+		log.Printf("update token failed sid:%s %v", in.Sid, err)
 		return &inquiry.LoginReply{
 			Head: &common.Head{Retcode: 1}}, nil
 	}

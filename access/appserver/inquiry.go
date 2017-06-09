@@ -4,7 +4,6 @@ import (
 	"Server/httpserver"
 	"Server/proto/common"
 	"Server/proto/inquiry"
-	"Server/proto/punch"
 	"Server/util"
 	"log"
 	"net/http"
@@ -51,12 +50,12 @@ func inquiryLogin(w http.ResponseWriter, r *http.Request) {
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, 0, "Login",
-		&punch.LoginRequest{
+		&inquiry.LoginRequest{
 			Head: &common.Head{Sid: uuid}, Sid: sid,
 			Rawdata: rawData, Signature: signature,
 			Encrypteddata: encryptedData, Iv: iv})
 	httpserver.CheckRPCErr(rpcerr, "Login")
-	res := resp.Interface().(*punch.LoginReply)
+	res := resp.Interface().(*inquiry.LoginReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "Login")
 
 	body := httpserver.GenResponseBody(res, false)
