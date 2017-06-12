@@ -17,6 +17,7 @@ service Inquiry {
     rpc GetPatients(common.CommRequest) returns (PatientsReply) {}
     rpc AddPatient(PatientRequest) returns (common.CommReply) {}
     rpc ModPatient(PatientRequest) returns (common.CommReply) {}
+    rpc AddInquiry(InquiryRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -32,6 +33,7 @@ message LoginReply {
     int64 hasphone = 5;
     string sid = 6;
     int64 role = 7;
+    int64 hasrelation = 8;
 }
 
 message LoginRequest {
@@ -106,4 +108,11 @@ message PatientsReply {
 message PatientRequest {
     common.Head head = 1;
     PatientInfo info = 2;
+}
+
+message InquiryRequest {
+    common.Head head = 1;
+    int64 doctor = 2;
+    int64 pid = 3;
+    int64 fee = 4;
 }

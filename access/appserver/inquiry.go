@@ -314,6 +314,29 @@ func uploadImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func addInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	pid := req.GetParamInt("pid")
+	doctor := req.GetParamInt("doctor")
+	fee := req.GetParamInt("fee")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "AddInquiry",
+		&inquiry.InquiryRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Doctor: doctor, Pid: pid, Fee: fee})
+	httpserver.CheckRPCErr(rpcerr, "AddInquiry")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddInquiry")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -342,6 +365,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return modPatientInfo(w, r)
 	case "upload_img":
 		return uploadImg(w, r)
+	case "add_inquiry":
+		return addInquiry(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
