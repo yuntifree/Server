@@ -1,5 +1,5 @@
 #!/bin/bash
-RPCLIST="discover fetch hot modify push verify userinfo monitor config punch inquiry"
+RPCLIST="discover fetch hot modify push verify userinfo monitor config punch inquiry pay"
 ORMLIST="advertise"
 
 function gen_rpc()

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     gender      tinyint unsigned NOT NULL DEFAULT 0,
     role        tinyint unsigned NOT NULL DEFAULT 0,
     doctor         int unsigned NOT NULL DEFAULT 0,
+    hasrelation     tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(uid),
     UNIQUE KEY(username),
@@ -84,3 +85,36 @@ CREATE TABLE IF NOT EXISTS relations (
     UNIQUE KEY(doctor, patient)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS inquiry_history (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    doctor  int unsigned NOT NULL,
+    patient int unsigned NOT NULL,
+    pid     int unsigned NOT NULL,
+    fee     int unsigned NOT NULL DEFAULT 0,
+    -- status 0-待支付 1-支付成功(问诊中) 2-问诊结束
+    status  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime datetime NOT NULL DEFAULT '2017-01-01',
+    etime datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(doctor, patient)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS orders (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    oid     varchar(64) NOT NULL,
+    uid     int unsigned NOT NULL,
+    tuid    int unsigned NOT NULL,
+    -- type 0-问诊
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    -- item 对应type的id
+    item    int unsigned NOT NULL DEFAULT 0,
+    price    int unsigned NOT NULL DEFAULT 0,
+    fee    int unsigned NOT NULL DEFAULT 0,
+    ctime datetime NOT NULL DEFAULT '2017-01-01',
+    ftime datetime NOT NULL DEFAULT '2017-01-01',
+    -- status 0-未支付 1-支付成功
+    status  tinyint unsigned NOT NULL DEFAULT 0,
+    PRIMARY KEY(id),
+    UNIQUE KEY(oid)
+) ENGINE = InnoDB;

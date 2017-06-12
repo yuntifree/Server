@@ -13,8 +13,8 @@ const (
 	wifiAppid        = "wx14a923201458f61b"
 	wifiAppsecret    = "673d553f7f55f01a71752c4df1fefda9"
 	baseurl          = "https://api.weixin.qq.com/sns/jscode2session"
-	inquiryAppid     = "wx22f7ce89ec239c32"
-	inquiryAppsecret = "0a126ec36e6b99da43cb1740d52f7d90"
+	InquiryAppid     = "wx22f7ce89ec239c32"
+	InquiryAppsecret = "0a126ec36e6b99da43cb1740d52f7d90"
 )
 
 //WaterMark watermark
@@ -43,7 +43,7 @@ func GetSession(code string) (openid, sessionkey string, err error) {
 
 //GetInquirySession  get inquiry session key and openid
 func GetInquirySession(code string) (openid, sessionkey string, err error) {
-	return getAppSession(code, inquiryAppid, inquiryAppsecret)
+	return getAppSession(code, InquiryAppid, InquiryAppsecret)
 }
 
 //getAppSession get session key and openid for appid

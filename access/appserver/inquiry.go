@@ -5,13 +5,21 @@ import (
 	"Server/httpserver"
 	"Server/proto/common"
 	"Server/proto/inquiry"
+	"Server/proto/pay"
 	"Server/util"
+	"Server/weixin"
+	"encoding/xml"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
+)
+
+const (
+	succRsp = "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>"
+	failRsp = "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[SERVER ERROR]]></return_msg></xml>"
 )
 
 func extractAction(path string) string {
@@ -337,6 +345,81 @@ func addInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	doctor := req.GetParamInt("doctor")
+	fee := req.GetParamInt("fee")
+	openid := req.GetParamString("openid")
+	callback := strings.Replace(r.RequestURI, "wx_pay", "wx_pay_callback", -1)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.PayServerType,
+		uid, "WxPay",
+		&pay.WxPayRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Type: 0, Item: id, Tuid: doctor, Fee: fee, Openid: openid,
+			Clientip: r.RemoteAddr, Callback: callback})
+	httpserver.CheckRPCErr(rpcerr, "WxPay")
+	res := resp.Interface().(*pay.WxPayReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "WxPay")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
+func wxPayCallback(w http.ResponseWriter, r *http.Request) {
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("wxPayCallback read body failed:%v", err)
+		w.Write([]byte(failRsp))
+		return
+	}
+	log.Printf("wxPayCallback request:%s", string(buf))
+	var notify weixin.NotifyRequest
+	err = xml.Unmarshal(buf, &notify)
+	if err != nil {
+		log.Printf("wxPayCallback Unmarshal xml failed:%s %v", string(buf), err)
+		w.Write([]byte(failRsp))
+		return
+	}
+	if notify.ReturnCode != "SUCCESS" || notify.ResultCode != "SUCCESS" {
+		log.Printf("wxPayCallback failed response:%+v", notify)
+		w.Write([]byte(succRsp))
+		return
+	}
+
+	if !weixin.VerifyNotify(notify) {
+		log.Printf("wxPayCallback VerifyNotify failed:%+v", notify)
+		w.Write([]byte(failRsp))
+		return
+	}
+	w.Write([]byte(succRsp))
+
+	uuid := util.GenUUID()
+	rsp, rpcerr := httpserver.CallRPC(util.PayServerType,
+		0, "WxPayCallback",
+		&pay.WxPayCBRequest{Head: &common.Head{Sid: uuid},
+			Oid: notify.OutTradeNO, Fee: notify.TotalFee})
+	if rpcerr.Interface() != nil {
+		log.Printf("WxPayCallback CallRPC failed:%v", err)
+		return
+	}
+	res, ok := rsp.Interface().(*common.CommReply)
+	if !ok {
+		log.Printf("WxPayCallback assert reply failed:%v", err)
+		return
+	}
+	if res.Head.Retcode != 0 {
+		log.Printf("WxPayCallback retcode:%d", res.Head.Retcode)
+		return
+	}
+	return
+}
+
 func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	log.Printf("path:%s", r.URL.Path)
 	action := extractAction(r.URL.Path)
@@ -367,6 +450,10 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return uploadImg(w, r)
 	case "add_inquiry":
 		return addInquiry(w, r)
+	case "wx_pay":
+		return wxPay(w, r)
+	case "wx_pay_callback":
+		wxPayCallback(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

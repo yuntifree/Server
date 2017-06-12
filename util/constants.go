@@ -25,6 +25,8 @@ const (
 	AdvertiseServerPort = ":50062"
 	InquiryServerName   = "service:inquiry"
 	InquiryServerPort   = ":50063"
+	PayServerName       = "service:pay"
+	PayServerPort       = ":50064"
 	MaxIdleConns        = 3
 	DebugHost           = "10.26.210.175"
 	APIHosts            = "10.27.178.90,10.27.178.90"
@@ -55,6 +57,7 @@ const (
 	MonitorServerType   = 10
 	AdvertiseServerType = 11
 	InquiryServerType   = 12
+	PayServerType       = 13
 	AndroidTerm         = 0
 	IosTerm             = 1
 	WebTerm             = 2

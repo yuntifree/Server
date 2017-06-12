@@ -1,0 +1,38 @@
+
+syntax = "proto3";
+
+import "Server/proto/common/common.proto";
+
+package pay;
+
+service Pay {
+    rpc WxPay(WxPayRequest) returns (WxPayReply) {}
+    rpc WxPayCB(WxPayCBRequest) returns (common.CommReply) {}
+}
+
+message WxPayRequest {
+    common.Head head = 1;
+    int64 type = 2;
+    int64 item = 3;
+    int64 tuid = 4;
+    int64 fee = 5;
+    string openid = 6;
+    string callback = 7;
+    string clientip = 8;
+}
+
+message WxPayReply {
+    common.Head head = 1;
+    string mid = 2;
+    string prepayid = 3;
+    string nonce = 4;
+    int64 timestamp = 5;
+    string sign = 6;
+    string openid = 7;
+}
+
+message WxPayCBRequest {
+    common.Head head = 1;
+    string oid = 2;
+    int64 fee = 3;
+}
