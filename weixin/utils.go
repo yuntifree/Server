@@ -12,9 +12,9 @@ const (
 //GenOrderID generate order id
 func GenOrderID(id int64) string {
 	now := time.Now()
-	return fmt.Sprintf("%03d%04d%02d%02d%02d%02d%02d%06d%11d",
+	return fmt.Sprintf("%03d%04d%02d%02d%02d%02d%02d%03d%011d",
 		wxType, now.Year(), now.Month(), now.Day(), now.Hour(),
-		now.Minute(), now.Second(), (now.UnixNano()%1e9)/1000,
+		now.Minute(), now.Second(), (now.UnixNano()%1e9)/1000000,
 		id)
 
 }

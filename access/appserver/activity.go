@@ -134,7 +134,7 @@ var stationRsp = `
 			},
 			{
 				"id":8,
-				"name":"旗峰公园血屋",
+				"name":"旗峰公园",
 				"address":"东莞旗峰公园正门广场",
 				"phone":"15816818445",
 				"timeslots":[

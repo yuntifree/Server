@@ -64,9 +64,11 @@ type NotifyRequest struct {
 	BankType      string `xml:"bank_type"`
 	TotalFee      int64  `xml:"total_fee"`
 	CashFee       int64  `xml:"cash_fee"`
-	TranscationID string `xml:"transaction_id"`
+	TransactionID string `xml:"transaction_id"`
 	OutTradeNO    string `xml:"out_trade_no"`
 	TimeEnd       string `xml:"time_end"`
+	FeeType       string `xml:"fee_type"`
+	IsSubscribe   string `xml:"is_subscribe"`
 }
 
 //VerifyNotify verify notify sign
@@ -78,7 +80,8 @@ func VerifyNotify(req NotifyRequest) bool {
 	for i := 0; i < vt.NumField(); i++ {
 		f := vt.Field(i)
 		name := f.Tag.Get("xml")
-		m[name] = vv.FieldByName(f.Name).String()
+		m[name] = vv.FieldByName(f.Name).Interface()
+		log.Printf("name:%s value:%v", name, vv.FieldByName(f.Name).Interface())
 	}
 	sign := CalcSign(m, InquiryMerKey)
 	if req.Sign != sign {
@@ -99,7 +102,7 @@ func CalcSign(mReq map[string]interface{}, key string) string {
 	for _, k := range sortedKeys {
 		log.Printf("%v -- %v", k, mReq[k])
 		value := fmt.Sprintf("%v", mReq[k])
-		if value != "" {
+		if value != "" && k != "sign" {
 			signStr += k + "=" + value + "&"
 		}
 	}
@@ -126,11 +129,13 @@ func calcReqSign(req UnifyOrderReq, merKey string) string {
 	m["total_fee"] = req.TotalFee
 	m["out_trade_no"] = req.OutTradeNO
 	m["nonce_str"] = req.NonceStr
+	m["openid"] = req.Openid
 	return CalcSign(m, merKey)
 }
 
 //UnifyPayRequest send unify order pay request
 func UnifyPayRequest(req UnifyOrderReq) (*UnifyOrderResp, error) {
+	req.NotifyURL = callbackURL
 	req.Sign = calcReqSign(req, InquiryMerKey)
 
 	buf, err := xml.Marshal(req)
@@ -141,6 +146,7 @@ func UnifyPayRequest(req UnifyOrderReq) (*UnifyOrderResp, error) {
 
 	reqStr := string(buf)
 	reqStr = strings.Replace(reqStr, "XUnifyOrderReq", "xml", -1)
+	log.Printf("reqStr:%s", reqStr)
 
 	request, err := http.NewRequest("POST", orderURL, bytes.NewReader([]byte(reqStr)))
 	if err != nil {

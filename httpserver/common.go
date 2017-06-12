@@ -25,6 +25,7 @@ import (
 	"Server/proto/inquiry"
 	"Server/proto/modify"
 	"Server/proto/monitor"
+	"Server/proto/pay"
 	"Server/proto/punch"
 	"Server/proto/push"
 	"Server/proto/userinfo"
@@ -823,6 +824,8 @@ func genServerName(rtype int64, callback string) string {
 		return util.AdvertiseServerName
 	case util.InquiryServerType:
 		return util.InquiryServerName
+	case util.PayServerType:
+		return util.PayServerName
 	default:
 		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}
@@ -855,6 +858,8 @@ func genClient(rtype int64, conn *grpc.ClientConn, callback string) interface{} 
 		cli = advertise.NewAdvertiseClient(conn)
 	case util.InquiryServerType:
 		cli = inquiry.NewInquiryClient(conn)
+	case util.PayServerType:
+		cli = pay.NewPayClient(conn)
 	default:
 		panic(util.AppError{ErrInvalidParam, "illegal server type", callback})
 	}

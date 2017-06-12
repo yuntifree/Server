@@ -352,15 +352,19 @@ func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	id := req.GetParamInt("id")
 	doctor := req.GetParamInt("doctor")
 	fee := req.GetParamInt("fee")
-	openid := req.GetParamString("openid")
 	callback := strings.Replace(r.RequestURI, "wx_pay", "wx_pay_callback", -1)
+	arr := strings.Split(r.RemoteAddr, ":")
+	var clientip string
+	if len(arr) > 0 {
+		clientip = arr[0]
+	}
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.PayServerType,
 		uid, "WxPay",
 		&pay.WxPayRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Type: 0, Item: id, Tuid: doctor, Fee: fee, Openid: openid,
-			Clientip: r.RemoteAddr, Callback: callback})
+			Type: 0, Item: id, Tuid: doctor, Fee: fee,
+			Clientip: clientip, Callback: callback})
 	httpserver.CheckRPCErr(rpcerr, "WxPay")
 	res := resp.Interface().(*pay.WxPayReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "WxPay")
@@ -401,7 +405,7 @@ func wxPayCallback(w http.ResponseWriter, r *http.Request) {
 
 	uuid := util.GenUUID()
 	rsp, rpcerr := httpserver.CallRPC(util.PayServerType,
-		0, "WxPayCallback",
+		0, "WxPayCB",
 		&pay.WxPayCBRequest{Head: &common.Head{Sid: uuid},
 			Oid: notify.OutTradeNO, Fee: notify.TotalFee})
 	if rpcerr.Interface() != nil {

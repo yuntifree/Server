@@ -16,9 +16,8 @@ message WxPayRequest {
     int64 item = 3;
     int64 tuid = 4;
     int64 fee = 5;
-    string openid = 6;
-    string callback = 7;
-    string clientip = 8;
+    string callback = 6;
+    string clientip = 7;
 }
 
 message WxPayReply {

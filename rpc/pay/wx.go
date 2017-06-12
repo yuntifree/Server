@@ -27,6 +27,15 @@ func recordOrderInfo(db *sql.DB, oid string, in *pay.WxPayRequest) (int64, error
 	return id, nil
 }
 
+func getUserOpenid(db *sql.DB, uid int64) (string, error) {
+	var openid string
+	err := db.QueryRow("SELECT w.openid FROM wx_openid w, users u WHERE u.username = w.unionid AND u.uid = ?", uid).Scan(&openid)
+	if err != nil {
+		log.Printf("getUserOpenid failed:%d %v", uid, err)
+	}
+	return openid, err
+}
+
 func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayReply, error) {
 	log.Printf("WxPay request:%+v", in)
 	util.PubRPCRequest(w, "pay", "WxPay")
@@ -38,13 +47,19 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 
 	}
+	openid, err := getUserOpenid(db, in.Head.Uid)
+	if err != nil {
+		return &pay.WxPayReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+
+	}
 
 	var req weixin.UnifyOrderReq
 	req.Appid = weixin.InquiryAppid
 	req.Body = "问诊打赏"
 	req.MchID = weixin.InquiryMerID
 	req.NonceStr = util.GenSalt()
-	req.Openid = in.Openid
+	req.Openid = openid
 	req.TradeType = "JSAPI"
 	req.SpbillCreateIP = in.Clientip
 	req.TotalFee = in.Fee
@@ -75,7 +90,7 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 	util.PubRPCSuccRsp(w, "pay", "WxPay")
 	return &pay.WxPayReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Package: "pre_payid=" + resp.PrepayID, NonceStr: resp.NonceStr,
+		Package: "prepay_id=" + resp.PrepayID, NonceStr: resp.NonceStr,
 		TimeStamp: now, PaySign: sign, SignType: "MD5",
 	}, nil
 }
