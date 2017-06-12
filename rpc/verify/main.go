@@ -549,7 +549,7 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 
 func isExceedCodeFrequency(db *sql.DB, phone string, stype uint) bool {
 	var flag int
-	err := db.QueryRow("SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 1 MINUTE), 0, 1) FROM zte_code WHERE phone = ? AND type = ?", phone, stype).Scan(&flag)
+	err := db.QueryRow("SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 5 MINUTE), 0, 1) FROM zte_code WHERE phone = ? AND type = ?", phone, stype).Scan(&flag)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("isExceedCodeFrequency query failed:%v", err)
 		return false
