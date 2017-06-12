@@ -180,7 +180,7 @@ var errFrequency = errors.New("exceed frequency limit")
 func getPhoneCode(phone string) error {
 	log.Printf("request phone:%s", phone)
 	var id, code, flag int
-	err := db.QueryRow("SELECT id, code, IF(NOW() > DATE_ADD(stime, INTERVAL 1 MINUTE), 0, 1) FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1",
+	err := db.QueryRow("SELECT pid, code, IF(NOW() > DATE_ADD(stime, INTERVAL 1 MINUTE), 0, 1) FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1",
 		phone).Scan(&id, &code, &flag)
 	if err != nil {
 		code := util.Randn(randrange)
@@ -204,7 +204,7 @@ func getPhoneCode(phone string) error {
 			log.Printf("send sms failed:%d", ret)
 			return errors.New("send sms failed")
 		}
-		db.Exec("UPDATE phone_code SET stime = NOW() WHERE id = ?", id)
+		db.Exec("UPDATE phone_code SET stime = NOW() WHERE pid = ?", id)
 		return nil
 	} else if flag == 1 {
 		return errFrequency
@@ -231,8 +231,8 @@ func (s *server) GetPhoneCode(ctx context.Context, in *inquiry.PhoneRequest) (*c
 
 func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
 	var id, ecode int64
-	err := db.QueryRow("SELECT id, code FROM phone_code WHERE phone = ? AND etime > NOW() LIMIT 1", phone).
-		Scan(&ecode)
+	err := db.QueryRow("SELECT pid, code FROM phone_code WHERE phone = ? AND etime > NOW() ORDER BY pid DESC LIMIT 1", phone).
+		Scan(&id, &ecode)
 	if err != nil {
 		log.Printf("checkPhoneCode get code failed:%s %v", phone, err)
 		return false
@@ -241,7 +241,7 @@ func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
 		log.Printf("code not match, phone:%s code:%d - %d", phone, code, ecode)
 		return false
 	}
-	_, err = db.Exec("UPDATE phone_code SET used = 1 WHERE id = ?", id)
+	_, err = db.Exec("UPDATE phone_code SET used = 1 WHERE pid = ?", id)
 	if err != nil {
 		log.Printf("checkPhoneCode set used failed, id:%d phone:%s", id,
 			phone)
