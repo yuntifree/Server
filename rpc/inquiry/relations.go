@@ -24,6 +24,13 @@ func (s *server) BindOp(ctx context.Context, in *common.CommRequest) (*common.Co
 			Head: &common.Head{Retcode: 1}}, nil
 
 	}
+	if in.Type == 0 {
+		_, err = db.Exec("UPDATE users SET hasrelation = 1 WHERE uid = ?", in.Head.Uid)
+		if err != nil {
+			log.Printf("BindOp update user relation failed:%d %v", in.Head.Uid,
+				err)
+		}
+	}
 	util.PubRPCSuccRsp(w, "inquiry", "BindOp")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}}, nil

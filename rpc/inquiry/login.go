@@ -26,10 +26,10 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 			Head: &common.Head{Retcode: common.ErrCode_ILLEGAL_CODE}}, nil
 	}
 	sid := util.GenSalt()
-	var uid, role int64
+	var uid, role, hasrelation int64
 	var phone string
-	err = db.QueryRow("SELECT u.uid, u.phone, u.role FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
-		Scan(&uid, &phone, &role)
+	err = db.QueryRow("SELECT u.uid, u.phone, u.role, u.hasrelation FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
+		Scan(&uid, &phone, &role, &hasrelation)
 	if err != nil {
 		_, err = db.Exec("INSERT INTO wx_openid(openid, skey, sid, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?, sid = ?",
 			openid, skey, sid, skey, sid)
@@ -59,7 +59,7 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token,
-		Hasphone: hasphone, Role: role}, nil
+		Hasphone: hasphone, Role: role, Hasrelation: hasrelation}, nil
 }
 
 func checkSign(skey, rawdata, signature string) bool {
@@ -102,7 +102,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 		return &inquiry.LoginReply{
 			Head: &common.Head{Retcode: 1}}, nil
 	}
-	var uid, role int64
+	var uid, role, hasrelation int64
 	var phone string
 	if unionid == "" { //has login
 		uinfo, err := extractUserInfo(skey, in.Encrypteddata, in.Iv)
@@ -118,9 +118,9 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			return &inquiry.LoginReply{
 				Head: &common.Head{Retcode: 1}}, nil
 		}
-		db.QueryRow("SELECT uid, phone, role FROM users WHERE username = ?",
+		db.QueryRow("SELECT uid, phone, role, hasrelation FROM users WHERE username = ?",
 			uinfo.UnionId).
-			Scan(&uid, &phone, &role)
+			Scan(&uid, &phone, &role, &hasrelation)
 		if uid == 0 {
 			res, err := db.Exec("INSERT IGNORE INTO users(username, nickname, headurl, gender, ctime) VALUES (?, ?, ?, ?, NOW())",
 				uinfo.UnionId, uinfo.NickName, uinfo.AvartarUrl, uinfo.Gender)
@@ -147,8 +147,14 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			Head: &common.Head{Retcode: 1}}, nil
 	}
 
+	var hasphone int64
+	if phone != "" {
+		hasphone = 1
+	}
+
 	return &inquiry.LoginReply{
-		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token}, nil
+		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token,
+		Hasphone: hasphone, Role: role, Hasrelation: hasrelation}, nil
 }
 
 func (s *server) CheckToken(ctx context.Context, in *inquiry.TokenRequest) (*common.CommReply, error) {
