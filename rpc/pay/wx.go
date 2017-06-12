@@ -74,9 +74,9 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 
 	util.PubRPCSuccRsp(w, "pay", "WxPay")
 	return &pay.WxPayReply{
-		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Mid:  resp.MchID, Prepayid: resp.PrepayID, Nonce: resp.NonceStr,
-		Timestamp: now, Sign: sign, Openid: in.Openid,
+		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Package: "pre_payid=" + resp.PrepayID, NonceStr: resp.NonceStr,
+		TimeStamp: now, PaySign: sign, SignType: "MD5",
 	}, nil
 }
 

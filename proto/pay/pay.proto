@@ -23,12 +23,11 @@ message WxPayRequest {
 
 message WxPayReply {
     common.Head head = 1;
-    string mid = 2;
-    string prepayid = 3;
-    string nonce = 4;
-    int64 timestamp = 5;
-    string sign = 6;
-    string openid = 7;
+    string paySign = 2;
+    string package = 3;
+    string nonceStr = 4;
+    int64 timeStamp = 5;
+    string signType = 6;
 }
 
 message WxPayCBRequest {
