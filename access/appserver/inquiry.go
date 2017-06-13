@@ -243,6 +243,28 @@ func getPatients(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getMyDoctors(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetDoctors",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: num})
+	httpserver.CheckRPCErr(rpcerr, "GetDoctors")
+	res := resp.Interface().(*inquiry.DoctorsReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetDoctors")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func addPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -532,6 +554,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		getChat(w, r)
 	case "get_chat_session":
 		getChatSession(w, r)
+	case "get_my_doctors":
+		getMyDoctors(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

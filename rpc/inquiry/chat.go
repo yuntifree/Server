@@ -133,6 +133,10 @@ func (s *server) GetChatSession(ctx context.Context, in *common.CommRequest) (*i
 	util.PubRPCRequest(w, "inquiry", "GetChatSession")
 	infos := getUserChatSession(db, in.Head.Uid, in.Seq, in.Num)
 	util.PubRPCSuccRsp(w, "inquiry", "GetChatSession")
+	var hasmore int64
+	if len(infos) >= int(in.Num) {
+		hasmore = 1
+	}
 	return &inquiry.ChatSessionReply{Head: &common.Head{Retcode: 0},
-		Infos: infos}, nil
+		Infos: infos, Hasmore: hasmore}, nil
 }

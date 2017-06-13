@@ -21,6 +21,7 @@ service Inquiry {
     rpc SendChat(ChatRequest) returns (common.CommReply) {}
     rpc GetChat(common.CommRequest) returns (ChatReply) {}
     rpc GetChatSession(common.CommRequest) returns (ChatSessionReply) {}
+    rpc GetDoctors(common.CommRequest) returns (DoctorsReply) {}
 }
 
 message CodeRequest {
@@ -158,4 +159,20 @@ message ChatSessionInfo {
 message ChatSessionReply {
     common.Head head = 1;
     repeated ChatSessionInfo infos = 2;
+    int64 hasmore = 3;
+}
+
+message Doctor {
+    int64 id = 1;
+    int64 seq = 2;
+    int64 uid = 3;
+    DoctorInfo doctor = 4;
+    int64 flag = 5;
+    ChatInfo chat = 6;
+}
+
+message DoctorsReply {
+    common.Head head = 1;
+    repeated Doctor infos = 2;
+    int64 hasmore = 3;
 }

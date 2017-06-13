@@ -6,6 +6,7 @@ import (
 	"Server/util"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
@@ -104,4 +105,71 @@ func (s *server) ModPatient(ctx context.Context, in *inquiry.PatientRequest) (*c
 	util.PubRPCSuccRsp(w, "inquiry", "ModPatient")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func getLastestChat(db *sql.DB, uid, tuid int64) *inquiry.ChatInfo {
+	var info inquiry.ChatInfo
+	err := db.QueryRow("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) ORDER BY id DESC LIMIT 1").
+		Scan(&info.Id, &info.Uid, &info.Tuid, &info.Type, &info.Content,
+			&info.Ctime)
+	if err != nil {
+		log.Printf("getLastestChat query failed:%v", err)
+		return nil
+	}
+	return &info
+}
+
+func getDoctors(db *sql.DB, uid, seq, num int64) ([]*inquiry.Doctor, error) {
+	query := "SELECT r.id, r.doctor, r.flag, d.name, d.headurl, d.hospital, d.department, d.title FROM relations r, doctor d, users u WHERE r.doctor = u.uid AND u.doctor = d.id AND r.deleted = 0 AND d.deleted = 0 AND u.deleted = 0"
+	query += fmt.Sprintf(" AND r.patient = %d", uid)
+	if seq != 0 {
+		query += fmt.Sprintf(" AND r.id < %d", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY r.id DESC LIMIT %d", num)
+	log.Printf("getDoctors query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getDoctors query failed:%d %v", uid, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var infos []*inquiry.Doctor
+	for rows.Next() {
+		var doc inquiry.Doctor
+		var info inquiry.DoctorInfo
+		err = rows.Scan(&doc.Id, &doc.Uid, &doc.Flag, &info.Name,
+			&info.Headurl, &info.Hospital, &info.Department,
+			&info.Title)
+		if err != nil {
+			log.Printf("getDoctors scan failed:%d %v", uid, err)
+			continue
+		}
+		doc.Doctor = &info
+		if doc.Flag > 0 {
+			chat := getLastestChat(db, uid, doc.Uid)
+			if chat != nil {
+				doc.Chat = chat
+			}
+		}
+		infos = append(infos, &doc)
+	}
+	return infos, nil
+}
+
+func (s *server) GetDoctors(ctx context.Context, in *common.CommRequest) (*inquiry.DoctorsReply, error) {
+	util.PubRPCRequest(w, "inquiry", "GetDoctors")
+	infos, err := getDoctors(db, in.Head.Uid, in.Seq, in.Num)
+	if err != nil {
+		log.Printf("getDoctors failed:%d %v", in.Head.Uid, err)
+		return &inquiry.DoctorsReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "GetDoctors")
+	var hasmore int64
+	if len(infos) >= int(in.Num) {
+		hasmore = 1
+	}
+	return &inquiry.DoctorsReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos,
+		Hasmore: hasmore}, nil
 }
