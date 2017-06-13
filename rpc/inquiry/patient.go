@@ -109,7 +109,8 @@ func (s *server) ModPatient(ctx context.Context, in *inquiry.PatientRequest) (*c
 
 func getLastestChat(db *sql.DB, uid, tuid int64) *inquiry.ChatInfo {
 	var info inquiry.ChatInfo
-	err := db.QueryRow("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) ORDER BY id DESC LIMIT 1").
+	err := db.QueryRow("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) ORDER BY id DESC LIMIT 1",
+		uid, tuid, tuid, uid).
 		Scan(&info.Id, &info.Uid, &info.Tuid, &info.Type, &info.Content,
 			&info.Ctime)
 	if err != nil {
