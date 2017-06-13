@@ -19,6 +19,7 @@ service Inquiry {
     rpc ModPatient(PatientRequest) returns (common.CommReply) {}
     rpc AddInquiry(InquiryRequest) returns (common.CommReply) {}
     rpc SendChat(ChatRequest) returns (common.CommReply) {}
+    rpc GetChat(common.CommRequest) returns (ChatReply) {}
 }
 
 message CodeRequest {
@@ -123,4 +124,19 @@ message ChatRequest {
     int64 tuid = 2;
     int64 type = 3;
     string content = 4;
+}
+
+message ChatInfo {
+    int64 id = 1;
+    int64 seq = 2;
+    int64 uid = 3;
+    int64 tuid = 4;
+    int64 type = 5;
+    string content = 6;
+    string ctime = 7;
+}
+
+message ChatReply {
+    common.Head head = 1;
+    repeated ChatInfo infos = 2;
 }
