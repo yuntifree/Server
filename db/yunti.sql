@@ -277,7 +277,8 @@ CREATE TABLE IF NOT EXISTS banner (
     id      int unsigned NOT NULL AUTO_INCREMENT,
     -- type 0:banner 1:flash_ad 2:activity 3:login image
     -- 4:portal banner 5:logintest image 6:portal banner v20170411
-    -- 7:wjj login 8:youhua hospital 9:taobao 
+    -- 7:wjj login 8:youhua hospital 9:taobao 10:edu login 
+    -- 11:kongu login
     type    tinyint unsigned NOT NULL DEFAULT 0,
     img     varchar(256) NOT NULL,
     dst     varchar(256) NOT NULL,
