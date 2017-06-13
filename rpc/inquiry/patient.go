@@ -45,7 +45,7 @@ func (s *server) GetPatients(ctx context.Context, in *common.CommRequest) (*inqu
 }
 
 func addPatient(db *sql.DB, uid int64, info *inquiry.PatientInfo) (int64, error) {
-	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, ctime) VALUES (?, ?, ?, ?, NOW())",
+	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, ctime) VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
 		uid, info.Name, info.Phone, info.Mcard)
 	if err != nil {
 		log.Printf("addPatient insert failed:%v", err)
@@ -63,7 +63,7 @@ func (s *server) AddPatient(ctx context.Context, in *inquiry.PatientRequest) (*c
 	util.PubRPCRequest(w, "inquiry", "AddPatient")
 	id, err := addPatient(db, in.Head.Uid, in.Info)
 	if err != nil {
-		log.Printf("gePatients failed:%d %v", in.Head.Uid, err)
+		log.Printf("addPatients failed:%d %v", in.Head.Uid, err)
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
