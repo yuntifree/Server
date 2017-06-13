@@ -45,7 +45,7 @@ func (s *server) GetPatients(ctx context.Context, in *common.CommRequest) (*inqu
 }
 
 func addPatient(db *sql.DB, uid int64, info *inquiry.PatientInfo) (int64, error) {
-	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, ctime) VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
+	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, ctime) VALUES (?, ?, ?, ?, NOW())",
 		uid, info.Name, info.Phone, info.Mcard)
 	if err != nil {
 		log.Printf("addPatient insert failed:%v", err)
