@@ -32,7 +32,7 @@ func (s *server) SendChat(ctx context.Context, in *inquiry.ChatRequest) (*common
 }
 
 func getUserChat(db *sql.DB, uid, tuid, seq, num int64) []*inquiry.ChatInfo {
-	rows, err := db.Query("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) AND seq > ? ORDER BY id ASC LIMIT ?",
+	rows, err := db.Query("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) AND id > ? ORDER BY id ASC LIMIT ?",
 		uid, tuid, tuid, uid, seq, num)
 	if err != nil {
 		log.Printf("getUserChat query failed:%d %d %v", uid, tuid, err)

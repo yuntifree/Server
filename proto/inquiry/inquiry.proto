@@ -22,6 +22,7 @@ service Inquiry {
     rpc GetChat(common.CommRequest) returns (ChatReply) {}
     rpc GetChatSession(common.CommRequest) returns (ChatSessionReply) {}
     rpc GetDoctors(common.CommRequest) returns (DoctorsReply) {}
+    rpc GetWallet(common.CommRequest) returns (WalletReply) {}
 }
 
 message CodeRequest {
@@ -175,4 +176,12 @@ message DoctorsReply {
     common.Head head = 1;
     repeated Doctor infos = 2;
     int64 hasmore = 3;
+}
+
+message WalletReply {
+    common.Head head = 1;
+    int64 balance = 2;
+    int64 total = 3;
+    int64 draw = 4;
+    int64 totaldraw = 5;
 }

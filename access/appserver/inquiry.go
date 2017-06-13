@@ -435,6 +435,25 @@ func getChatSession(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	return nil
 }
 
+func getWallet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetWallet",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetWallet")
+	res := resp.Interface().(*inquiry.WalletReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetWallet")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -556,6 +575,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		getChatSession(w, r)
 	case "get_my_doctors":
 		getMyDoctors(w, r)
+	case "get_my_wallet":
+		getWallet(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
