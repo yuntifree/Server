@@ -21,6 +21,7 @@ enum ErrCode{
     DUPLICATE = 10015;
     USED_RESERVE_CODE = 10016;
     USED_DONATE_CODE = 10017;
+    INSUFFICIENT_BALANCE = 10018;
 }
 
 message Head {

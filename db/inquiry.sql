@@ -140,3 +140,17 @@ CREATE TABLE IF NOT EXISTS chat (
     KEY(tuid),
     KEY(ctime)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS draw_history (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    fee     int unsigned NOT NULL,
+    -- status 0-申请 1-审核通过 2-转账成功 3-审核失败
+    -- 4-转账失败
+    status  tinyint unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    rtime   datetime NOT NULL DEFAULT '2017-01-01',
+    ptime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
+) ENGINE = InnoDB;

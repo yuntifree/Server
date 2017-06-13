@@ -454,6 +454,27 @@ func getWallet(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func applyDraw(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	fee := req.GetParamInt("fee")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "ApplyDraw",
+		&inquiry.DrawRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Fee: fee})
+	httpserver.CheckRPCErr(rpcerr, "ApplyDraw")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyDraw")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -577,6 +598,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		getMyDoctors(w, r)
 	case "get_my_wallet":
 		getWallet(w, r)
+	case "apply_draw":
+		applyDraw(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
