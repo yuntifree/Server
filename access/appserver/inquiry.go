@@ -272,7 +272,7 @@ func modPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	req.InitInquiry(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
-	deleted := req.GetParamInt("deleted")
+	deleted := req.GetParamIntDef("deleted", 0)
 	name := req.GetParamString("name")
 	phone := req.GetParamString("phone")
 	mcard := req.GetParamString("mcard")
@@ -391,6 +391,28 @@ func getChat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getChatSession(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetChatSession",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: num})
+	httpserver.CheckRPCErr(rpcerr, "GetChatSession")
+	res := resp.Interface().(*inquiry.ChatSessionReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetChatSession")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -490,7 +512,7 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return setFee(w, r)
 	case "bind_op":
 		return bindOp(w, r)
-	case "get_patients":
+	case "get_my_patients":
 		return getPatients(w, r)
 	case "add_patient_info":
 		return addPatientInfo(w, r)
@@ -506,6 +528,10 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		wxPayCallback(w, r)
 	case "send_chat":
 		sendChat(w, r)
+	case "get_chat":
+		getChat(w, r)
+	case "get_chat_session":
+		getChatSession(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

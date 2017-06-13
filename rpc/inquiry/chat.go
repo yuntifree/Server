@@ -5,6 +5,7 @@ import (
 	"Server/proto/inquiry"
 	"Server/util"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
@@ -64,5 +65,74 @@ func (s *server) GetChat(ctx context.Context, in *common.CommRequest) (*inquiry.
 	infos := getUserChat(db, in.Head.Uid, in.Id, in.Seq, in.Num)
 	util.PubRPCSuccRsp(w, "inquiry", "GetChat")
 	return &inquiry.ChatReply{Head: &common.Head{Retcode: 0},
+		Infos: infos}, nil
+}
+
+type chatInfo struct {
+	cid     int64
+	ctype   int64
+	content string
+	ctime   string
+	ack     int64
+}
+
+func getLastChat(db *sql.DB, doctor, patient int64) (*chatInfo, error) {
+	var info chatInfo
+	err := db.QueryRow("SELECT id, type, content, ctime, ack FROM chat WHERE uid = ? AND tuid = ? ORDER BY id DESC LIMIT 1", patient, doctor).
+		Scan(&info.cid, &info.ctype, &info.content, &info.ctime,
+			&info.ack)
+	if err != nil {
+		log.Printf("getLastChat failed:%d %d %v", doctor, patient, err)
+		return nil, err
+	}
+	return &info, nil
+}
+
+func getUserChatSession(db *sql.DB, doctor, seq, num int64) []*inquiry.ChatSessionInfo {
+	query := fmt.Sprintf("SELECT r.id, r.patient, u.headurl, u.nickname FROM relations r, users u WHERE r.doctor = %d AND r.flag = 1 AND r.deleted = 0 AND u.deleted = 0", doctor)
+	if seq != 0 {
+		query += fmt.Sprintf(" AND r.id < %d", seq)
+	}
+	query += fmt.Sprintf(" ORDER BY r.id DESC LIMIT %d", num)
+	log.Printf("getUserChatSession query:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("getUserChatSession query failed:%v", err)
+		return nil
+	}
+
+	var infos []*inquiry.ChatSessionInfo
+	defer rows.Close()
+	for rows.Next() {
+		var info inquiry.ChatSessionInfo
+		err = rows.Scan(&info.Id, &info.Uid, &info.Headurl,
+			&info.Nickname)
+		if err != nil {
+			log.Printf("getUserChatSession scan failed:%v", err)
+			continue
+		}
+		cinfo, err := getLastChat(db, doctor, info.Uid)
+		if err != nil {
+			log.Printf("getUserChatSession getLastChat failed:%v", err)
+		} else {
+			info.Cid = cinfo.cid
+			info.Type = cinfo.ctype
+			info.Content = cinfo.content
+			info.Ctime = cinfo.ctime
+			if cinfo.ack == 0 {
+				info.Reddot = 1
+			}
+		}
+
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetChatSession(ctx context.Context, in *common.CommRequest) (*inquiry.ChatSessionReply, error) {
+	util.PubRPCRequest(w, "inquiry", "GetChatSession")
+	infos := getUserChatSession(db, in.Head.Uid, in.Seq, in.Num)
+	util.PubRPCSuccRsp(w, "inquiry", "GetChatSession")
+	return &inquiry.ChatSessionReply{Head: &common.Head{Retcode: 0},
 		Infos: infos}, nil
 }

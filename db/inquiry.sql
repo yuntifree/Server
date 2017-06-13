@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS relations (
     -- status 0-未问诊 1-问诊中 2-问诊结束
     status  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    -- flag 0-没有问诊记录 1-有过问诊记录
+    flag     tinyint unsigned NOT NULL DEFAULT 0,
     ctime datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(doctor, patient)

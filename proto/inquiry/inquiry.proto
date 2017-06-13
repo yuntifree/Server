@@ -20,6 +20,7 @@ service Inquiry {
     rpc AddInquiry(InquiryRequest) returns (common.CommReply) {}
     rpc SendChat(ChatRequest) returns (common.CommReply) {}
     rpc GetChat(common.CommRequest) returns (ChatReply) {}
+    rpc GetChatSession(common.CommRequest) returns (ChatSessionReply) {}
 }
 
 message CodeRequest {
@@ -139,4 +140,22 @@ message ChatInfo {
 message ChatReply {
     common.Head head = 1;
     repeated ChatInfo infos = 2;
+}
+
+message ChatSessionInfo {
+    int64 id = 1;
+    int64 seq = 2;
+    int64 uid = 3;
+    string nickname = 4;
+    string headurl = 5;
+    string content = 6;
+    string ctime = 7;
+    int64 reddot = 8;
+    int64 cid = 9;
+    int64 type = 10;
+}
+
+message ChatSessionReply {
+    common.Head head = 1;
+    repeated ChatSessionInfo infos = 2;
 }
