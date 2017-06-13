@@ -118,3 +118,19 @@ CREATE TABLE IF NOT EXISTS orders (
     PRIMARY KEY(id),
     UNIQUE KEY(oid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS chat (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    tuid    int unsigned NOT NULL,
+    -- type 0-text 1-image
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    content varchar(512) NOT NULL,
+    ack     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    acktime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid),
+    KEY(tuid),
+    KEY(ctime)
+) ENGINE = InnoDB;

@@ -18,6 +18,7 @@ service Inquiry {
     rpc AddPatient(PatientRequest) returns (common.CommReply) {}
     rpc ModPatient(PatientRequest) returns (common.CommReply) {}
     rpc AddInquiry(InquiryRequest) returns (common.CommReply) {}
+    rpc SendChat(ChatRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -115,4 +116,11 @@ message InquiryRequest {
     int64 doctor = 2;
     int64 pid = 3;
     int64 fee = 4;
+}
+
+message ChatRequest {
+    common.Head head = 1;
+    int64 tuid = 2;
+    int64 type = 3;
+    string content = 4;
 }

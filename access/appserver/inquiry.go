@@ -345,6 +345,29 @@ func addInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func sendChat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	tuid := req.GetParamInt("tuid")
+	ctype := req.GetParamInt("type")
+	content := req.GetParamString("content")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "SendChat",
+		&inquiry.ChatRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Tuid: tuid, Type: ctype, Content: content})
+	httpserver.CheckRPCErr(rpcerr, "SendChat")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SendChat")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -458,6 +481,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return wxPay(w, r)
 	case "wx_pay_callback":
 		wxPayCallback(w, r)
+	case "send_chat":
+		sendChat(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
