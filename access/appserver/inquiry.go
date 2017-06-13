@@ -315,11 +315,14 @@ func modPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	return nil
 }
 
+type image struct {
+	filename string `json:"filename"`
+}
+
 func uploadImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	r.ParseMultipartForm(10 * 1024 * 1024)
-	values := r.MultipartForm.Value["name"]
-	log.Printf("values:%v", values)
 	files := r.MultipartForm.File["file"]
+	log.Printf("form:%+v", r.MultipartForm)
 	var buf []byte
 	if len(files) > 0 {
 		f, err := files[0].Open()
@@ -333,14 +336,33 @@ func uploadImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 			return &util.AppError{Code: httpserver.ErrInner, Msg: err.Error()}
 		}
 	} else {
+		log.Printf("empty file")
 		return &util.AppError{Code: httpserver.ErrInner, Msg: "empty file"}
 	}
 	filename := util.GenUUID() + ".jpg"
+	log.Printf("filename :%s", filename)
 	flag := aliyun.UploadOssImg(filename, string(buf))
 	if !flag {
 		log.Printf("UploadOssImg failed")
 		return &util.AppError{Code: httpserver.ErrInner, Msg: "upload image failed"}
 	}
+	filename = aliyun.GenOssImgURL(filename)
+	log.Printf("filename upload succ:%s", filename)
+	js, err := simplejson.NewJson([]byte(`{"errno":0}`))
+	if err != nil {
+		log.Printf("writeInfoResp NewJson failed: %v", err)
+		w.Write([]byte(`{"errno":103,"desc":"inner failed"}`))
+		return
+	}
+	js.SetPath([]string{"data", "filename"}, filename)
+
+	resp, err := js.Encode()
+	if err != nil {
+		log.Printf("writeInfoResp NewJson search failed: %v", err)
+		w.Write([]byte(`{"errno":103,"desc":"inner failed"}`))
+		return
+	}
+	w.Write(resp)
 	return nil
 }
 

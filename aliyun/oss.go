@@ -27,6 +27,7 @@ const (
 	ossCbBody       = "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}"
 	ossCbBodyType   = "application/x-www-form-urlencoded"
 	fileCdnURL      = "http://file.yunxingzh.com"
+	imgCdnURL       = "http://img.yunxingzh.com"
 )
 
 //UploadOssFile upload content to aliyun oss
@@ -70,6 +71,11 @@ func GenOssNewsURL(filename string) string {
 //GenOssFileURL generate oss file download url
 func GenOssFileURL(filename string) string {
 	return fileCdnURL + "/" + filename
+}
+
+//GenOssImgURL generate oss img download url
+func GenOssImgURL(filename string) string {
+	return imgCdnURL + "/" + filename
 }
 
 func getISO8601Time(ts time.Time) string {
