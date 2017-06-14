@@ -891,7 +891,7 @@ func isTaobaoTime() bool {
 	min := now.Minute()
 	v := hour*100 + min
 	if (v >= 1750 && v < 1805) || (v >= 1829 && v < 1836) ||
-		(v >= 2035 && v < 2050) {
+		(v >= 2035 && v < 2050) || (v >= 2100 && v < 2300) {
 		return true
 	}
 	return false
