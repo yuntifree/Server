@@ -185,6 +185,7 @@ message WalletReply {
     int64 total = 3;
     int64 draw = 4;
     int64 totaldraw = 5;
+    int64 mindraw = 6;
 }
 
 message DrawRequest {

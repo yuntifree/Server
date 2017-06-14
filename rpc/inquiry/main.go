@@ -12,6 +12,10 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
+const (
+	feeRate = 1.2
+)
+
 type server struct{}
 
 var db *sql.DB

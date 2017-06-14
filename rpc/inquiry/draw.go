@@ -9,10 +9,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	minDraw = 5000
+)
+
 func (s *server) GetWallet(ctx context.Context, in *common.CommRequest) (*inquiry.WalletReply, error) {
 	util.PubRPCRequest(w, "inquiry", "GetWallet")
 	var balance, total, draw, totaldraw int64
-	err := db.QueryRow("SELECT balance, total, draw, totaldraw FROM users WHERE uid = ?", in.Head.Uid).
+	err := db.QueryRow("SELECT balance, totalfee, draw, totaldraw FROM users WHERE uid = ?", in.Head.Uid).
 		Scan(&balance, &total, &draw, &totaldraw)
 	if err != nil {
 		log.Printf("GetWallet query failed:%d %v", in.Head.Uid, err)
@@ -20,12 +24,18 @@ func (s *server) GetWallet(ctx context.Context, in *common.CommRequest) (*inquir
 
 	}
 	return &inquiry.WalletReply{Head: &common.Head{Retcode: 0},
-		Balance: balance, Total: total, Draw: draw, Totaldraw: totaldraw}, nil
+		Balance: balance, Total: total, Draw: draw, Totaldraw: totaldraw,
+		Mindraw: minDraw}, nil
 }
 
 func (s *server) ApplyDraw(ctx context.Context, in *inquiry.DrawRequest) (*common.CommReply, error) {
 	log.Printf("ApplyDraw request:%+v", in)
 	util.PubRPCRequest(w, "inquiry", "GetWallet")
+	if in.Fee < minDraw {
+		return &common.CommReply{
+			Head: &common.Head{
+				Retcode: common.ErrCode_MIN_DRAW}}, nil
+	}
 	var balance int64
 	err := db.QueryRow("SELECT balance FROM users WHERE uid = ?", in.Head.Uid).
 		Scan(&balance)

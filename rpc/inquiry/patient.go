@@ -40,7 +40,7 @@ func (s *server) GetPatients(ctx context.Context, in *common.CommRequest) (*inqu
 		return &inquiry.PatientsReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	util.PubRPCSuccRsp(w, "inquiry", "GetDoctorInfo")
+	util.PubRPCSuccRsp(w, "inquiry", "GetPatients")
 	return &inquiry.PatientsReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
 }

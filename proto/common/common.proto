@@ -22,6 +22,7 @@ enum ErrCode{
     USED_RESERVE_CODE = 10016;
     USED_DONATE_CODE = 10017;
     INSUFFICIENT_BALANCE = 10018;
+    MIN_DRAW = 10019;
 }
 
 message Head {

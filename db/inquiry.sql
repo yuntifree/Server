@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS inquiry_history (
     patient int unsigned NOT NULL,
     pid     int unsigned NOT NULL,
     fee     int unsigned NOT NULL DEFAULT 0,
+    doctor_fee int unsigned NOT NULL DEFAULT 0,
     -- status 0-待支付 1-支付成功(问诊中) 2-问诊结束
     status  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,

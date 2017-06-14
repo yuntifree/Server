@@ -10,8 +10,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-func addInquiry(db *sql.DB, in *inquiry.InquiryRequest) (int64, error) {
-	res, err := db.Exec("INSERT INTO inquiry_history(doctor, patient, pid, fee, ctime) VALUES (?, ?, ?, ?, NOW())", in.Doctor, in.Head.Uid, in.Pid, in.Fee)
+func addInquiry(db *sql.DB, fee int64, in *inquiry.InquiryRequest) (int64, error) {
+	res, err := db.Exec("INSERT INTO inquiry_history(doctor, patient, pid, fee, doctor_fee, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+		in.Doctor, in.Head.Uid, in.Pid, in.Fee, fee)
 	if err != nil {
 		log.Printf("addInquiry failed:%v", err)
 		return 0, err
@@ -29,9 +30,25 @@ func addInquiry(db *sql.DB, in *inquiry.InquiryRequest) (int64, error) {
 	return id, nil
 }
 
+func getDoctorFee(db *sql.DB, uid int64) (int64, error) {
+	var fee int64
+	err := db.QueryRow("SELECT d.fee FROM doctor d, users u WHERE d.id = u.doctor AND u.uid = ?", uid).Scan(&fee)
+	if err != nil {
+		log.Printf("getDoctorFee query failed:%v", err)
+		return 0, err
+	}
+	return fee, nil
+}
+
 func (s *server) AddInquiry(ctx context.Context, in *inquiry.InquiryRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "AddInquiry")
-	id, err := addInquiry(db, in)
+	fee, err := getDoctorFee(db, in.Doctor)
+	if err != nil {
+		log.Printf("AddInquiry getDoctorFee failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	id, err := addInquiry(db, fee, in)
 	if err != nil {
 		log.Printf("addInquiry failed:%d %v", in.Head.Uid, err)
 		return &common.CommReply{
