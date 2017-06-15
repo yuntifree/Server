@@ -51,9 +51,16 @@ func (s *server) GetDoctorInfo(ctx context.Context, in *common.CommRequest) (*in
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Info: info}, nil
 }
 
-func getPatientInfo(db *sql.DB, uid int64) (*inquiry.PatientInfo, error) {
+func getPatientInfo(db *sql.DB, uid, tuid int64) (*inquiry.PatientInfo, error) {
+	var pid int64
+	err := db.QueryRow("SELECT pid FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", uid, tuid).Scan(&pid)
+	if err != nil {
+		log.Printf("getPatientInfo get pid failed:%d %d %v", uid, tuid,
+			err)
+		return nil, err
+	}
 	var info inquiry.PatientInfo
-	err := db.QueryRow("SELECT name, mcard, phone FROM users WHERE uid = ?", uid).
+	err = db.QueryRow("SELECT name, mcard, phone FROM patient WHERE id = ?", pid).
 		Scan(&info.Name, &info.Mcard, &info.Phone)
 	if err != nil {
 		log.Printf("getPatientInfo query failed:%d %v", uid, err)
@@ -64,7 +71,7 @@ func getPatientInfo(db *sql.DB, uid int64) (*inquiry.PatientInfo, error) {
 
 func (s *server) GetPatientInfo(ctx context.Context, in *common.CommRequest) (*inquiry.PatientInfoReply, error) {
 	util.PubRPCRequest(w, "inquiry", "GetPatientInfo")
-	info, err := getPatientInfo(db, in.Id)
+	info, err := getPatientInfo(db, in.Head.Uid, in.Id)
 	if err != nil {
 		log.Printf("getPatientInfo failed:%d %v", in.Id, err)
 		return &inquiry.PatientInfoReply{
