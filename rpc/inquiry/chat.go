@@ -31,7 +31,32 @@ func (s *server) SendChat(ctx context.Context, in *inquiry.ChatRequest) (*common
 		Id: id}, nil
 }
 
+func getNewChat(db *sql.DB, uid, tuid, num int64) []*inquiry.ChatInfo {
+	rows, err := db.Query("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) ORDER BY id DESC LIMIT ?",
+		uid, tuid, tuid, uid, num)
+	if err != nil {
+		log.Printf("getNewChat failed:%d %d %v", uid, tuid, err)
+		return nil
+	}
+	defer rows.Close()
+	var infos []*inquiry.ChatInfo
+	for rows.Next() {
+		var info inquiry.ChatInfo
+		err = rows.Scan(&info.Id, &info.Uid, &info.Tuid, &info.Type, &info.Content, &info.Ctime)
+		if err != nil {
+			log.Printf("getUserChat scan failed:%d %d %v", uid, tuid, err)
+			continue
+		}
+		info.Seq = info.Id
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func getUserChat(db *sql.DB, uid, tuid, seq, num int64) []*inquiry.ChatInfo {
+	if seq == -1 {
+		return getNewChat(db, uid, tuid, num)
+	}
 	rows, err := db.Query("SELECT id, uid, tuid, type, content, ctime FROM chat WHERE ((uid = ? AND tuid = ?) OR (uid = ? AND tuid = ?)) AND id > ? ORDER BY id ASC LIMIT ?",
 		uid, tuid, tuid, uid, seq, num)
 	if err != nil {
@@ -60,12 +85,22 @@ func getUserChat(db *sql.DB, uid, tuid, seq, num int64) []*inquiry.ChatInfo {
 	return infos
 }
 
+func getInquiryStatus(db *sql.DB, uid, tuid int64) int64 {
+	var status int64
+	err := db.QueryRow("SELECT status FROM relations WHERE (doctor = ? AND patient = ?) OR (doctor = ? AND patient = ?)", uid, tuid, tuid, uid).Scan(&status)
+	if err != nil {
+		log.Printf("getInquiryStatus query failed:%d %d %v", uid, tuid, err)
+	}
+	return status
+}
+
 func (s *server) GetChat(ctx context.Context, in *common.CommRequest) (*inquiry.ChatReply, error) {
 	util.PubRPCRequest(w, "inquiry", "GetChat")
 	infos := getUserChat(db, in.Head.Uid, in.Id, in.Seq, in.Num)
+	status := getInquiryStatus(db, in.Head.Uid, in.Id)
 	util.PubRPCSuccRsp(w, "inquiry", "GetChat")
 	return &inquiry.ChatReply{Head: &common.Head{Retcode: 0},
-		Infos: infos}, nil
+		Infos: infos, Status: status}, nil
 }
 
 type chatInfo struct {

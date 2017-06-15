@@ -144,6 +144,7 @@ message ChatInfo {
 message ChatReply {
     common.Head head = 1;
     repeated ChatInfo infos = 2;
+    int64 status = 3;
 }
 
 message ChatSessionInfo {
