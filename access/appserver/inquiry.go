@@ -389,6 +389,27 @@ func addInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	return nil
 }
 
+func finInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	tuid := req.GetParamInt("tuid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "FinInquiry",
+		&inquiry.FinInquiryRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Tuid: tuid})
+	httpserver.CheckRPCErr(rpcerr, "FinInquiry")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FinInquiry")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func sendChat(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -606,6 +627,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		return uploadImg(w, r)
 	case "add_inquiry":
 		return addInquiry(w, r)
+	case "fin_inquiry":
+		return finInquiry(w, r)
 	case "wx_pay":
 		return wxPay(w, r)
 	case "wx_pay_callback":

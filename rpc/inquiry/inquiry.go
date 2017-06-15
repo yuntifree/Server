@@ -58,3 +58,55 @@ func (s *server) AddInquiry(ctx context.Context, in *inquiry.InquiryRequest) (*c
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Id: id}, nil
 }
+
+func finInquiry(db *sql.DB, uid, tuid int64) error {
+	var id, hid, status int64
+	err := db.QueryRow("SELECT id, hid, status FROM relations WHERE doctor = ? AND patient = ?", uid, tuid).Scan(&id, &hid, &status)
+	if err != nil {
+		log.Printf("finInquiry query failed:%d %d %v", uid, tuid, err)
+		return err
+	}
+	if status == 2 {
+		log.Printf("finInquiry finish closed inquiry:%d %d %d", uid, tuid, hid)
+		return nil
+	}
+	_, err = db.Exec("UPDATE relations SET status = 2 WHERE id = ?", id)
+	if err != nil {
+		log.Printf("finInquiry update relations failed:%d %d %v", uid,
+			tuid, err)
+		return err
+	}
+	_, err = db.Exec("UPDATE inquiry_history SET status = 2, etime = NOW() WHERE id = ?", hid)
+	if err != nil {
+		log.Printf("finInquiry update inquiry history failed:%d %d %v", uid,
+			tuid, err)
+		return err
+	}
+	return nil
+}
+
+func (s *server) FinInquiry(ctx context.Context, in *inquiry.FinInquiryRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "FinInquiry")
+	var role int64
+	err := db.QueryRow("SELECT role FROM users WHERE uid = ?", in.Head.Uid).
+		Scan(&role)
+	if err != nil {
+		log.Printf("FinInquiry query role failed:%d %v", in.Head.Uid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if role != 1 {
+		log.Printf("FinInquiry illegal role:%d %d", in.Head.Uid, role)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	err = finInquiry(db, in.Head.Uid, in.Tuid)
+	if err != nil {
+		log.Printf("finInquiry failed:%d %v", in.Head.Uid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "FinInquiry")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
