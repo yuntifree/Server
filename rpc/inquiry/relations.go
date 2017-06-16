@@ -9,6 +9,7 @@ import (
 )
 
 func (s *server) BindOp(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+	log.Printf("BindOp request:%+v", in)
 	util.PubRPCRequest(w, "inquiry", "BindOp")
 	var err error
 	if in.Type == 0 {
@@ -29,6 +30,31 @@ func (s *server) BindOp(ctx context.Context, in *common.CommRequest) (*common.Co
 		if err != nil {
 			log.Printf("BindOp update user relation failed:%d %v", in.Head.Uid,
 				err)
+		}
+	} else {
+		var cnt int64
+		err = db.QueryRow("SELECT COUNT(id) FROM relations WHERE patient = ? AND deleted = 0", in.Head.Uid).Scan(&cnt)
+		if err != nil {
+			log.Printf("BindOp get relations failed:%v", err)
+		}
+		if cnt == 0 {
+			_, err = db.Exec("UPDATE users SET hasrelation = 0 WHERE uid = ?", in.Head.Uid)
+			if err != nil {
+				log.Printf("BindOp update user relation failed:%d %v", in.Head.Uid,
+					err)
+			}
+		}
+
+		err = db.QueryRow("SELECT COUNT(id) FROM relations WHERE doctor = ? AND deleted = 0 AND flag = 1", in.Id).Scan(&cnt)
+		if err != nil {
+			log.Printf("BindOp get relations failed:%v", err)
+		}
+		if cnt == 0 {
+			_, err = db.Exec("UPDATE users SET hasrelation = 0 WHERE uid = ?", in.Id)
+			if err != nil {
+				log.Printf("BindOp update user relation failed:%d %v", in.Head.Uid,
+					err)
+			}
 		}
 	}
 	util.PubRPCSuccRsp(w, "inquiry", "BindOp")

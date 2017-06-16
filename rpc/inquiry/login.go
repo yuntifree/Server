@@ -17,6 +17,19 @@ const (
 	randrange = 1000000
 )
 
+func hasPatient(db *sql.DB, uid int64) int64 {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM patient WHERE uid = ? AND deleted = 0",
+		uid).Scan(&cnt)
+	if err != nil {
+		return 0
+	}
+	if cnt > 0 {
+		return 1
+	}
+	return 0
+}
+
 func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inquiry.LoginReply, error) {
 	log.Printf("SubmitCode request uid:%d code:%s", in.Head.Uid, in.Code)
 	openid, skey, err := weixin.GetInquirySession(in.Code)
@@ -39,6 +52,8 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 				Head: &common.Head{Retcode: 1}}, nil
 		}
 	}
+	log.Printf("uid:%d role:%d phone:%s hasrelation:%d", uid, role,
+		phone, hasrelation)
 	if uid == 0 {
 		log.Printf("user not found, openid:%s", openid)
 		return &inquiry.LoginReply{
@@ -48,6 +63,10 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	var hasphone int64
 	if phone != "" {
 		hasphone = 1
+	}
+	var haspatient int64
+	if role == 0 {
+		haspatient = hasPatient(db, uid)
 	}
 	token := util.GenSalt()
 	_, err = db.Exec("UPDATE users SET token = ? WHERE uid = ?", token, uid)
@@ -59,7 +78,8 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token,
-		Hasphone: hasphone, Role: role, Hasrelation: hasrelation}, nil
+		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
+		Haspatient: haspatient}, nil
 }
 
 func checkSign(skey, rawdata, signature string) bool {
@@ -151,10 +171,15 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 	if phone != "" {
 		hasphone = 1
 	}
+	var haspatient int64
+	if role == 0 {
+		haspatient = hasPatient(db, uid)
+	}
 
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token,
-		Hasphone: hasphone, Role: role, Hasrelation: hasrelation}, nil
+		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
+		Haspatient: haspatient}, nil
 }
 
 func (s *server) CheckToken(ctx context.Context, in *inquiry.TokenRequest) (*common.CommReply, error) {

@@ -41,6 +41,7 @@ message LoginReply {
     string sid = 6;
     int64 role = 7;
     int64 hasrelation = 8;
+    int64 haspatient = 9;
 }
 
 message LoginRequest {
@@ -173,6 +174,7 @@ message Doctor {
     DoctorInfo doctor = 4;
     int64 flag = 5;
     ChatInfo chat = 6;
+    int64 status = 7;
 }
 
 message DoctorsReply {

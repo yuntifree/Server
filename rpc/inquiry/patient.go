@@ -121,7 +121,7 @@ func getLastestChat(db *sql.DB, uid, tuid int64) *inquiry.ChatInfo {
 }
 
 func getDoctors(db *sql.DB, uid, seq, num int64) ([]*inquiry.Doctor, error) {
-	query := "SELECT r.id, r.doctor, r.flag, d.name, d.headurl, d.hospital, d.department, d.title FROM relations r, doctor d, users u WHERE r.doctor = u.uid AND u.doctor = d.id AND r.deleted = 0 AND d.deleted = 0 AND u.deleted = 0"
+	query := "SELECT r.id, r.doctor, r.flag, r.status, d.name, d.headurl, d.hospital, d.department, d.title FROM relations r, doctor d, users u WHERE r.doctor = u.uid AND u.doctor = d.id AND r.deleted = 0 AND d.deleted = 0 AND u.deleted = 0"
 	query += fmt.Sprintf(" AND r.patient = %d", uid)
 	if seq != 0 {
 		query += fmt.Sprintf(" AND r.id < %d", seq)
@@ -138,7 +138,7 @@ func getDoctors(db *sql.DB, uid, seq, num int64) ([]*inquiry.Doctor, error) {
 	for rows.Next() {
 		var doc inquiry.Doctor
 		var info inquiry.DoctorInfo
-		err = rows.Scan(&doc.Id, &doc.Uid, &doc.Flag, &info.Name,
+		err = rows.Scan(&doc.Id, &doc.Uid, &doc.Flag, &doc.Status, &info.Name,
 			&info.Headurl, &info.Hospital, &info.Department,
 			&info.Title)
 		if err != nil {

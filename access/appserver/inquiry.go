@@ -68,6 +68,7 @@ func inquiryLogin(w http.ResponseWriter, r *http.Request) {
 	res := resp.Interface().(*inquiry.LoginReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "Login")
 
+	log.Printf("res:%+v", res)
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
 	httpserver.ReportSuccResp(r.RequestURI)

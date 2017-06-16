@@ -43,9 +43,11 @@ func (s *server) GetDoctorInfo(ctx context.Context, in *common.CommRequest) (*in
 		return &inquiry.DoctorInfoReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	if in.Head.Uid != in.Id {
-		info.Fee = (int64(float64(info.Fee)*feeRate) / 100) * 100
-	}
+	/*
+		if in.Head.Uid != in.Id {
+			info.Fee = (int64(float64(info.Fee)*feeRate) / 100) * 100
+		}
+	*/
 	util.PubRPCSuccRsp(w, "inquiry", "GetDoctorInfo")
 	return &inquiry.DoctorInfoReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Info: info}, nil
