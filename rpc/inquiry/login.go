@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
@@ -215,8 +216,8 @@ func getPhoneCode(phone string) error {
 			log.Printf("insert into phone_code failed:%v", err)
 			return err
 		}
-		ret := util.SendSMS(phone, int(code))
-		if ret != 0 {
+		ret := util.SendHealthSMS(phone, fmt.Sprintf("%06d", code))
+		if ret != nil {
 			log.Printf("send sms failed:%d", ret)
 			return errors.New("send sms failed")
 		}
@@ -224,8 +225,8 @@ func getPhoneCode(phone string) error {
 	}
 
 	if code > 0 && flag == 0 {
-		ret := util.SendSMS(phone, int(code))
-		if ret != 0 {
+		ret := util.SendHealthSMS(phone, fmt.Sprintf("%06d", code))
+		if ret != nil {
 			log.Printf("send sms failed:%d", ret)
 			return errors.New("send sms failed")
 		}
