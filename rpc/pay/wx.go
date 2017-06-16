@@ -98,9 +98,9 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.CommReply, error) {
 	log.Printf("WxPayCB request:%+v", in)
 	util.PubRPCRequest(w, "pay", "WxPayCB")
-	var ptype, pid, status int64
-	err := db.QueryRow("SELECT type, item, status FROM orders WHERE oid = ?", in.Oid).
-		Scan(&ptype, &pid, &status)
+	var oid, ptype, pid, status int64
+	err := db.QueryRow("SELECT id,  type, item, status FROM orders WHERE oid = ?", in.Oid).
+		Scan(&oid, &ptype, &pid, &status)
 	if err != nil {
 		log.Printf("WxPayCB query order info failed:%v", err)
 		return &common.CommReply{
@@ -113,13 +113,15 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 			Head: &common.Head{Retcode: 0},
 		}, nil
 	}
-	_, err = db.Exec("UPDATE orders SET status = 1, fee = ?, ftime = NOW() WHERE id = ?", in.Fee, pid)
+	_, err = db.Exec("UPDATE orders SET status = 1, fee = ?, ftime = NOW() WHERE id = ?",
+		in.Fee, oid)
 	if err != nil {
 		log.Printf("WxPayCB update order status failed::%s %v", in.Oid, err)
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1},
 		}, nil
 	}
+	log.Printf("after update orders status:%s", in.Oid)
 	_, err = db.Exec("UPDATE inquiry_history SET status = 1 WHERE id = ?", pid)
 	if err != nil {
 		log.Printf("WxPayCB update inquiry history failed:%d %v", pid, err)
@@ -127,6 +129,32 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 			Head: &common.Head{Retcode: 1},
 		}, nil
 	}
+	log.Printf("after update inquiry_history status:%s %d", in.Oid, pid)
+	var doctor, patient int64
+	err = db.QueryRow("SELECT doctor, patient FROM inquiry_history WHERE id = ?", pid).Scan(&doctor, &patient)
+	if err != nil {
+		log.Printf("WxPayCB query inquiry history failed:%d %v", pid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1},
+		}, nil
+	}
+	_, err = db.Exec("UPDATE relations SET hid = ?, flag = 1, status = 1 WHERE doctor = ? AND patient = ?", pid, doctor, patient)
+	if err != nil {
+		log.Printf("WxPayCB update relations failed:%d %v", pid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1},
+		}, nil
+	}
+	log.Printf("after update relations flag, doctor:%d patient:%d %s",
+		doctor, patient, in.Oid)
+	_, err = db.Exec("UPDATE users SET hasrelation = 1 WHERE uid = ?", doctor)
+	if err != nil {
+		log.Printf("WxPayCB update user hasrelation failed:%d %v", pid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1},
+		}, nil
+	}
+	log.Printf("after update users hasrelation doctor:%d %s", doctor, in.Oid)
 	util.PubRPCSuccRsp(w, "pay", "WxPayCB")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0},
