@@ -13,7 +13,7 @@ import (
 )
 
 func getPatients(db *sql.DB, uid int64) ([]*inquiry.PatientInfo, error) {
-	rows, err := db.Query("SELECT id, name, phone, mcard FROM patient WHERE deleted = 0 AND uid = ?", uid)
+	rows, err := db.Query("SELECT id, name, phone, mcard, gender, age FROM patient WHERE deleted = 0 AND uid = ?", uid)
 	if err != nil {
 		log.Printf("getPatients query failed:%d %v", uid, err)
 		return nil, err
@@ -22,7 +22,8 @@ func getPatients(db *sql.DB, uid int64) ([]*inquiry.PatientInfo, error) {
 	var infos []*inquiry.PatientInfo
 	for rows.Next() {
 		var info inquiry.PatientInfo
-		err = rows.Scan(&info.Id, &info.Name, &info.Phone, &info.Mcard)
+		err = rows.Scan(&info.Id, &info.Name, &info.Phone, &info.Mcard,
+			&info.Gender, &info.Age)
 		if err != nil {
 			log.Printf("getPatients scan failed:%v", err)
 			continue
@@ -46,8 +47,8 @@ func (s *server) GetPatients(ctx context.Context, in *common.CommRequest) (*inqu
 }
 
 func addPatient(db *sql.DB, uid int64, info *inquiry.PatientInfo) (int64, error) {
-	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, ctime) VALUES (?, ?, ?, ?, NOW())",
-		uid, info.Name, info.Phone, info.Mcard)
+	res, err := db.Exec("INSERT INTO patient(uid, name, phone, mcard, gender, age, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+		uid, info.Name, info.Phone, info.Mcard, info.Gender, info.Age)
 	if err != nil {
 		log.Printf("addPatient insert failed:%v", err)
 		return 0, err
@@ -85,8 +86,9 @@ func modPatient(db *sql.DB, uid int64, info *inquiry.PatientInfo) error {
 		log.Printf("not match uid:%d - %d", uid, euid)
 		return errors.New("uid not matched")
 	}
-	_, err = db.Exec("UPDATE patient SET name = ?, phone = ?, mcard = ?, deleted = ? WHERE id = ?",
-		info.Name, info.Phone, info.Mcard, info.Deleted, info.Id)
+	_, err = db.Exec("UPDATE patient SET name = ?, phone = ?, mcard = ?, deleted = ?, gender = ?, age = ? WHERE id = ?",
+		info.Name, info.Phone, info.Mcard, info.Deleted,
+		info.Gender, info.Age, info.Id)
 	if err != nil {
 		log.Printf("modPatient update failed:%d %v", info.Id, err)
 		return err

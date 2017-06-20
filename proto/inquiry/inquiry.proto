@@ -101,6 +101,8 @@ message PatientInfo {
     string mcard = 3;
     string phone = 4;
     int64 deleted = 5;
+    int64 gender = 6;
+    int64 age = 7;
 }
 
 message PatientInfoReply {

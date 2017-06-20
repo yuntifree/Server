@@ -62,8 +62,9 @@ func getPatientInfo(db *sql.DB, uid, tuid int64) (*inquiry.PatientInfo, error) {
 		return nil, err
 	}
 	var info inquiry.PatientInfo
-	err = db.QueryRow("SELECT name, mcard, phone FROM patient WHERE id = ?", pid).
-		Scan(&info.Name, &info.Mcard, &info.Phone)
+	err = db.QueryRow("SELECT name, mcard, phone, gender, age FROM patient WHERE id = ?", pid).
+		Scan(&info.Name, &info.Mcard, &info.Phone, &info.Gender,
+			&info.Age)
 	if err != nil {
 		log.Printf("getPatientInfo query failed:%d %v", uid, err)
 		return nil, err

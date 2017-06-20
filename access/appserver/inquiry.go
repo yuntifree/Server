@@ -273,13 +273,15 @@ func addPatientInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	name := req.GetParamString("name")
 	phone := req.GetParamString("phone")
 	mcard := req.GetParamString("mcard")
+	gender := req.GetParamInt("gender")
+	age := req.GetParamInt("age")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
 		uid, "AddPatient",
 		&inquiry.PatientRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &inquiry.PatientInfo{Name: name, Phone: phone,
-				Mcard: mcard}})
+				Mcard: mcard, Gender: gender, Age: age}})
 	httpserver.CheckRPCErr(rpcerr, "AddPatient")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddPatient")
