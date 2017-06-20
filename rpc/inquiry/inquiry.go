@@ -11,8 +11,8 @@ import (
 )
 
 func addInquiry(db *sql.DB, fee int64, in *inquiry.InquiryRequest) (int64, error) {
-	res, err := db.Exec("INSERT INTO inquiry_history(doctor, patient, pid, fee, doctor_fee, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
-		in.Doctor, in.Head.Uid, in.Pid, in.Fee, fee)
+	res, err := db.Exec("INSERT INTO inquiry_history(doctor, patient, pid, fee, doctor_fee, form_id, ctime) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+		in.Doctor, in.Head.Uid, in.Pid, in.Fee, fee, in.Formid)
 	if err != nil {
 		log.Printf("addInquiry failed:%v", err)
 		return 0, err

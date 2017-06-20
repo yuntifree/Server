@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS wx_openid (
     KEY(sid)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS wx_token (
+    id      int unsigned NOT NULL AUTO_INCREMENT,
+    appid   varchar(32) NOT NULL,
+    secret  varchar(32) NOT NULL,
+    access_token varchar(128) NOT NULL,
+    expire_time datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(appid)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS doctor (
     id      int unsigned NOT NULL AUTO_INCREMENT,
     phone   varchar(16) NOT NULL,
@@ -99,6 +109,7 @@ CREATE TABLE IF NOT EXISTS inquiry_history (
     pid     int unsigned NOT NULL,
     fee     int unsigned NOT NULL DEFAULT 0,
     doctor_fee int unsigned NOT NULL DEFAULT 0,
+    form_id varchar(128) NOT NULL DEFAULT '',
     -- status 0-待支付 1-支付成功(问诊中) 2-问诊结束
     status  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,

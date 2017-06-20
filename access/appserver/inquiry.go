@@ -374,12 +374,14 @@ func addInquiry(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	pid := req.GetParamInt("pid")
 	doctor := req.GetParamInt("doctor")
 	fee := req.GetParamInt("fee")
+	formid := req.GetParamString("formid")
+	log.Printf("addInquiry formid:%s", formid)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
 		uid, "AddInquiry",
 		&inquiry.InquiryRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Doctor: doctor, Pid: pid, Fee: fee})
+			Doctor: doctor, Pid: pid, Fee: fee, Formid: formid})
 	httpserver.CheckRPCErr(rpcerr, "AddInquiry")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddInquiry")
