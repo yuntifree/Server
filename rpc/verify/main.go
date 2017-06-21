@@ -821,7 +821,8 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 		btype = 3
 	} else if isEduAp(db, apmac) {
 		btype = 10
-	} else if util.IsKongguAcname(acname) {
+	} else if util.IsKongguAcname(acname) ||
+		acname == "AC_120_A_01" {
 		btype = 11
 	} else if util.IsWjjAcname(acname) {
 		btype = 7
