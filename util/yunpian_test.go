@@ -8,3 +8,10 @@ func Test_SendYPSMS(t *testing.T) {
 		t.Errorf("SendYPSMS failed:%v", err)
 	}
 }
+
+func Test_SendPaySMS(t *testing.T) {
+	err := SendPaySMS("18682313472")
+	if err != nil {
+		t.Errorf("SendPaySMS failed:%v", err)
+	}
+}

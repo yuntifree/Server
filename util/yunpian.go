@@ -15,11 +15,19 @@ const (
 	apiKey      = "87fda7cd28aad018688c3ce04bbf1df2"
 	tplURL      = "https://sms.yunpian.com/v2/sms/tpl_single_send.json"
 	healthTplID = 1840358
+	payTplID    = 1844680
 )
 
 //SendReserveSMS send reserve info sms
 func SendReserveSMS(mobile, verifycode, stime string) error {
 	return SendYPSMS(mobile, verifycode, stime, tplID)
+}
+
+//SendPaySMS send payed notify sms
+func SendPaySMS(mobile string) error {
+	data := url.Values{"apikey": {apiKey}, "mobile": {mobile},
+		"tpl_id": {fmt.Sprintf("%d", payTplID)}}
+	return sendData(data)
 }
 
 //SendHealthSMS send health info sms

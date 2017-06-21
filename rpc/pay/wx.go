@@ -45,6 +45,13 @@ func getUserOpenid(db *sql.DB, uid int64) (string, error) {
 	return openid, err
 }
 
+func getUserPhone(db *sql.DB, uid int64) (string, error) {
+	var phone string
+	err := db.QueryRow("SELECT phone FROM users WHERE uid = ?", uid).
+		Scan(&phone)
+	return phone, err
+}
+
 func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayReply, error) {
 	log.Printf("WxPay request:%+v", in)
 	util.PubRPCRequest(w, "pay", "WxPay")
@@ -109,10 +116,10 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.CommReply, error) {
 	log.Printf("WxPayCB request:%+v", in)
 	util.PubRPCRequest(w, "pay", "WxPayCB")
-	var oid, ptype, pid, status, uid int64
+	var oid, ptype, pid, status, uid, tuid int64
 	var prepayid string
-	err := db.QueryRow("SELECT id,  type, item, status, uid, prepayid FROM orders WHERE oid = ?", in.Oid).
-		Scan(&oid, &ptype, &pid, &status, &uid, &prepayid)
+	err := db.QueryRow("SELECT id,  type, item, status, uid, prepayid, tuid FROM orders WHERE oid = ?", in.Oid).
+		Scan(&oid, &ptype, &pid, &status, &uid, &prepayid, &tuid)
 	if err != nil {
 		log.Printf("WxPayCB query order info failed:%v", err)
 		return &common.CommReply{
@@ -179,6 +186,10 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 		payInfos[3] = money
 		log.Printf("to sendPayWxMsg %s %v", openid, payInfos)
 		sendPayWxMsg(db, openid, prepayid, payInfos)
+	}
+	phone, err := getUserPhone(db, tuid)
+	if err == nil {
+		util.SendPaySMS(phone)
 	}
 	util.PubRPCSuccRsp(w, "pay", "WxPayCB")
 	return &common.CommReply{
