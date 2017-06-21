@@ -40,6 +40,7 @@ func getNewChat(db *sql.DB, uid, tuid, num int64) []*inquiry.ChatInfo {
 	}
 	defer rows.Close()
 	var infos []*inquiry.ChatInfo
+	var minseq int64
 	for rows.Next() {
 		var info inquiry.ChatInfo
 		err = rows.Scan(&info.Id, &info.Uid, &info.Tuid, &info.Type, &info.Content, &info.Ctime)
@@ -48,7 +49,13 @@ func getNewChat(db *sql.DB, uid, tuid, num int64) []*inquiry.ChatInfo {
 			continue
 		}
 		info.Seq = info.Id
+		minseq = info.Id
 		infos = append(infos, &info)
+	}
+	_, err = db.Exec("UPDATE chat SET ack = 1, acktime = NOW() WHERE uid = ? AND tuid = ? AND id > ? AND ack = 0",
+		tuid, uid, minseq)
+	if err != nil {
+		log.Printf("getUserChat update ack failed:%v", err)
 	}
 	return infos
 }
