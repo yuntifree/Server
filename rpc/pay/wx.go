@@ -6,6 +6,7 @@ import (
 	"Server/util"
 	"Server/weixin"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -27,6 +28,14 @@ func recordOrderInfo(db *sql.DB, oid string, in *pay.WxPayRequest) (int64, error
 	return id, nil
 }
 
+func recordPrepayid(db *sql.DB, id int64, prepayid string) {
+	_, err := db.Exec("UPDATE orders SET prepayid = ? WHERE id = ?",
+		prepayid, id)
+	if err != nil {
+		log.Printf("recordPrepayid failed:%d %s %v", id, prepayid, err)
+	}
+}
+
 func getUserOpenid(db *sql.DB, uid int64) (string, error) {
 	var openid string
 	err := db.QueryRow("SELECT w.openid FROM wx_openid w, users u WHERE u.username = w.unionid AND u.uid = ?", uid).Scan(&openid)
@@ -41,7 +50,7 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 	util.PubRPCRequest(w, "pay", "WxPay")
 	oid := weixin.GenOrderID(in.Head.Uid)
 	log.Printf("WxPay request:%+v oid:%s", in, oid)
-	_, err := recordOrderInfo(db, oid, in)
+	id, err := recordOrderInfo(db, oid, in)
 	if err != nil {
 		return &pay.WxPayReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
@@ -87,6 +96,8 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 	m["timeStamp"] = now
 	sign := weixin.CalcSign(m, weixin.InquiryMerKey)
 
+	recordPrepayid(db, id, resp.PrepayID)
+
 	util.PubRPCSuccRsp(w, "pay", "WxPay")
 	return &pay.WxPayReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid},
@@ -98,9 +109,10 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.CommReply, error) {
 	log.Printf("WxPayCB request:%+v", in)
 	util.PubRPCRequest(w, "pay", "WxPayCB")
-	var oid, ptype, pid, status int64
-	err := db.QueryRow("SELECT id,  type, item, status FROM orders WHERE oid = ?", in.Oid).
-		Scan(&oid, &ptype, &pid, &status)
+	var oid, ptype, pid, status, uid int64
+	var prepayid string
+	err := db.QueryRow("SELECT id,  type, item, status, uid, prepayid FROM orders WHERE oid = ?", in.Oid).
+		Scan(&oid, &ptype, &pid, &status, &uid, &prepayid)
 	if err != nil {
 		log.Printf("WxPayCB query order info failed:%v", err)
 		return &common.CommReply{
@@ -155,6 +167,19 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 		}, nil
 	}
 	log.Printf("after update users hasrelation doctor:%d %s", doctor, in.Oid)
+	openid, err := getUserOpenid(db, uid)
+	if err == nil {
+		ts := time.Now()
+		ptime := fmt.Sprintf("%d年%d月%d日", ts.Year(), ts.Month(), ts.Day())
+		money := fmt.Sprintf("人民币 %d元", in.Fee/100)
+		var payInfos [4]string
+		payInfos[0] = ptime
+		payInfos[1] = "问诊打赏"
+		payInfos[2] = in.Oid
+		payInfos[3] = money
+		log.Printf("to sendPayWxMsg %s %v", openid, payInfos)
+		sendPayWxMsg(db, openid, prepayid, payInfos)
+	}
 	util.PubRPCSuccRsp(w, "pay", "WxPayCB")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0},

@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS orders (
     item    int unsigned NOT NULL DEFAULT 0,
     price    int unsigned NOT NULL DEFAULT 0,
     fee    int unsigned NOT NULL DEFAULT 0,
+    prepayid varchar(64) NOT NULL DEFAULT '',
     ctime datetime NOT NULL DEFAULT '2017-01-01',
     ftime datetime NOT NULL DEFAULT '2017-01-01',
     -- status 0-未支付 1-支付成功
