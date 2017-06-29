@@ -21,6 +21,7 @@ service Config{
     rpc SubmitReserveInfo(ReserveRequest) returns (ReserveReply) {}
     rpc GetReserveInfo(GetReserveRequest) returns (ReserveInfoReply) {}
     rpc SubmitDonateInfo(DonateRequest) returns (common.CommReply) {}
+    rpc GetTravelAd(common.CommRequest) returns (TravelAdReply) {}
 }
 
 message PortalMenuInfo {
@@ -206,4 +207,16 @@ message DonateRequest {
     common.Head head = 1;
     int64 reservecode = 2;
     int64 donatecode = 3;
+}
+
+message TravelAdInfo {
+    int64 id = 1;
+    string title = 2;
+    string img = 3;
+    string dst = 4;
+}
+
+message TravelAdReply {
+    common.Head head = 1;
+    repeated TravelAdInfo infos = 2;
 }

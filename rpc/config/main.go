@@ -895,6 +895,35 @@ func (s *server) ModPortalMenu(ctx context.Context, in *config.MenuRequest) (*co
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
 
+func getTravelAd(db *sql.DB) []*config.TravelAdInfo {
+	var infos []*config.TravelAdInfo
+	rows, err := db.Query("SELECT id, img, title, dst FROM travel_ad WHERE online = 1 AND deleted = 0")
+	if err != nil {
+		log.Printf("getTravelAd failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.TravelAdInfo
+		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst)
+		if err != nil {
+			log.Printf("getTravelAd scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetTravelAd(ctx context.Context, in *common.CommRequest) (*config.TravelAdReply, error) {
+	util.PubRPCRequest(w, "config", "GetTravelAd")
+	infos := getTravelAd(db)
+	util.PubRPCSuccRsp(w, "config", "GetTravelAd")
+	return &config.TravelAdReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Infos: infos}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.ConfigServerPort)
 	if err != nil {

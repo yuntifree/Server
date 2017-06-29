@@ -189,3 +189,15 @@ CREATE TABLE IF NOT EXISTS login_img
     PRIMARY kEY(id),
     UNIQUE KEY(unid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS travel_ad
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    title   varchar(256) NOT NULL,
+    img     varchar(128) NOT NULL,
+    dst     varchar(256) NOT NULL,
+    online  tinyine unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
