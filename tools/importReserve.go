@@ -16,6 +16,7 @@ type reserveInfo struct {
 	phone        string
 	reserve_date string
 	ctime        string
+	btype        int64
 }
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	rows, err := db.Query("SELECT id, sid, name, phone, reserve_date, ctime FROM reserve_info WHERE id > 92")
+	rows, err := db.Query("SELECT id, sid, name, phone, btype, reserve_date, ctime FROM reserve_info WHERE id > 92")
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return
@@ -33,13 +34,13 @@ func main() {
 	defer rows.Close()
 	for rows.Next() {
 		var info reserveInfo
-		err := rows.Scan(&info.id, &info.sid, &info.name, &info.phone, &info.reserve_date,
-			&info.ctime)
+		err := rows.Scan(&info.id, &info.sid, &info.name, &info.phone,
+			&info.btype, &info.reserve_date, &info.ctime)
 		if err != nil {
 			log.Printf("scan failed:%v", err)
 			continue
 		}
-		fmt.Printf("%d,%d,%s,%s,%s,%s\n", info.id, info.sid, info.name,
-			info.phone, info.reserve_date, info.ctime)
+		fmt.Printf("%d,%d,%s,%s,%d,%s,%s\n", info.id, info.sid, info.name,
+			info.phone, info.btype, info.reserve_date, info.ctime)
 	}
 }
