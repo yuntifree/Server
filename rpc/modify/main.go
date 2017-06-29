@@ -165,7 +165,7 @@ func (s *server) ReportClick(ctx context.Context, in *modify.ClickRequest) (*com
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	if id != 0 {
+	if id != 0 || in.Type == educationVideoType {
 		switch in.Type {
 		case videoClickType:
 			_, err = db.Exec("UPDATE youku_video SET play = play + 1 WHERE vid = ?", in.Id)
