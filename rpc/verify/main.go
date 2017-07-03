@@ -23,16 +23,18 @@ import (
 )
 
 const (
-	expiretime  = 3600 * 24 * 30
-	mastercode  = 251653
-	randrange   = 1000000
-	specPhone   = "13800000000"
-	testAcname  = "2043.0769.200.00"
-	testAcip    = "120.197.159.10"
-	testUserip  = "10.96.72.28"
-	testUsermac = "f45c89987347"
-	defLoginImg = "http://img.yunxingzh.com/57970b5c-249a-4bc6-970e-064305e6d498.png"
-	mpURL       = "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIzOTc0OTcyMw==&scene=124#wechat_redirect"
+	expiretime           = 3600 * 24 * 30
+	mastercode           = 251653
+	randrange            = 1000000
+	specPhone            = "13800000000"
+	testAcname           = "2043.0769.200.00"
+	testAcip             = "120.197.159.10"
+	testUserip           = "10.96.72.28"
+	testUsermac          = "f45c89987347"
+	defLoginImg          = "http://img.yunxingzh.com/57970b5c-249a-4bc6-970e-064305e6d498.png"
+	mpURL                = "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIzOTc0OTcyMw==&scene=124#wechat_redirect"
+	taobaoBannerType     = 9
+	specTaobaoBannerType = 12
 )
 
 type server struct{}
@@ -642,13 +644,21 @@ func isTestParam(info *verify.PortalInfo) bool {
 	return false
 }
 
-func getTaobaoInfo(db *sql.DB) (img, dst string) {
-	err := db.QueryRow("SELECT img, dst FROM banner WHERE type = 9").
+func getBannerTypeInfo(db *sql.DB, btype int64) (img, dst string) {
+	err := db.QueryRow("SELECT img, dst FROM banner WHERE type = ?", btype).
 		Scan(&img, &dst)
 	if err != nil {
-		log.Printf("getTaobaoInfo failed:%v", err)
+		log.Printf("getBannerTypeInfo failed:%v", err)
 	}
 	return
+}
+
+func getTaobaoInfo(db *sql.DB) (img, dst string) {
+	return getBannerTypeInfo(db, taobaoBannerType)
+}
+
+func getSpecTaobaoInfo(db *sql.DB) (img, dst string) {
+	return getBannerTypeInfo(db, specTaobaoBannerType)
 }
 
 func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest) (*verify.PortalLoginReply, error) {
@@ -707,7 +717,12 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
-	img, dst := getTaobaoInfo(db)
+	var img, dst string
+	if isSpecTaobaoTime() {
+		img, dst = getSpecTaobaoInfo(db)
+	} else {
+		img, dst = getTaobaoInfo(db)
+	}
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
@@ -870,9 +885,9 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		if util.IsWjjKongguAcname(acname) {
 			def = 4
 		} else if util.IsWjjAcname(acname) {
-			def = 2
+			def = 6
 		} else if util.IsKongguAcname(acname) {
-			return
+			def = 5
 		} else if util.IsLzfAcname(acname) {
 			def = 3
 		} else if util.IsTestAcname(acname) {
@@ -900,6 +915,18 @@ func isTaobaoTime() bool {
 	return false
 }
 
+func isSpecTaobaoTime() bool {
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	v := hour*100 + min
+	if (v >= 0 && v < 30) || (v >= 120 && v < 145) ||
+		(v >= 300 && v < 340) || (v >= 515 && v < 535) {
+		return true
+	}
+	return false
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
@@ -922,6 +949,10 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		(util.IsWjjAcname(in.Info.Acname) && isTaobaoTime()) {
 		taobao = 1
 		cover, _ = getTaobaoInfo(db)
+	}
+	if !util.IsKongguAcname(in.Info.Acname) && isSpecTaobaoTime() {
+		taobao = 1
+		cover, _ = getSpecTaobaoInfo(db)
 	}
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
@@ -1190,7 +1221,12 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	}
 	ptype := util.GetPortalType(db, in.Info.Apmac)
 	dir := util.GetPortalPath(db, in.Info.Acname, ptype)
-	img, dst := getTaobaoInfo(db)
+	var img, dst string
+	if isSpecTaobaoTime() {
+		img, dst = getSpecTaobaoInfo(db)
+	} else {
+		img, dst = getTaobaoInfo(db)
+	}
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
