@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"database/sql"
 
@@ -29,6 +30,7 @@ const (
 	appBannerType      = 0
 	portalBannerType   = 4
 	portalBannerV2Type = 6
+	statInterval       = 15
 )
 
 type server struct{}
@@ -694,6 +696,14 @@ func (s *server) FetchPortalMenu(ctx context.Context, in *common.CommRequest) (*
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
 }
 
+func getPrevTime(tt time.Time, m int) time.Time {
+	year, month, day := tt.Date()
+	local := tt.Location()
+	hour, min, _ := tt.Clock()
+	min = (min / m) * m
+	return time.Date(year, month, day, hour, min, 0, 0, local)
+}
+
 func getRedirect(db *sql.DB, id int64) string {
 	var dst string
 	err := db.QueryRow("SELECT dst FROM redirect WHERE type = ?", id).Scan(&dst)
@@ -704,6 +714,11 @@ func getRedirect(db *sql.DB, id int64) string {
 	_, err = db.Exec("INSERT INTO redirect_cnt(type, ctime, cnt) VALUES (?, NOW(), 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1", id)
 	if err != nil {
 		log.Printf("getRedirect add count failed:%v", err)
+	}
+	t := getPrevTime(time.Now(), statInterval)
+	_, err = db.Exec("INSERT INTO redirect_stat(type, ctime, cnt) VALUES(?, ?, 1) ON DUPLICATE KEY uPDATE cnt = cnt + 1", id, t.Format(util.TimeFormat))
+	if err != nil {
+		log.Printf("getRedirect add count for stat failed:%v", err)
 	}
 	return dst
 }

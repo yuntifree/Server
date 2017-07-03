@@ -675,3 +675,14 @@ CREATE TABLE IF NOT EXISTS redirect_cnt
     PRIMARY KEY(id),
     UNIQUE KEY(type, ctime)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS redirect_stat
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    type    int unsigned NOT NULL,
+    cnt     int unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(type, ctime)
+) ENGINE = InnoDB;
+
