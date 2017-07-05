@@ -69,6 +69,7 @@ message PhoneCodeRequest {
     common.Head head = 1;
     string phone = 2;
     int64 code = 3;
+    int64 tuid = 4;
 }
 
 message RoleReply {

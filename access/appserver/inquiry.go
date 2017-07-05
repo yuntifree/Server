@@ -108,6 +108,7 @@ func bindPhone(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	phone := req.GetParamString("phone")
 	uid := req.GetParamInt("uid")
 	code := req.GetParamInt("code")
+	tuid := req.GetParamIntDef("tuid", 0)
 
 	if !util.IsIllegalPhone(phone) {
 		log.Printf("getPhoneCode illegal phone:%s", phone)
@@ -119,7 +120,7 @@ func bindPhone(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
 		uid, "BindPhone",
 		&inquiry.PhoneCodeRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Phone: phone, Code: code})
+			Phone: phone, Code: code, Tuid: tuid})
 	httpserver.CheckRPCErr(rpcerr, "BindPhone")
 	res := resp.Interface().(*inquiry.RoleReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "BindPhone")

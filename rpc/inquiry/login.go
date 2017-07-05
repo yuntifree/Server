@@ -306,6 +306,13 @@ func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*
 				Retcode: 1}}, nil
 	}
 
+	if in.Tuid != 0 { //Bind Op
+		err = addRelations(db, in.Head.Uid, in.Tuid)
+		if err != nil {
+			log.Printf("BindPhone addRelations tuid:%d failed:%v", in.Tuid, err)
+		}
+	}
+
 	util.PubRPCSuccRsp(w, "inquiry", "BindPhone")
 	return &inquiry.RoleReply{Head: &common.Head{Retcode: 0}, Role: role}, nil
 }
