@@ -1401,6 +1401,25 @@ func getTravelAd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func getAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	ctype := req.GetParamInt("type")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "GetAdClick",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Type: ctype})
+	httpserver.CheckRPCErr(rpcerr, "GetAdClick")
+	res := resp.Interface().(*config.AdClickReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetAdClick")
+
+	body := httpserver.GenResponseBody(res, false)
+	req.WriteRsp(w, body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getAllAps(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.Init(r)
@@ -1988,6 +2007,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_reserve_info", httpserver.AppHandler(getReserveInfo))
 	mux.Handle("/submit_donate_info", httpserver.AppHandler(submitDonateInfo))
 	mux.Handle("/get_travel_ad", httpserver.AppHandler(getTravelAd))
+	mux.Handle("/get_ad_click", httpserver.AppHandler(getAdClick))
 	mux.Handle("/inquiry/", httpserver.AppHandler(inquiryHandler))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux

@@ -31,6 +31,7 @@ const (
 	portalBannerType   = 4
 	portalBannerV2Type = 6
 	statInterval       = 15
+	travelAdType       = 1
 )
 
 type server struct{}
@@ -937,6 +938,51 @@ func (s *server) GetTravelAd(ctx context.Context, in *common.CommRequest) (*conf
 	return &config.TravelAdReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Infos: infos}, nil
+}
+
+func getTravelTotal(db *sql.DB) int64 {
+	var total int64
+	err := db.QueryRow("SELECT SUM(cnt) FROM redirect_cnt WHERE type = 17").
+		Scan(&total)
+	if err != nil {
+		log.Printf("getTravelTotal query failed:%v", err)
+	}
+	return total
+}
+
+func getTravelClick(db *sql.DB) []*config.AdClickInfo {
+	rows, err := db.Query("SELECT r.title, tl.type, tl.total FROM (SELECT  type, SUM(cnt) as total FROM redirect_cnt WHERE type >= 8 AND type <= 16 GROUP BY type) as tl, redirect r WHERE r.type = tl.type ORDER BY tl.type")
+	if err != nil {
+		log.Printf("getTravelClick query failed:%v", err)
+		return nil
+	}
+
+	var infos []*config.AdClickInfo
+	defer rows.Close()
+	for rows.Next() {
+		var info config.AdClickInfo
+		err = rows.Scan(&info.Title, &info.Type, &info.Total)
+		if err != nil {
+			log.Printf("getTravelClick scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetAdClick(ctx context.Context, in *common.CommRequest) (*config.AdClickReply, error) {
+	util.PubRPCRequest(w, "config", "GetAdClick")
+	var total int64
+	var infos []*config.AdClickInfo
+	if in.Type == travelAdType {
+		total = getTravelTotal(db)
+		infos = getTravelClick(db)
+	}
+	util.PubRPCSuccRsp(w, "config", "GetAdClick")
+	return &config.AdClickReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Total: total, Infos: infos}, nil
 }
 
 func main() {
