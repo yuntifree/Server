@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS wx_token (
     id      int unsigned NOT NULL AUTO_INCREMENT,
     appid   varchar(32) NOT NULL,
     secret  varchar(32) NOT NULL,
-    access_token varchar(128) NOT NULL,
+    access_token varchar(256) NOT NULL,
     expire_time datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     UNIQUE KEY(appid)
@@ -167,4 +167,14 @@ CREATE TABLE IF NOT EXISTS draw_history (
     ptime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(uid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS qrcode (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    path    varchar(128) NOT NULL,
+    width   int unsigned NOT NULL,
+    img     varchar(128) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(path, width)
 ) ENGINE = InnoDB;

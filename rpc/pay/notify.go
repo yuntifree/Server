@@ -33,34 +33,8 @@ type tmpData struct {
 	Keyword4 keyVal `json:"keyword4"`
 }
 
-func getAccessToken(db *sql.DB, appid string) (string, error) {
-	var secret, token string
-	var flag int
-	err := db.QueryRow("SELECT secret, access_token, IF(expire_time > NOW(), 1, 0) FROM wx_token WHERE appid = ?", appid).
-		Scan(&secret, &token, &flag)
-	if err != nil {
-		log.Printf("getAccessToken query failed:%v", err)
-		return "", err
-	}
-	if flag == 1 && token != "" {
-		return token, nil
-	}
-	token, err = weixin.GetAccessToken(appid, secret)
-	if err != nil {
-		log.Printf("getAccessToken  GetAccessToken failed:%s %v", appid, err)
-		return "", err
-	}
-	_, err = db.Exec("UPDATE wx_token SET access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 2 HOUR) WHERE appid = ?", token, appid)
-	if err != nil {
-		log.Printf("getAccessToken update token failed:%s %s %v",
-			appid, token, err)
-	}
-
-	return token, nil
-}
-
 func sendPayWxMsg(db *sql.DB, openid, formID string, payInfos [4]string) {
-	accessToken, err := getAccessToken(db, weixin.InquiryAppid)
+	accessToken, err := weixin.RefreshAccessToken(db, weixin.InquiryAppid)
 	if err != nil {
 		log.Printf("sendPayWxMsg getAccessToken failed:%v", err)
 		return

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"Server/aliyun"
 	"Server/proto/common"
 	"Server/proto/inquiry"
 	"Server/util"
+	"Server/weixin"
 	"database/sql"
 	"errors"
 	"log"
@@ -83,6 +85,50 @@ func (s *server) GetPatientInfo(ctx context.Context, in *common.CommRequest) (*i
 	util.PubRPCSuccRsp(w, "inquiry", "GetPatientInfo")
 	return &inquiry.PatientInfoReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Info: info}, nil
+}
+
+func genQRCodeImg(db *sql.DB, path string, width int64) (string, error) {
+	accessToken, err := weixin.RefreshAccessToken(db, weixin.InquiryAppid)
+	if err != nil {
+		log.Printf("genQRCodeImg RefreshAccessToken failed:%v", err)
+		return "", err
+	}
+	qrcode, err := weixin.CreateQRCode(accessToken, path, width)
+	if err != nil {
+		log.Printf("genQRCodeImg CreateQRCode failed:%v", err)
+		return "", err
+	}
+	filename := util.GenUUID() + ".jpg"
+	flag := aliyun.UploadOssImg(filename, qrcode)
+	if !flag {
+		log.Printf("genQRCodeImg UploadOssImg failed:%v", err)
+		return "", err
+	}
+	url := aliyun.GenOssImgURL(filename)
+	return url, nil
+}
+
+func (s *server) GetQRCode(ctx context.Context, in *inquiry.QRCodeRequest) (*inquiry.QRCodeReply, error) {
+	util.PubRPCRequest(w, "inquiry", "GetQRCode")
+	var img string
+	err := db.QueryRow("SELECT img FROM qrcode WHERE width = ? AND path = ?",
+		in.Width, in.Path).Scan(&img)
+	if err != nil || img == "" {
+		img, err = genQRCodeImg(db, in.Path, in.Width)
+		if err != nil {
+			log.Printf("GetQRCode getQRCodeImg failed:%v", err)
+			return &inquiry.QRCodeReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		}
+		_, err := db.Exec("INSERT INTO qrcode(path, img, width, ctime) VALUES (?, ?, ?,NOW())", in.Path, img, in.Width)
+		if err != nil {
+			log.Printf("GetQRCode record new qrcode failed:%v", err)
+		}
+	}
+
+	util.PubRPCSuccRsp(w, "inquiry", "GetQRCode")
+	return &inquiry.QRCodeReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Url: img}, nil
 }
 
 func (s *server) SetFee(ctx context.Context, in *inquiry.FeeRequest) (*common.CommReply, error) {
