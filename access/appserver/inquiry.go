@@ -567,6 +567,48 @@ func feedback(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func setDrawPasswd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	passwd := req.GetParamString("passwd")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "SetDrawPasswd",
+		&inquiry.PasswdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Passwd: passwd})
+	httpserver.CheckRPCErr(rpcerr, "SetDrawPasswd")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SetDrawPasswd")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
+func checkDrawPasswd(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	passwd := req.GetParamString("passwd")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "CheckDrawPasswd",
+		&inquiry.PasswdRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Passwd: passwd})
+	httpserver.CheckRPCErr(rpcerr, "CheckDrawPasswd")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "CheckDrawPasswd")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -698,6 +740,10 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		getQRCode(w, r)
 	case "feedback":
 		feedback(w, r)
+	case "set_draw_passwd":
+		setDrawPasswd(w, r)
+	case "check_draw_passwd":
+		checkDrawPasswd(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

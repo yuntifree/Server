@@ -27,6 +27,8 @@ service Inquiry {
     rpc FinInquiry(FinInquiryRequest) returns (common.CommReply) {}
     rpc GetQRCode(QRCodeRequest) returns (QRCodeReply) {}
     rpc Feedback(FeedRequest) returns (common.CommReply) {}
+    rpc SetDrawPasswd(PasswdRequest) returns (common.CommReply) {}
+    rpc CheckDrawPasswd(PasswdRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
@@ -222,4 +224,9 @@ message QRCodeReply {
 message FeedRequest {
     common.Head head = 1;
     string content = 2;
+}
+
+message PasswdRequest {
+    common.Head head = 1;
+    string passwd = 2;
 }

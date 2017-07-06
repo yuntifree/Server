@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
     balance     int unsigned NOT NULL DEFAULT 0,
     totalfee    int unsigned NOT NULL DEFAULT 0,
     draw        int unsigned NOT NULL DEFAULT 0,
+    draw_pass   varchar(32) NOT NULL DEFAULT '',
+    draw_salt   varchar(32) NOT NULL DEFAULT '',
     totaldraw   int unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',

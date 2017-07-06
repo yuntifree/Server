@@ -13,6 +13,38 @@ const (
 	minDraw = 5000
 )
 
+func (s *server) SetDrawPasswd(ctx context.Context, in *inquiry.PasswdRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "SetDrawPasswd")
+	salt := util.GenSalt()
+	pass := util.GenSaltPasswd(in.Passwd, salt)
+	_, err := db.Exec("UPDATE users SET draw_pass = ?, draw_salt = ? WHERE uid = ?",
+		pass, salt, in.Head.Uid)
+	if err != nil {
+		log.Printf("SetDrawPasswd query failed:%d %v", in.Head.Uid, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
+func (s *server) CheckDrawPasswd(ctx context.Context, in *inquiry.PasswdRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "CheckDrawPasswd")
+	var salt, pass string
+	err := db.QueryRow("SELECT draw_salt, draw_pass FROM users WHERE uid = ?",
+		in.Head.Uid).Scan(&salt, &pass)
+	if err != nil {
+		log.Printf("CheckDrawPasswd query failed:%d %v", in.Head.Uid, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	epass := util.GenSaltPasswd(in.Passwd, salt)
+	if epass != pass {
+		log.Printf("CheckDrawPasswd check failed:%s %s", epass, pass)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_CHECK_PASSWD}}, nil
+	}
+
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
 func (s *server) GetWallet(ctx context.Context, in *common.CommRequest) (*inquiry.WalletReply, error) {
 	util.PubRPCRequest(w, "inquiry", "GetWallet")
 	var balance, total, draw, totaldraw int64
