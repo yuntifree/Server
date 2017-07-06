@@ -178,3 +178,12 @@ CREATE TABLE IF NOT EXISTS qrcode (
     PRIMARY KEY(id),
     UNIQUE KEY(path, width)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    content varchar(1024) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
+) ENGINE = InnoDB;

@@ -110,3 +110,17 @@ func (s *server) FinInquiry(ctx context.Context, in *inquiry.FinInquiryRequest) 
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
+
+func (s *server) Feedback(ctx context.Context, in *inquiry.FeedRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "Feedback")
+	_, err := db.Exec("INSERT INTO feedback(uid, content, ctime) VALUES (?, ?, NOW())",
+		in.Head.Uid, in.Content)
+	if err != nil {
+		log.Printf("Feedback failed:%d %v", in.Head.Uid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "Feedback")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
