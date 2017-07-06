@@ -232,4 +232,5 @@ message AdClickReply {
     common.Head head = 1;
     int64 total = 2;
     repeated AdClickInfo infos = 3;
+    string downurl = 4;
 }

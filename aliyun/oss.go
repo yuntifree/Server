@@ -23,6 +23,7 @@ const (
 	imgOuterHost    = "http://yuntiimgs.oss-cn-shenzhen.aliyuncs.com"
 	maxImageSize    = 4 * 1024 * 1024
 	imageBucket     = "yuntiimgs"
+	fileBucket      = "yuntifile"
 	ossCbURL        = "http://api.yunxingzh.com/upload_callback"
 	ossCbBody       = "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}"
 	ossCbBodyType   = "application/x-www-form-urlencoded"
@@ -33,6 +34,11 @@ const (
 //UploadOssFile upload content to aliyun oss
 func UploadOssFile(filename, content string) bool {
 	return uploadOssBucket(filename, content, yuntiBucket)
+}
+
+//UploadYuntiFile upload content to aliyun oss
+func UploadYuntiFile(filename, content string) bool {
+	return uploadOssBucket(filename, content, fileBucket)
 }
 
 //UploadOssImg upload img to aliyun oss

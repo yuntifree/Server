@@ -9,6 +9,7 @@ import (
 
 	"database/sql"
 
+	"Server/aliyun"
 	"Server/proto/common"
 	"Server/proto/config"
 	"Server/util"
@@ -971,18 +972,36 @@ func getTravelClick(db *sql.DB) []*config.AdClickInfo {
 	return infos
 }
 
+func genCsv(infos []*config.AdClickInfo, total int64) string {
+	var buf string
+	for _, v := range infos {
+		buf += fmt.Sprintf("%s,%d,%.4f%%\n", v.Title, v.Total, float64(v.Total)*100.0/float64(total))
+	}
+	return buf
+}
+
 func (s *server) GetAdClick(ctx context.Context, in *common.CommRequest) (*config.AdClickReply, error) {
 	util.PubRPCRequest(w, "config", "GetAdClick")
 	var total int64
 	var infos []*config.AdClickInfo
+	var downurl string
 	if in.Type == travelAdType {
 		total = getTravelTotal(db)
 		infos = getTravelClick(db)
+		csv := genCsv(infos, total)
+		filename := util.GenUUID() + ".csv"
+		flag := aliyun.UploadYuntiFile(filename, csv)
+		if !flag {
+			return &config.AdClickReply{
+				Head: &common.Head{Retcode: 1},
+			}, nil
+		}
+		downurl = aliyun.GenOssFileURL(filename)
 	}
 	util.PubRPCSuccRsp(w, "config", "GetAdClick")
 	return &config.AdClickReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Total: total, Infos: infos}, nil
+		Total: total, Infos: infos, Downurl: downurl}, nil
 }
 
 func main() {
