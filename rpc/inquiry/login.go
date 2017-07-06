@@ -41,9 +41,9 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	}
 	sid := util.GenSalt()
 	var uid, role, hasrelation int64
-	var phone string
-	err = db.QueryRow("SELECT u.uid, u.phone, u.role, u.hasrelation FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
-		Scan(&uid, &phone, &role, &hasrelation)
+	var phone, pass string
+	err = db.QueryRow("SELECT u.uid, u.phone, u.draw_pass u.role, u.hasrelation FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
+		Scan(&uid, &phone, &pass, &role, &hasrelation)
 	if err != nil {
 		_, err = db.Exec("INSERT INTO wx_openid(openid, skey, sid, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?, sid = ?",
 			openid, skey, sid, skey, sid)
@@ -69,6 +69,10 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	if role == 0 {
 		haspatient = hasPatient(db, uid)
 	}
+	var haspasswd int64
+	if pass != "" {
+		haspasswd = 1
+	}
 	token := util.GenSalt()
 	_, err = db.Exec("UPDATE users SET token = ? WHERE uid = ?", token, uid)
 	if err != nil {
@@ -80,7 +84,7 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token,
 		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
-		Haspatient: haspatient}, nil
+		Haspatient: haspatient, Haspasswd: haspasswd}, nil
 }
 
 func checkSign(skey, rawdata, signature string) bool {
@@ -124,7 +128,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			Head: &common.Head{Retcode: 1}}, nil
 	}
 	var uid, role, hasrelation int64
-	var phone string
+	var phone, pass string
 	if unionid == "" { //has login
 		uinfo, err := extractUserInfo(skey, in.Encrypteddata, in.Iv)
 		if err != nil {
@@ -139,9 +143,9 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 			return &inquiry.LoginReply{
 				Head: &common.Head{Retcode: 1}}, nil
 		}
-		db.QueryRow("SELECT uid, phone, role, hasrelation FROM users WHERE username = ?",
+		db.QueryRow("SELECT uid, phone, role, hasrelation, draw_pass FROM users WHERE username = ?",
 			uinfo.UnionId).
-			Scan(&uid, &phone, &role, &hasrelation)
+			Scan(&uid, &phone, &role, &hasrelation, &pass)
 		if uid == 0 {
 			res, err := db.Exec("INSERT IGNORE INTO users(username, nickname, headurl, gender, ctime) VALUES (?, ?, ?, ?, NOW())",
 				uinfo.UnionId, uinfo.NickName, uinfo.AvartarUrl, uinfo.Gender)
@@ -176,11 +180,15 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 	if role == 0 {
 		haspatient = hasPatient(db, uid)
 	}
+	var haspasswd int64
+	if pass != "" {
+		haspasswd = 1
+	}
 
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token,
 		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
-		Haspatient: haspatient}, nil
+		Haspatient: haspatient, Haspasswd: haspasswd}, nil
 }
 
 func (s *server) CheckToken(ctx context.Context, in *inquiry.TokenRequest) (*common.CommReply, error) {
