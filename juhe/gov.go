@@ -18,17 +18,18 @@ import (
 )
 
 const (
-	gdURL  = "http://wgx.dg.gov.cn/publicfiles/business/htmlfiles/dgwhj/s35233/list.htm"
-	gdBase = "http://wgx.dg.gov.cn"
-	fgURL  = "http://dgdp.dg.gov.cn/business/htmlfiles/dgfg/pxwzx/list.htm"
-	fgBase = "http://dgdp.dg.gov.cn"
-	hbURL  = "http://dgepb.dg.gov.cn/business/htmlfiles/dgepb/dgdt/list.htm"
-	hbBase = "http://dgepb.dg.gov.cn/business/htmlfiles/"
-	wjURL  = "http://www.dgwsj.gov.cn/304219773/0802/wjjlist2.shtml"
-	wjBase = "http://www.dgwsj.gov.cn"
-	jyURL  = "http://www.dgjy.net/moreInfo.aspx?menuId=679"
-	jyBase = "http://www.dgjy.net"
-	jcURL  = "http://www.gddg110.gov.cn/publicfiles/business/htmlfiles/dgjch/s14345/list.htm"
+	gdURL     = "http://wgx.dg.gov.cn/publicfiles/business/htmlfiles/dgwhj/s35233/list.htm"
+	gdBase    = "http://wgx.dg.gov.cn/publicfiles/business/htmlfiles/"
+	gdImgBase = "http://wgx.dg.gov.cn"
+	fgURL     = "http://dgdp.dg.gov.cn/business/htmlfiles/dgfg/pxwzx/list.htm"
+	fgBase    = "http://dgdp.dg.gov.cn"
+	hbURL     = "http://dgepb.dg.gov.cn/business/htmlfiles/dgepb/dgdt/list.htm"
+	hbBase    = "http://dgepb.dg.gov.cn/business/htmlfiles/"
+	wjURL     = "http://www.dgwsj.gov.cn/304219773/0802/wjjlist2.shtml"
+	wjBase    = "http://www.dgwsj.gov.cn"
+	jyURL     = "http://www.dgjy.net/moreInfo.aspx?menuId=679"
+	jyBase    = "http://www.dgjy.net"
+	jcURL     = "http://www.gddg110.gov.cn/publicfiles/business/htmlfiles/dgjch/s14345/list.htm"
 )
 
 type gdInfo struct {
@@ -393,7 +394,7 @@ func getGdNewsInfo(url string) (news News, err error) {
 	var content []Content
 	d.Find(".concen_04 font P").Each(func(i int, n *goquery.Selection) {
 		if img, ok := n.Find("img").Attr("src"); ok {
-			image := gdBase + img
+			image := gdImgBase + img
 			images = append(images, image)
 			var cont Content
 			cont.Type = typeImg
@@ -787,7 +788,7 @@ func getWjNewsInfo(url string) (news News, err error) {
 	}
 	log.Printf("UploadOssFile success: %s", filename)
 	news.URL = aliyun.GenOssNewsURL(filename)
-	news.Author = "莞市卫生和计划生育局"
+	news.Author = "东莞市卫生和计划生育局"
 
 	for i := 0; i < 3 && i < len(images); i++ {
 		news.Pics[i] = images[i]
