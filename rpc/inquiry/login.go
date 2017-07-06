@@ -42,7 +42,7 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	sid := util.GenSalt()
 	var uid, role, hasrelation int64
 	var phone, pass string
-	err = db.QueryRow("SELECT u.uid, u.phone, u.draw_pass u.role, u.hasrelation FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
+	err = db.QueryRow("SELECT u.uid, u.phone, u.draw_pass, u.role, u.hasrelation FROM users u, wx_openid x WHERE u.username = x.unionid AND x.openid = ?", openid).
 		Scan(&uid, &phone, &pass, &role, &hasrelation)
 	if err != nil {
 		_, err = db.Exec("INSERT INTO wx_openid(openid, skey, sid, ctime) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE skey = ?, sid = ?",
