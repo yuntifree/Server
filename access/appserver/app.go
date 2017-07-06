@@ -1783,7 +1783,7 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	} else
 	*/
 	if util.IsKongguAcname(acname) {
-		dst = "http://192.168.100.4:8080/login201703301945/" + postfix
+		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
 	} else if acname == "AC_SSH_A_09" {
 		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
 	} else if util.IsWjjAcname(acname) {
