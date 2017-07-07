@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -51,6 +52,23 @@ type gdContent struct {
 	Recs    gdRecs   `xml:"RECS"`
 }
 
+func isExpire(date string) bool {
+	if date == "" {
+		return true
+	}
+	arr := strings.Split(date, "-")
+	if len(arr) > 1 {
+		year, err := strconv.Atoi(arr[0])
+		if err != nil {
+			return true
+		}
+		if year < 2017 {
+			return true
+		}
+	}
+	return false
+}
+
 //GetHBNews get dongguan huanbaoju news
 func GetHBNews() []News {
 	var news []News
@@ -88,6 +106,9 @@ func GetHBNews() []News {
 		if err != nil {
 			log.Printf("getHBNewsInfo failed:%s %v", url, err)
 			continue
+		}
+		if isExpire(info.Date) {
+			break
 		}
 		news = append(news, info)
 	}
@@ -211,6 +232,9 @@ func GetFGNews() []News {
 		if err != nil {
 			log.Printf("getFgNewsInfo failed:%s %v", url, err)
 			continue
+		}
+		if isExpire(info.Date) {
+			break
 		}
 		news = append(news, info)
 	}
@@ -352,6 +376,9 @@ func GetGDNews() []News {
 			log.Printf("getGdNewsInfo failed:%s %v", url, err)
 			continue
 		}
+		if isExpire(info.Date) {
+			break
+		}
 		news = append(news, info)
 	}
 
@@ -466,6 +493,9 @@ func GetJCNews() []News {
 			info, err := getJcNewsInfo(src)
 			if err != nil {
 				log.Printf("getJyNewsInfo failed:%s %v", src, err)
+				return
+			}
+			if isExpire(info.Date) {
 				return
 			}
 			news = append(news, info)
@@ -590,6 +620,9 @@ func GetJYNews() []News {
 				log.Printf("getJyNewsInfo failed:%s %v", src, err)
 				return
 			}
+			if isExpire(info.Date) {
+				return
+			}
 			news = append(news, info)
 		}
 	})
@@ -700,6 +733,9 @@ func GetWJNews() []News {
 			info, err := getWjNewsInfo(src)
 			if err != nil {
 				log.Printf("getWjNewsInfo failed:%s %v", src, err)
+				return
+			}
+			if isExpire(info.Date) {
 				return
 			}
 			news = append(news, info)
