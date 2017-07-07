@@ -95,6 +95,46 @@ func getHotNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
 	return queryNews(db, query)
 }
 
+func getDgNews(db *sql.DB, seq, num int64) []*hot.HotsInfo {
+	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, UNIX_TIMESTAMP(ctime) FROM news WHERE deleted = 0 AND top = 0 AND stype = 10 AND source != '东莞阳光网' "
+	if seq != 0 {
+		query += fmt.Sprintf(" AND ctime < FROM_UNIXTIME(%d,", seq)
+		query += "'%y-%m-%d')"
+	}
+	query += " ORDER BY ctime DESC LIMIT " + strconv.Itoa(int(num))
+	var infos []*hot.HotsInfo
+	log.Printf("query string:%s", query)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var img [3]string
+		var info hot.HotsInfo
+		err = rows.Scan(&info.Id, &info.Title, &img[0], &img[1], &img[2],
+			&info.Source, &info.Dst, &info.Ctime, &info.Seq)
+		if err != nil {
+			log.Printf("scan rows failed: %v", err)
+			continue
+		}
+		info.Stype = 0
+		var pics [3]string
+		j, k := 0, 0
+		for ; j < 3; j++ {
+			if img[j] != "" {
+				pics[k] = img[j]
+				k++
+			}
+		}
+		info.Images = pics[:k]
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func getNews(db *sql.DB, seq, num, newsType int64) []*hot.HotsInfo {
 	query := "SELECT id, title, img1, img2, img3, source, dst, ctime, stype FROM news WHERE deleted = 0 AND top = 0 AND stype = " +
 		strconv.Itoa(int(newsType))
@@ -266,7 +306,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 				for i := 0; i < len(tops); i++ {
 					tops[i].Seq += max
 				}
-				infos = getNews(db, in.Seq, util.MaxListSize/2, 10)
+				infos = getDgNews(db, in.Seq, util.MaxListSize/2)
 				for i := 0; i < len(infos); i++ {
 					infos[i].Seq += max
 				}
@@ -282,7 +322,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 			top = getTopVideo(in.Head.Uid, token)
 		}
 	} else if in.Type == typeDgNews {
-		infos = getNews(db, in.Seq, util.MaxListSize, 10)
+		infos = getDgNews(db, in.Seq, util.MaxListSize)
 	} else if in.Type == typeAmuse {
 		infos = getNews(db, in.Seq, util.MaxListSize, 4)
 	}
@@ -393,7 +433,7 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 		return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 1}}, err
 	}
 
-	infos := getNews(db, 0, homeNewsNum, 10)
+	infos := getDgNews(db, 0, homeNewsNum)
 	if len(infos) >= 9 {
 		infos = append(infos[:0], infos[1], infos[3], infos[5], infos[7], infos[8])
 	}
