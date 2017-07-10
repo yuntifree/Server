@@ -168,6 +168,7 @@ message ChatSessionInfo {
     int64 reddot = 8;
     int64 cid = 9;
     int64 type = 10;
+    int64 status = 11;
 }
 
 message ChatSessionReply {

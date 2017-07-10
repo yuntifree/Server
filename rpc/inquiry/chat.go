@@ -131,7 +131,7 @@ func getLastChat(db *sql.DB, doctor, patient int64) (*chatInfo, error) {
 }
 
 func getUserChatSession(db *sql.DB, doctor, seq, num int64) []*inquiry.ChatSessionInfo {
-	query := fmt.Sprintf("SELECT r.id, r.patient, u.headurl, u.nickname FROM relations r, users u WHERE r.patient = u.uid AND r.doctor = %d AND r.flag = 1 AND r.deleted = 0 AND u.deleted = 0", doctor)
+	query := fmt.Sprintf("SELECT r.id, r.patient, r.status, u.headurl, u.nickname FROM relations r, users u WHERE r.patient = u.uid AND r.doctor = %d AND r.flag = 1 AND r.deleted = 0 AND u.deleted = 0", doctor)
 	if seq != 0 {
 		query += fmt.Sprintf(" AND r.id < %d", seq)
 	}
@@ -147,7 +147,7 @@ func getUserChatSession(db *sql.DB, doctor, seq, num int64) []*inquiry.ChatSessi
 	defer rows.Close()
 	for rows.Next() {
 		var info inquiry.ChatSessionInfo
-		err = rows.Scan(&info.Id, &info.Uid, &info.Headurl,
+		err = rows.Scan(&info.Id, &info.Uid, &info.Status, &info.Headurl,
 			&info.Nickname)
 		if err != nil {
 			log.Printf("getUserChatSession scan failed:%v", err)
