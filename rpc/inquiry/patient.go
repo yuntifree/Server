@@ -123,7 +123,7 @@ func getLastestChat(db *sql.DB, uid, tuid int64) *inquiry.ChatInfo {
 }
 
 func getDoctors(db *sql.DB, uid, seq, num int64) ([]*inquiry.Doctor, error) {
-	query := "SELECT r.id, r.doctor, r.flag, r.status, d.name, d.headurl, d.hospital, d.department, d.title FROM relations r, doctor d, users u WHERE r.doctor = u.uid AND u.doctor = d.id AND r.deleted = 0 AND d.deleted = 0 AND u.deleted = 0"
+	query := "SELECT r.id, r.doctor, r.flag, r.status, d.name, d.headurl, d.hospital, d.department, d.title, d.fee FROM relations r, doctor d, users u WHERE r.doctor = u.uid AND u.doctor = d.id AND r.deleted = 0 AND d.deleted = 0 AND u.deleted = 0"
 	query += fmt.Sprintf(" AND r.patient = %d", uid)
 	if seq != 0 {
 		query += fmt.Sprintf(" AND r.id < %d", seq)
@@ -142,11 +142,12 @@ func getDoctors(db *sql.DB, uid, seq, num int64) ([]*inquiry.Doctor, error) {
 		var info inquiry.DoctorInfo
 		err = rows.Scan(&doc.Id, &doc.Uid, &doc.Flag, &doc.Status, &info.Name,
 			&info.Headurl, &info.Hospital, &info.Department,
-			&info.Title)
+			&info.Title, &info.Fee)
 		if err != nil {
 			log.Printf("getDoctors scan failed:%d %v", uid, err)
 			continue
 		}
+		info.Fee = (int64(float64(info.Fee)*feeRate) / 100) * 100
 		doc.Doctor = &info
 		if doc.Flag > 0 {
 			chat := getLastestChat(db, uid, doc.Uid)
