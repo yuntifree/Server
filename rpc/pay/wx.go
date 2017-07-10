@@ -181,7 +181,7 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 		money := fmt.Sprintf("人民币 %d元", in.Fee/100)
 		var payInfos [4]string
 		payInfos[0] = ptime
-		payInfos[1] = "问诊打赏"
+		payInfos[1] = "咨询费用"
 		payInfos[2] = in.Oid
 		payInfos[3] = money
 		log.Printf("to sendPayWxMsg %s %v", openid, payInfos)
