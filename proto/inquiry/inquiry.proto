@@ -29,6 +29,7 @@ service Inquiry {
     rpc Feedback(FeedRequest) returns (common.CommReply) {}
     rpc SetDrawPasswd(PasswdRequest) returns (common.CommReply) {}
     rpc CheckDrawPasswd(PasswdRequest) returns (common.CommReply) {}
+    rpc DelUser(PhoneRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {
