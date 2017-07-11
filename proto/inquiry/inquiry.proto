@@ -30,6 +30,7 @@ service Inquiry {
     rpc SetDrawPasswd(PasswdRequest) returns (common.CommReply) {}
     rpc CheckDrawPasswd(PasswdRequest) returns (common.CommReply) {}
     rpc DelUser(PhoneRequest) returns (common.CommReply) {}
+    rpc SetDoctor(PhoneRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {

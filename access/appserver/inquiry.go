@@ -634,6 +634,31 @@ func delUser(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func setDoctor(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	phone := req.GetParamString("phone")
+	if uid != 1 || phone == "18682313472" {
+		w.Write([]byte(`{"errno":121,"desc":"缺少权限"}`))
+		return
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "SetDoctor",
+		&inquiry.PhoneRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Phone: phone})
+	httpserver.CheckRPCErr(rpcerr, "SetDoctor")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SetDoctor")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -771,6 +796,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		checkDrawPasswd(w, r)
 	case "del_user":
 		delUser(w, r)
+	case "set_doctor":
+		setDoctor(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

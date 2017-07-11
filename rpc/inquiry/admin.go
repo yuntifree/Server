@@ -49,3 +49,16 @@ func (s *server) DelUser(ctx context.Context, in *inquiry.PhoneRequest) (*common
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
+
+func (s *server) SetDoctor(ctx context.Context, in *inquiry.PhoneRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "SetDoctor")
+	_, err := db.Exec("UPDATE users SET role = 1, doctor = 1 WHERE phone = ?", in.Phone)
+	if err != nil {
+		log.Printf("SetDoctor query failed:%s %v", in.Phone, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "SetDoctor")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
