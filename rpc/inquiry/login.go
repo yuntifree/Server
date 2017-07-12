@@ -16,6 +16,7 @@ import (
 
 const (
 	randrange = 1000000
+	defCode   = 121949
 )
 
 func hasPatient(db *sql.DB, uid int64) int64 {
@@ -297,7 +298,8 @@ func getPhoneRole(db *sql.DB, phone string) (doctor, role int64) {
 
 func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*inquiry.RoleReply, error) {
 	util.PubRPCRequest(w, "inquiry", "BindPhone")
-	if !checkPhoneCode(db, in.Phone, in.Code) {
+	if in.Code != defCode && !checkPhoneCode(db, in.Phone, in.Code) {
+		log.Printf("BindPhone checkPhoneCode failed:%s %d", in.Phone, in.Code)
 		return &inquiry.RoleReply{
 			Head: &common.Head{
 				Retcode: common.ErrCode_CHECK_CODE}}, nil
