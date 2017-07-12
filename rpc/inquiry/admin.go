@@ -32,7 +32,8 @@ func (s *server) DelUser(ctx context.Context, in *inquiry.PhoneRequest) (*common
 		ids += fmt.Sprintf("'%s',", name)
 	}
 	ids += "'0'"
-	_, err = db.Exec("DELETE FROM wx_openid WHERE unionid IN (?)", ids)
+	log.Printf("ids:%s", ids)
+	_, err = db.Exec(fmt.Sprintf("DELETE FROM wx_openid WHERE unionid IN (%s)", ids))
 	if err != nil {
 		log.Printf("DelUser delete from wx_openid failed:%s %v", ids, err)
 		return &common.CommReply{
