@@ -194,6 +194,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 
 func (s *server) CheckToken(ctx context.Context, in *inquiry.TokenRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "CheckToken")
+	log.Printf("CheckToken request:%+v", in)
 	var token string
 	err := db.QueryRow("SELECT token FROM users WHERE uid = ?", in.Head.Uid).
 		Scan(&token)

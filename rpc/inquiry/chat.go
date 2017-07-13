@@ -52,7 +52,7 @@ func getNewChat(db *sql.DB, uid, tuid, num int64) []*inquiry.ChatInfo {
 		minseq = info.Id
 		infos = append(infos, &info)
 	}
-	_, err = db.Exec("UPDATE chat SET ack = 1, acktime = NOW() WHERE uid = ? AND tuid = ? AND id > ? AND ack = 0",
+	_, err = db.Exec("UPDATE chat SET ack = 1, acktime = NOW() WHERE uid = ? AND tuid = ? AND id >= ? AND ack = 0",
 		tuid, uid, minseq)
 	if err != nil {
 		log.Printf("getUserChat update ack failed:%v", err)
@@ -102,6 +102,7 @@ func getInquiryStatus(db *sql.DB, uid, tuid int64) int64 {
 }
 
 func (s *server) GetChat(ctx context.Context, in *common.CommRequest) (*inquiry.ChatReply, error) {
+	log.Printf("GetChat request:%+v", in)
 	util.PubRPCRequest(w, "inquiry", "GetChat")
 	infos := getUserChat(db, in.Head.Uid, in.Id, in.Seq, in.Num)
 	status := getInquiryStatus(db, in.Head.Uid, in.Id)
