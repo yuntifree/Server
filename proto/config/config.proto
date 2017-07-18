@@ -24,6 +24,8 @@ service Config{
     rpc GetTravelAd(common.CommRequest) returns (TravelAdReply) {}
     rpc GetAdClick(common.CommRequest) returns (AdClickReply) {}
     rpc GetLoginImg(common.CommRequest) returns (LoginImgReply) {}
+    rpc AddLoginImg(LoginImgRequest) returns (common.CommReply) {}
+    rpc ModLoginImg(LoginImgRequest) returns (common.CommReply) {}
 }
 
 message PortalMenuInfo {
@@ -243,10 +245,17 @@ message LoginImgInfo {
     int64 etime = 4;
     int64 online = 5;
     int64 type = 6;
+    int64 deleted = 7;
 }
 
 message LoginImgReply {
     common.Head head = 1;
     repeated LoginImgInfo infos = 2;
     int64 hasmore = 3;
+    int64 total = 4;
+}
+
+message LoginImgRequest {
+    common.Head head = 1;
+    LoginImgInfo info = 2;
 }
