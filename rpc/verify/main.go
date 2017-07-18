@@ -831,20 +831,37 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 	}
 
 	img = defLoginImg
-	btype := 3
+	btype := 0
 	if util.IsTestAcname(acname) {
 		btype = 3
 	} else if isEduAp(db, apmac) {
-		btype = 10
+		btype = 4
 	} else if util.IsKongguAcname(acname) ||
 		acname == "AC_120_A_01" {
-		btype = 11
+		btype = 2
 	} else if util.IsWjjAcname(acname) {
-		btype = 7
+		btype = 1
 	}
-	err := db.QueryRow("SELECT img FROM banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1", btype).Scan(&img)
+	rows, err := db.Query("SELECT img, stime, etime FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC", btype)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
+	}
+	defer rows.Close()
+	c := getCurTime()
+	for rows.Next() {
+		var banner string
+		var stime, etime int64
+		err = rows.Scan(&banner, &stime, &etime)
+		if err != nil {
+			log.Printf("getLoginImg scan failed:%v", err)
+			continue
+		}
+		if stime == 0 && etime == 0 {
+			return banner
+		}
+		if stime <= c && c <= etime {
+			return banner
+		}
 	}
 	return img
 }
@@ -901,6 +918,14 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		}
 	}
 	return
+}
+
+func getCurTime() int64 {
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	v := hour*100 + min
+	return int64(v)
 }
 
 func isTaobaoTime() bool {
