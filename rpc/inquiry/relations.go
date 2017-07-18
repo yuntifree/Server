@@ -4,13 +4,22 @@ import (
 	"Server/proto/common"
 	"Server/util"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
 )
 
 func addRelations(db *sql.DB, patient, doctor int64) error {
-	_, err := db.Exec("INSERT INTO relations(doctor, patient, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
+	var role int64
+	err := db.QueryRow("SELECT role FROM users WHERE uid = ?", doctor).
+		Scan(&role)
+	if err != nil || role == 0 {
+		log.Printf("addRelations check doctor role failed, %d-%d", patient,
+			doctor)
+		return fmt.Errorf("check doctor role failed")
+	}
+	_, err = db.Exec("INSERT INTO relations(doctor, patient, ctime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE deleted = 0",
 		doctor, patient)
 	if err != nil {
 		log.Printf("addRelations failed:%d %d %v", doctor, patient)

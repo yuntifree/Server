@@ -72,7 +72,7 @@ func (s *server) WxPay(ctx context.Context, in *pay.WxPayRequest) (*pay.WxPayRep
 
 	var req weixin.UnifyOrderReq
 	req.Appid = weixin.InquiryAppid
-	req.Body = "问诊打赏"
+	req.Body = "咨询费"
 	req.MchID = weixin.InquiryMerID
 	req.NonceStr = util.GenSalt()
 	req.Openid = openid
@@ -166,7 +166,7 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 	}
 	log.Printf("after update relations flag, doctor:%d patient:%d %s",
 		doctor, patient, in.Oid)
-	_, err = db.Exec("UPDATE users SET hasrelation = 1 WHERE uid = ?", doctor)
+	_, err = db.Exec("UPDATE users SET hasrelation = 1, balance = balance + ?, totalfee = totalfee + ? WHERE uid = ?", in.Fee, in.Fee, doctor)
 	if err != nil {
 		log.Printf("WxPayCB update user hasrelation failed:%d %v", pid, err)
 		return &common.CommReply{
