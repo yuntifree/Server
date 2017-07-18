@@ -86,7 +86,6 @@ func modLoginImg(w http.ResponseWriter, r *http.Request) {
 	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	id := req.GetParamInt("id")
-	stype := req.GetParamInt("type")
 	stime := req.GetParamIntDef("stime", 0)
 	etime := req.GetParamIntDef("etime", 0)
 	img := req.GetParamString("img")
@@ -98,7 +97,7 @@ func modLoginImg(w http.ResponseWriter, r *http.Request) {
 		uid, "ModLoginImg",
 		&config.LoginImgRequest{
 			Head: &common.Head{Sid: uuid},
-			Info: &config.LoginImgInfo{Id: id, Type: stype,
+			Info: &config.LoginImgInfo{Id: id,
 				Stime: stime, Etime: etime, Img: img,
 				Online: online, Deleted: deleted}})
 	httpserver.CheckRPCErr(rpcerr, "ModLoginImg")
