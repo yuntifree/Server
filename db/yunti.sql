@@ -686,3 +686,19 @@ CREATE TABLE IF NOT EXISTS redirect_stat
     UNIQUE KEY(type, ctime)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS login_banner
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- type 0:ssh 1:wjj 2:konggu 3:test
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    img     varchar(128) NOT NULL,
+    stime   int unsigned NOT NULL DEFAULT 0,
+    etime   int unsigned NOT NULL DEFAULT 0,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type),
+    KEY(stime),
+    KEY(etime)
+) ENGINE = InnoDB;

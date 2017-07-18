@@ -1593,6 +1593,7 @@ func NewOssServer() http.Handler {
 	mux.Handle("/add_channel_version", httpserver.AppHandler(addChannelVersion))
 	mux.Handle("/mod_channel_version", httpserver.AppHandler(modChannelVersion))
 	mux.Handle("/get_oss_image_policy", httpserver.AppHandler(getOssImagePolicy))
+	mux.Handle("/config/", httpserver.AppHandler(configHandler))
 	mux.Handle("/", fh)
 	return mux
 }

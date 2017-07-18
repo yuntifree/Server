@@ -23,6 +23,7 @@ service Config{
     rpc SubmitDonateInfo(DonateRequest) returns (common.CommReply) {}
     rpc GetTravelAd(common.CommRequest) returns (TravelAdReply) {}
     rpc GetAdClick(common.CommRequest) returns (AdClickReply) {}
+    rpc GetLoginImg(common.CommRequest) returns (LoginImgReply) {}
 }
 
 message PortalMenuInfo {
@@ -233,4 +234,19 @@ message AdClickReply {
     int64 total = 2;
     repeated AdClickInfo infos = 3;
     string downurl = 4;
+}
+
+message LoginImgInfo {
+    int64 id = 1;
+    string img = 2;
+    int64 stime = 3;
+    int64 etime = 4;
+    int64 online = 5;
+    int64 type = 6;
+}
+
+message LoginImgReply {
+    common.Head head = 1;
+    repeated LoginImgInfo infos = 2;
+    int64 hasmore = 3;
 }
