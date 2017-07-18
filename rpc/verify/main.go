@@ -857,7 +857,7 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 			continue
 		}
 		if stime == 0 && etime == 0 {
-			return banner
+			img = banner
 		}
 		if stime <= c && c <= etime {
 			return banner
