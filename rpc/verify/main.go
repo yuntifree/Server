@@ -35,6 +35,7 @@ const (
 	mpURL                = "https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIzOTc0OTcyMw==&scene=124#wechat_redirect"
 	taobaoBannerType     = 9
 	specTaobaoBannerType = 12
+	huayanghuUnit        = 4
 )
 
 type server struct{}
@@ -823,6 +824,18 @@ func isEduAp(db *sql.DB, apmac string) bool {
 	return false
 }
 
+func isUnitAp(db *sql.DB, apmac string, unit int64) bool {
+	var unid int64
+	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unid)
+	if err != nil {
+		return false
+	}
+	if unid == unit {
+		return true
+	}
+	return false
+}
+
 func getLoginImg(db *sql.DB, acname, apmac string) string {
 	var img string
 	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
@@ -857,7 +870,9 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 			continue
 		}
 		if stime == 0 && etime == 0 {
-			img = banner
+			if !isUnitAp(db, apmac, huayanghuUnit) {
+				img = banner
+			}
 		}
 		if stime <= c && c <= etime {
 			return banner
