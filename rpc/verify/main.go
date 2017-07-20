@@ -923,7 +923,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else if util.IsLzfAcname(acname) {
 			def = 3
 		} else if util.IsTestAcname(acname) {
-			def = 5
+			def = 2
 		} else {
 			def = 1
 		}
