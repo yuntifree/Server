@@ -9,6 +9,7 @@ service Inquiry {
     rpc Login(LoginRequest) returns (LoginReply) {}
     rpc CheckToken(TokenRequest) returns (common.CommReply) {}
     rpc GetPhoneCode(PhoneRequest) returns (common.CommReply) {}
+    rpc CheckPhoneCode(PhoneCodeRequest) returns (common.CommReply) {}
     rpc BindPhone(PhoneCodeRequest) returns (RoleReply) {}
     rpc GetDoctorInfo(common.CommRequest) returns (DoctorInfoReply) {}
     rpc SetFee(FeeRequest) returns (common.CommReply) {}

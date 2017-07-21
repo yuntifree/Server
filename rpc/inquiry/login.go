@@ -266,6 +266,17 @@ func (s *server) GetPhoneCode(ctx context.Context, in *inquiry.PhoneRequest) (*c
 	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
 }
 
+func (s *server) CheckPhoneCode(ctx context.Context, in *inquiry.PhoneCodeRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "CheckPhoneCode")
+	flag := checkPhoneCode(db, in.Phone, in.Code)
+	if !flag {
+		return &common.CommReply{
+			Head: &common.Head{Retcode: common.ErrCode_CHECK_CODE}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "CheckPhoneCode")
+	return &common.CommReply{Head: &common.Head{Retcode: 0}}, nil
+}
+
 func checkPhoneCode(db *sql.DB, phone string, code int64) bool {
 	var id, ecode int64
 	err := db.QueryRow("SELECT pid, code FROM phone_code WHERE phone = ? AND etime > NOW() ORDER BY pid DESC LIMIT 1", phone).
