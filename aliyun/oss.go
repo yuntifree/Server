@@ -46,6 +46,33 @@ func UploadOssImg(filename, content string) bool {
 	return uploadOssBucket(filename, content, imageBucket)
 }
 
+//UploadOssImgFromFile upload img to aliyun oss read from file
+func UploadOssImgFromFile(filename, filepath string) bool {
+	return uploadOssBucketFromFile(filename, filepath, imageBucket)
+}
+
+func uploadOssBucketFromFile(filename, filepath, ossbucket string) bool {
+	client, err := oss.New(endpoint, accessKeyID, accessKeySecret)
+	if err != nil {
+		log.Printf("oss init failed:%v", err)
+		return false
+	}
+
+	bucket, err := client.Bucket(ossbucket)
+	if err != nil {
+		log.Printf("bucket init failed:%v", err)
+		return false
+	}
+
+	err = bucket.UploadFile(filename, filepath, 100*1024)
+	if err != nil {
+		log.Printf("upload failed %s: %v", filename, err)
+		return false
+	}
+
+	return true
+}
+
 //uploadOssBucket upload file to alioss bucket
 func uploadOssBucket(filename, content, ossbucket string) bool {
 	client, err := oss.New(endpoint, accessKeyID, accessKeySecret)
