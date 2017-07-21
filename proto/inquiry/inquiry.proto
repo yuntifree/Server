@@ -49,6 +49,7 @@ message LoginReply {
     int64 hasrelation = 8;
     int64 haspatient = 9;
     int64 haspasswd = 10;
+    string phone = 11;
 }
 
 message LoginRequest {

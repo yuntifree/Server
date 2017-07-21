@@ -40,6 +40,7 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 		return &inquiry.LoginReply{
 			Head: &common.Head{Retcode: common.ErrCode_ILLEGAL_CODE}}, nil
 	}
+	log.Printf("openid:%s skey:%s", openid, skey)
 	sid := util.GenSalt()
 	var uid, role, hasrelation int64
 	var phone, pass string
@@ -85,7 +86,7 @@ func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inqu
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Flag: 1, Uid: uid, Token: token,
 		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
-		Haspatient: haspatient, Haspasswd: haspasswd}, nil
+		Haspatient: haspatient, Haspasswd: haspasswd, Phone: phone}, nil
 }
 
 func checkSign(skey, rawdata, signature string) bool {
@@ -189,7 +190,7 @@ func (s *server) Login(ctx context.Context, in *inquiry.LoginRequest) (*inquiry.
 	return &inquiry.LoginReply{
 		Head: &common.Head{Retcode: 0}, Uid: uid, Token: token,
 		Hasphone: hasphone, Role: role, Hasrelation: hasrelation,
-		Haspatient: haspatient, Haspasswd: haspasswd}, nil
+		Haspatient: haspatient, Haspasswd: haspasswd, Phone: phone}, nil
 }
 
 func (s *server) CheckToken(ctx context.Context, in *inquiry.TokenRequest) (*common.CommReply, error) {
@@ -305,6 +306,7 @@ func (s *server) BindPhone(ctx context.Context, in *inquiry.PhoneCodeRequest) (*
 			Head: &common.Head{
 				Retcode: common.ErrCode_CHECK_CODE}}, nil
 	}
+	log.Printf("BindPhone request:%+v", in)
 
 	doctor, role := getPhoneRole(db, in.Phone)
 	_, err := db.Exec("UPDATE users SET phone = ?, role = ?, doctor = ? WHERE uid = ?",
