@@ -29,10 +29,34 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		addLoginImg(w, r)
 	case "mod_login_img":
 		modLoginImg(w, r)
+	case "get_ap_info":
+		getApInfo(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
 	return nil
+}
+
+func getApInfo(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+	search := req.GetParamStringDef("search", "")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetApInfo",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Search: search, Seq: seq,
+			Num: num})
+	httpserver.CheckRPCErr(rpcerr, "GetApInfo")
+	res := resp.Interface().(*config.ApInfoReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetApInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
 }
 
 func getLoginImg(w http.ResponseWriter, r *http.Request) {
