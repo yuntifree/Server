@@ -702,3 +702,21 @@ CREATE TABLE IF NOT EXISTS login_banner
     KEY(stime),
     KEY(etime)
 ) ENGINE = InnoDB;
+
+-- 修改记录
+CREATE TABLE IF NOT EXISTS login_banner_history
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    bid     int unsigned NOT NULL,
+    uid     int unsigned NOT NULL,
+    type    tinyint unsigned NOT NULL DEFAULT 0,
+    img     varchar(128) NOT NULL,
+    stime   int unsigned NOT NULL DEFAULT 0,
+    etime   int unsigned NOT NULL DEFAULT 0,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(bid),
+    KEY(uid)
+) ENGINE = InnoDB;

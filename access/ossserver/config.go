@@ -174,7 +174,7 @@ func modLoginImg(w http.ResponseWriter, r *http.Request) {
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType,
 		uid, "ModLoginImg",
 		&config.LoginImgRequest{
-			Head: &common.Head{Sid: uuid},
+			Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &config.LoginImgInfo{Id: id,
 				Stime: stime, Etime: etime, Img: img,
 				Online: online, Deleted: deleted}})

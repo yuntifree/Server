@@ -91,12 +91,20 @@ func (s *server) AddLoginImg(ctx context.Context, in *config.LoginImgRequest) (*
 		Id:   id}, nil
 }
 
-func modLoginImg(db *sql.DB, info *config.LoginImgInfo) error {
+func modLoginImg(db *sql.DB, uid int64, info *config.LoginImgInfo) error {
 	_, err := db.Exec("UPDATE login_banner SET img = ?, stime = ?, etime = ?, online = ?, deleted = ? WHERE id = ?",
 		info.Img, info.Stime, info.Etime, info.Online, info.Deleted,
 		info.Id)
 	if err != nil {
-		log.Printf("addLoginImg failed:%+v %v", info, err)
+		log.Printf("modLoginImg failed:%+v %v", info, err)
+		return err
+	}
+
+	_, err = db.Exec("INSERT INTO login_banner_history(bid, uid, img, stime, etime, online, deleted, ctime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+		info.Id, uid, info.Img, info.Stime, info.Etime, info.Online,
+		info.Deleted)
+	if err != nil {
+		log.Printf("modLoginImg record failed:%+v %v", info, err)
 		return err
 	}
 	return nil
@@ -104,7 +112,7 @@ func modLoginImg(db *sql.DB, info *config.LoginImgInfo) error {
 
 func (s *server) ModLoginImg(ctx context.Context, in *config.LoginImgRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "config", "ModLoginImg")
-	err := modLoginImg(db, in.Info)
+	err := modLoginImg(db, in.Head.Uid, in.Info)
 	if err != nil {
 		log.Printf("modLoginImg failed:%v", err)
 		return &common.CommReply{
