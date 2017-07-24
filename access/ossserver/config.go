@@ -31,6 +31,10 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		modLoginImg(w, r)
 	case "get_ap_info":
 		getApInfo(w, r)
+	case "add_ap_info":
+		addApInfo(w, r)
+	case "mod_ap_info":
+		modApInfo(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
@@ -44,6 +48,7 @@ func getApInfo(w http.ResponseWriter, r *http.Request) {
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
 	search := req.GetParamStringDef("search", "")
+	search = strings.ToLower(search)
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetApInfo",
@@ -53,6 +58,55 @@ func getApInfo(w http.ResponseWriter, r *http.Request) {
 	httpserver.CheckRPCErr(rpcerr, "GetApInfo")
 	res := resp.Interface().(*config.ApInfoReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetApInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func addApInfo(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	unid := req.GetParamInt("unid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+	mac := req.GetParamString("mac")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AddApInfo",
+		&config.ApInfoRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &config.ApInfo{Mac: mac, Longitude: longitude,
+				Latitude: latitude, Unid: unid}})
+	httpserver.CheckRPCErr(rpcerr, "AddApInfo")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddApInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func modApInfo(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	unid := req.GetParamInt("unid")
+	longitude := req.GetParamFloat("longitude")
+	latitude := req.GetParamFloat("latitude")
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "ModApInfo",
+		&config.ApInfoRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &config.ApInfo{Id: id, Longitude: longitude,
+				Latitude: latitude, Unid: unid, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModApInfo")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModApInfo")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)

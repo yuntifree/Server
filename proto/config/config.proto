@@ -27,6 +27,8 @@ service Config{
     rpc AddLoginImg(LoginImgRequest) returns (common.CommReply) {}
     rpc ModLoginImg(LoginImgRequest) returns (common.CommReply) {}
     rpc GetApInfo(common.CommRequest) returns (ApInfoReply) {}
+    rpc AddApInfo(ApInfoRequest) returns (common.CommReply) {}
+    rpc ModApInfo(ApInfoRequest) returns (common.CommReply) {}
 }
 
 message ApInfo {
@@ -36,12 +38,18 @@ message ApInfo {
     int64 unid = 4;
     string name = 5;
     int64 deleted = 6;
+    string mac = 7;
 }
 
 message ApInfoReply {
     common.Head head = 1;
     repeated ApInfo infos = 2;
     int64 total = 3;
+}
+
+message ApInfoRequest {
+    common.Head head = 1;
+    ApInfo info = 2;
 }
 
 message PortalMenuInfo {

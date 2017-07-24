@@ -26,7 +26,7 @@ func getApTotal(db *sql.DB, search string) int64 {
 }
 
 func getApInfo(db *sql.DB, seq, num int64, search string) []*config.ApInfo {
-	query := "SELECT a.id, a.longitude, a.latitude, a.unid, u.name FROM ap_info a, unit u WHERE a.unid = u.id AND a.deleted = 0 AND u.deleted = 0"
+	query := "SELECT a.id, a.mac, a.longitude, a.latitude, a.unid, u.name FROM ap_info a, unit u WHERE a.unid = u.id AND a.deleted = 0 AND u.deleted = 0"
 	if search != "" {
 		query += fmt.Sprintf(" AND a.mac = '%s'", search)
 	}
@@ -43,7 +43,7 @@ func getApInfo(db *sql.DB, seq, num int64, search string) []*config.ApInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.ApInfo
-		err = rows.Scan(&info.Id, &info.Longitude, &info.Latitude,
+		err = rows.Scan(&info.Id, &info.Mac, &info.Longitude, &info.Latitude,
 			&info.Unid, &info.Name)
 		if err != nil {
 			log.Printf("getApInfo scan failed:%v", err)
@@ -62,4 +62,59 @@ func (s *server) GetApInfo(ctx context.Context, in *common.CommRequest) (*config
 	return &config.ApInfoReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Infos: infos, Total: total}, nil
+}
+
+func addApInfo(db *sql.DB, info *config.ApInfo) (int64, error) {
+	res, err := db.Exec("INSERT INTO ap_info(mac, longitude, latitude, unid) VALUES (?, ?, ?, ?)",
+		info.Mac, info.Longitude, info.Latitude, info.Unid)
+	if err != nil {
+		log.Printf("addApInfo insert failed:%v", err)
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("addApInfo get insert id failed:%v", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func (s *server) AddApInfo(ctx context.Context, in *config.ApInfoRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "AddApInfo")
+	id, err := addApInfo(db, in.Info)
+	if err != nil {
+		log.Printf("AddApInfo addApInfo failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid},
+			Id:   id}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "AddApInfo")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Id:   id}, nil
+}
+
+func modApInfo(db *sql.DB, info *config.ApInfo) error {
+	_, err := db.Exec("UPDATE ap_info SET longitude = ?, latitude = ?, unid = ?, deleted = ? WHERE id = ?",
+		info.Longitude, info.Latitude, info.Unid, info.Id, info.Deleted)
+	if err != nil {
+		log.Printf("addApInfo insert failed:%v", err)
+		return err
+	}
+	return nil
+}
+
+func (s *server) ModApInfo(ctx context.Context, in *config.ApInfoRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "ModApInfo")
+	err := modApInfo(db, in.Info)
+	if err != nil {
+		log.Printf("ModApInfo modApInfo failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid},
+		}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "ModApInfo")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+	}, nil
 }
