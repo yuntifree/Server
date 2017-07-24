@@ -96,7 +96,7 @@ func (s *server) AddApInfo(ctx context.Context, in *config.ApInfoRequest) (*comm
 
 func modApInfo(db *sql.DB, info *config.ApInfo) error {
 	_, err := db.Exec("UPDATE ap_info SET longitude = ?, latitude = ?, unid = ?, deleted = ? WHERE id = ?",
-		info.Longitude, info.Latitude, info.Unid, info.Id, info.Deleted)
+		info.Longitude, info.Latitude, info.Unid, info.Deleted, info.Id)
 	if err != nil {
 		log.Printf("addApInfo insert failed:%v", err)
 		return err

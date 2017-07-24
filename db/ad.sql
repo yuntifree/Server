@@ -130,3 +130,34 @@ CREATE TABLE IF NOT EXISTS timeslot
     UNIQUE KEY(name)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS ad_banner
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    type   tinyint unsigned NOT NULL DEFAULT 0,
+    stype  tinyint unsigned NOT NULL DEFAULT 0,
+    img    varchar(128) NOT NULL,
+    dst    varchar(256) NOT NULL,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted  tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type),
+    KEY(stype)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS ad_banner_history
+(
+    id     bigint unsigned NOT NULL AUTO_INCREMENT,
+    bid    int unsigned NOT NULL,
+    uid    int unsigned NOT NULL,
+    type   tinyint unsigned NOT NULL DEFAULT 0,
+    stype  tinyint unsigned NOT NULL DEFAULT 0,
+    img    varchar(128) NOT NULL,
+    dst    varchar(256) NOT NULL,
+    online  tinyint unsigned NOT NULL DEFAULT 0,
+    deleted  tinyint unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(type),
+    KEY(stype)
+) ENGINE = InnoDB;

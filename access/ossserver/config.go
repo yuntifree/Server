@@ -35,10 +35,88 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		addApInfo(w, r)
 	case "mod_ap_info":
 		modApInfo(w, r)
+	case "get_ad_banner":
+		getAdBanner(w, r)
+	case "add_ad_banner":
+		addAdBanner(w, r)
+	case "mod_ad_banner":
+		modAdBanner(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
 	return nil
+}
+
+func getAdBanner(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+	stype := req.GetParamInt("type")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetAdBanner",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Seq: seq,
+			Num: num, Type: stype})
+	httpserver.CheckRPCErr(rpcerr, "GetAdBanner")
+	res := resp.Interface().(*config.AdBannerReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetAdBanner")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func addAdBanner(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	mtype := req.GetParamInt("type")
+	stype := req.GetParamInt("stype")
+	img := req.GetParamString("img")
+	dst := req.GetParamString("dst")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AddAdBanner",
+		&config.AdBannerRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &config.AdBannerInfo{Type: mtype, Stype: stype,
+				Img: img, Dst: dst}})
+	httpserver.CheckRPCErr(rpcerr, "AddAdBanner")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddAdBanner")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func modAdBanner(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	stype := req.GetParamInt("stype")
+	img := req.GetParamString("img")
+	dst := req.GetParamString("dst")
+	online := req.GetParamIntDef("online", 0)
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AddAdBanner",
+		&config.AdBannerRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &config.AdBannerInfo{Id: id, Stype: stype,
+				Img: img, Dst: dst, Online: online, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModAdBanner")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModAdBanner")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
 }
 
 func getApInfo(w http.ResponseWriter, r *http.Request) {

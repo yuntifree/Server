@@ -29,6 +29,30 @@ service Config{
     rpc GetApInfo(common.CommRequest) returns (ApInfoReply) {}
     rpc AddApInfo(ApInfoRequest) returns (common.CommReply) {}
     rpc ModApInfo(ApInfoRequest) returns (common.CommReply) {}
+    rpc GetAdBanner(common.CommRequest) returns (AdBannerReply) {}
+    rpc AddAdBanner(AdBannerRequest) returns (common.CommReply) {}
+    rpc ModAdBanner(AdBannerRequest) returns (common.CommReply) {}
+}
+
+message AdBannerInfo {
+    int64 id = 1;
+    int64 type = 2;
+    int64 stype = 3;
+    string img = 4;
+    string dst = 5;
+    int64 online = 6;
+    int64 deleted = 7;
+}
+
+message AdBannerReply {
+    common.Head head = 1;
+    repeated AdBannerInfo infos = 2;
+    int64 total = 3;
+}
+
+message AdBannerRequest {
+    common.Head head = 1;
+    AdBannerInfo info = 2;
 }
 
 message ApInfo {
