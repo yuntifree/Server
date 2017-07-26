@@ -105,7 +105,7 @@ func modAdBanner(w http.ResponseWriter, r *http.Request) {
 	deleted := req.GetParamIntDef("deleted", 0)
 
 	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AddAdBanner",
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "ModAdBanner",
 		&config.AdBannerRequest{
 			Head: &common.Head{Sid: uuid},
 			Info: &config.AdBannerInfo{Id: id, Stype: stype,

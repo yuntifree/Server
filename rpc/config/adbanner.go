@@ -109,6 +109,7 @@ func modAdBanner(db *sql.DB, uid int64, info *config.AdBannerInfo) error {
 
 func (s *server) ModAdBanner(ctx context.Context, in *config.AdBannerRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "config", "ModAdBanner")
+	log.Printf("ModAdBanner in:%+v", in)
 	err := modAdBanner(db, in.Head.Uid, in.Info)
 	if err != nil {
 		log.Printf("ModAdBanner modAdBanner failed:%+v %v", in, err)
