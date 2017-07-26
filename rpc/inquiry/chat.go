@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -123,23 +124,56 @@ func getUserChat(db *sql.DB, uid, tuid, seq, num int64) []*inquiry.ChatInfo {
 	return infos
 }
 
-func getInquiryStatus(db *sql.DB, uid, tuid int64) int64 {
-	var status int64
-	err := db.QueryRow("SELECT status FROM relations WHERE (doctor = ? AND patient = ?) OR (doctor = ? AND patient = ?)", uid, tuid, tuid, uid).Scan(&status)
+func getInquiryInfo(db *sql.DB, uid, tuid int64) (hid, status int64) {
+	err := db.QueryRow("SELECT hid, status FROM relations WHERE (doctor = ? AND patient = ?) OR (doctor = ? AND patient = ?)", uid, tuid, tuid, uid).
+		Scan(&hid, &status)
 	if err != nil {
 		log.Printf("getInquiryStatus query failed:%d %d %v", uid, tuid, err)
 	}
-	return status
+	return
+}
+
+func getInquiryPtime(db *sql.DB, hid int64) int64 {
+	var ptime int64
+	err := db.QueryRow("SELECT UNIX_TIMESTAMP(ptime) FROM inquiry_history WHERE id = ?", hid).
+		Scan(&ptime)
+	if err != nil {
+		log.Printf("getInquiryPtime failed:%d %v", hid, err)
+	}
+	return ptime
+}
+
+func getRefundFlag(db *sql.DB, hid, uid, tuid int64) int64 {
+	role := getUserRole(db, uid)
+	if role == doctorRole {
+		return 0
+	}
+	ctime := getLastCtime(db, hid, tuid)
+	if ctime == 0 {
+		ptime := getInquiryPtime(db, hid)
+		if ptime+8*3600 < time.Now().Unix() {
+			return 1
+		}
+	} else {
+		if ctime+8*3600 < time.Now().Unix() {
+			return 1
+		}
+	}
+	return 0
 }
 
 func (s *server) GetChat(ctx context.Context, in *common.CommRequest) (*inquiry.ChatReply, error) {
 	log.Printf("GetChat request:%+v", in)
 	util.PubRPCRequest(w, "inquiry", "GetChat")
 	infos := getUserChat(db, in.Head.Uid, in.Id, in.Seq, in.Num)
-	status := getInquiryStatus(db, in.Head.Uid, in.Id)
+	hid, status := getInquiryInfo(db, in.Head.Uid, in.Id)
+	var rflag int64
+	if status == inquiryStatus {
+		rflag = getRefundFlag(db, hid, in.Head.Uid, in.Id)
+	}
 	util.PubRPCSuccRsp(w, "inquiry", "GetChat")
 	return &inquiry.ChatReply{Head: &common.Head{Retcode: 0},
-		Infos: infos, Status: status}, nil
+		Infos: infos, Status: status, Rflag: rflag}, nil
 }
 
 type chatInfo struct {

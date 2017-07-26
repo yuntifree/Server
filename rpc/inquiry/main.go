@@ -19,6 +19,8 @@ const (
 	finStatus         = 2
 	refundApplyStatus = 3
 	refundStatus      = 4
+	patientRole       = 0
+	doctorRole        = 1
 )
 
 type server struct{}
