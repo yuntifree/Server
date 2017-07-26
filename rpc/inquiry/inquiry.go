@@ -179,7 +179,7 @@ func (s *server) ApplyRefund(ctx context.Context, in *inquiry.RefundRequest) (*c
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	_, err = db.Exec("UPDATE relastions SET status = 3 WHERE doctor = ? AND patient = ?", in.Doctor, in.Head.Uid)
+	_, err = db.Exec("UPDATE relations SET status = 3 WHERE doctor = ? AND patient = ?", in.Doctor, in.Head.Uid)
 	if err != nil {
 		log.Printf("ApplyRefund update status failed:%d %v", hid, err)
 		return &common.CommReply{
@@ -224,7 +224,7 @@ func (s *server) CancelRefund(ctx context.Context, in *common.CommRequest) (*com
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	_, err = db.Exec("UPDATE relastions SET status = 1 WHERE doctor = ? AND patient = ?", in.Id, in.Head.Uid)
+	_, err = db.Exec("UPDATE relations SET status = 1 WHERE doctor = ? AND patient = ?", in.Id, in.Head.Uid)
 	if err != nil {
 		log.Printf("ApplyRefund update status failed:%d %v", hid, err)
 		return &common.CommReply{
