@@ -136,7 +136,7 @@ func getLastCtime(db *sql.DB, hid, doctor int64) int64 {
 	return 0
 }
 
-func (s *server) ApplyRefund(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+func (s *server) ApplyRefund(ctx context.Context, in *inquiry.RefundRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "ApplyRefund")
 	role := getUserRole(db, in.Head.Uid)
 	if role != 0 {
@@ -145,11 +145,12 @@ func (s *server) ApplyRefund(ctx context.Context, in *common.CommRequest) (*comm
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	var hid, status, ctime int64
-	err := db.QueryRow("SELECT id, status, UNIX_TIMESTAMP(ptime) FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", in.Id, in.Head.Uid).
+	err := db.QueryRow("SELECT id, status, UNIX_TIMESTAMP(ptime) FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1",
+		in.Doctor, in.Head.Uid).
 		Scan(&hid, &status, &ctime)
 	if err != nil {
 		log.Printf("ApplyRefund get inquiry info failed:%d %d %v",
-			in.Head.Uid, in.Id, err)
+			in.Head.Uid, in.Doctor, err)
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
@@ -158,15 +159,15 @@ func (s *server) ApplyRefund(ctx context.Context, in *common.CommRequest) (*comm
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	last := getLastCtime(db, hid, in.Id)
+	last := getLastCtime(db, hid, in.Doctor)
 	var intervals int64
 	if last == 0 {
 		intervals = time.Now().Unix() - ctime
 	} else {
 		intervals = time.Now().Unix() - last
 	}
-	_, err = db.Exec("INSERT INTO refund_history(hid, intervals, ctime) values (?, ?, NOW())",
-		hid, intervals)
+	_, err = db.Exec("INSERT INTO refund_history(hid, intervals, interval_choice, ctime) values (?, ?, ?,  NOW())",
+		hid, intervals, in.Interval)
 	if err != nil {
 		log.Printf("ApplyRefund record failed:%d %v", hid, err)
 		return &common.CommReply{

@@ -36,11 +36,12 @@ func applyRefund(w http.ResponseWriter, r *http.Request) {
 	req.InitInquiry(r)
 	uid := req.GetParamInt("uid")
 	doctor := req.GetParamInt("doctor")
+	interval := req.GetParamInt("interval")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, uid, "ApplyRefund",
-		&common.CommRequest{
-			Head: &common.Head{Sid: uuid}, Id: doctor})
+		&inquiry.RefundRequest{
+			Head: &common.Head{Sid: uuid}, Doctor: doctor, Interval: interval})
 	httpserver.CheckRPCErr(rpcerr, "ApplyRefund")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyRefund")

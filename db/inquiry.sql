@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS refund_history (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     -- hid inquiry_history id
     hid     bigint unsigned NOT NULL,
+    interval_choice tinyint unsigned NOT NULL DEFAULT 0,
     -- intervals 和医生上一次回复的时间间隔(单位s)
     intervals    int unsigned NOT NULL DEFAULT 0,
     -- 0-apply 1-succ 2-cancel 3-reject

@@ -32,8 +32,14 @@ service Inquiry {
     rpc CheckDrawPasswd(PasswdRequest) returns (common.CommReply) {}
     rpc DelUser(PhoneRequest) returns (common.CommReply) {}
     rpc SetDoctor(PhoneRequest) returns (common.CommReply) {}
-    rpc ApplyRefund(common.CommRequest) returns (common.CommReply) {}
+    rpc ApplyRefund(RefundRequest) returns (common.CommReply) {}
     rpc CancelRefund(common.CommRequest) returns (common.CommReply) {}
+}
+
+message RefundRequest {
+    common.Head head = 1;
+    int64 doctor = 2;
+    int64 interval = 3;
 }
 
 message CodeRequest {
