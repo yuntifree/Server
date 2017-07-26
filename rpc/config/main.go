@@ -230,6 +230,28 @@ func getUnitTitle(db *sql.DB, cid int64) string {
 	return title
 }
 
+func getAdBanners(db *sql.DB, adtype int64) []*config.MediaInfo {
+	var infos []*config.MediaInfo
+	rows, err := db.Query("SELECT img, dst, id FROM ad_banner WHERE type = ? AND stype = 1 AND online = 1 AND deleted = 0 ORDER BY id DESC",
+		adtype)
+	if err != nil {
+		log.Printf("getAdvertiseBanner query failed:%v", err)
+		return infos
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var info config.MediaInfo
+		err := rows.Scan(&info.Img, &info.Dst, &info.Id)
+		if err != nil {
+			log.Printf("getAdvertiseBanner scan failed:%v", err)
+			continue
+		}
+		info.Type = 1
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
 func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*config.PortalConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetPortalConf")
 	log.Printf("GetPortalConf uid:%d type:%d subtype:%d id:%d", in.Head.Uid, in.Type,
@@ -252,7 +274,7 @@ func (s *server) GetPortalConf(ctx context.Context, in *common.CommRequest) (*co
 		}
 	}
 	if adtype != 0 {
-		ads := getAdvertiseBanner(db, adtype)
+		ads := getAdBanners(db, adtype)
 		log.Printf("ads:%v", ads)
 		banners = append(ads, banners...)
 

@@ -236,6 +236,19 @@ func calcJokeSeq() int64 {
 	return (time.Now().Unix() - jokeTime) / hourSeconds * 100
 }
 
+func getAdBanner(db *sql.DB, adtype int64) *hot.HotsInfo {
+	var info hot.HotsInfo
+	var img string
+	err := db.QueryRow("SELECT img, dst FROM ad_banner WHERE type = ? AND stype = 2 AND online = 1 AND deleted = 0 ORDER BY id DESC LIMIT 1", adtype).Scan(&img, &info.Dst)
+	if err != nil {
+		log.Printf("getAdvertise query failed:%v", err)
+		return nil
+	}
+	info.Images = append(info.Images, img)
+	info.Stype = 1
+	return &info
+}
+
 func getAdvertise(db *sql.DB, adtype int64) *hot.HotsInfo {
 	var info hot.HotsInfo
 	var img string
@@ -288,7 +301,7 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 				max := getMaxNewsSeq(db)
 				tops := getTopNews(db, 0)
 				if in.Subtype != 0 {
-					ad := getAdvertise(db, in.Subtype)
+					ad := getAdBanner(db, in.Subtype)
 					log.Printf("ad:%v", ad)
 					if ad != nil {
 						tops = append(tops, ad)
