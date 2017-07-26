@@ -41,7 +41,7 @@ func applyRefund(w http.ResponseWriter, r *http.Request) {
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, uid, "ApplyRefund",
 		&inquiry.RefundRequest{
-			Head: &common.Head{Sid: uuid}, Doctor: doctor, Interval: interval})
+			Head: &common.Head{Sid: uuid, Uid: uid}, Doctor: doctor, Interval: interval})
 	httpserver.CheckRPCErr(rpcerr, "ApplyRefund")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyRefund")
@@ -60,7 +60,7 @@ func cancelRefund(w http.ResponseWriter, r *http.Request) {
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, uid, "CancelRefund",
 		&common.CommRequest{
-			Head: &common.Head{Sid: uuid}, Id: doctor})
+			Head: &common.Head{Sid: uuid, Uid: uid}, Id: doctor})
 	httpserver.CheckRPCErr(rpcerr, "CancelRefund")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "CancelRefund")
