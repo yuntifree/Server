@@ -145,7 +145,7 @@ func (s *server) ApplyRefund(ctx context.Context, in *common.CommRequest) (*comm
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	var hid, status, ctime int64
-	err := db.QueryRow("SELECT id, status, UNIX_TIMESTAMP(ctime) FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", in.Id, in.Head.Uid).
+	err := db.QueryRow("SELECT id, status, UNIX_TIMESTAMP(ptime) FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", in.Id, in.Head.Uid).
 		Scan(&hid, &status, &ctime)
 	if err != nil {
 		log.Printf("ApplyRefund get inquiry info failed:%d %d %v",

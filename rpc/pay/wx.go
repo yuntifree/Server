@@ -141,7 +141,7 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 		}, nil
 	}
 	log.Printf("after update orders status:%s", in.Oid)
-	_, err = db.Exec("UPDATE inquiry_history SET status = 1 WHERE id = ?", pid)
+	_, err = db.Exec("UPDATE inquiry_history SET status = 1, ptime = NOW() WHERE id = ?", pid)
 	if err != nil {
 		log.Printf("WxPayCB update inquiry history failed:%d %v", pid, err)
 		return &common.CommReply{

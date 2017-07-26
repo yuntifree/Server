@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS inquiry_history (
     -- intervals 医生第一条回复时间间隔
     intervals int unsigned NOT NULL DEFAULT 0,
     ctime datetime NOT NULL DEFAULT '2017-01-01',
+    -- ptime 支付成功时间
+    ptime datetime NOT NULL DEFAULT '2017-01-01',
     etime datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(doctor, patient)
