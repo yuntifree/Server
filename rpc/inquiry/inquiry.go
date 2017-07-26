@@ -179,6 +179,12 @@ func (s *server) ApplyRefund(ctx context.Context, in *inquiry.RefundRequest) (*c
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
+	_, err = db.Exec("UPDATE relastions SET status = 3 WHERE doctor = ? AND patient = ?", in.Doctor, in.Head.Uid)
+	if err != nil {
+		log.Printf("ApplyRefund update status failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
 	util.PubRPCSuccRsp(w, "inquiry", "ApplyRefund")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
@@ -215,6 +221,12 @@ func (s *server) CancelRefund(ctx context.Context, in *common.CommRequest) (*com
 	_, err = db.Exec("UPDATE inquiry_history SET status = 1 WHERE id = ?", hid)
 	if err != nil {
 		log.Printf("CancelRefund update status failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE relastions SET status = 1 WHERE doctor = ? AND patient = ?", in.Id, in.Head.Uid)
+	if err != nil {
+		log.Printf("ApplyRefund update status failed:%d %v", hid, err)
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
