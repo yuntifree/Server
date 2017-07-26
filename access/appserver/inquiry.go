@@ -31,6 +31,44 @@ func extractAction(path string) string {
 	return action
 }
 
+func applyRefund(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	doctor := req.GetParamInt("doctor")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, uid, "ApplyRefund",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Id: doctor})
+	httpserver.CheckRPCErr(rpcerr, "ApplyRefund")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyRefund")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func cancelRefund(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	doctor := req.GetParamInt("doctor")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, uid, "CancelRefund",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Id: doctor})
+	httpserver.CheckRPCErr(rpcerr, "CancelRefund")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "CancelRefund")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
 func submitCode(w http.ResponseWriter, r *http.Request) {
 	var req httpserver.Request
 	req.Init(r)
@@ -829,6 +867,10 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		delUser(w, r)
 	case "set_doctor":
 		setDoctor(w, r)
+	case "apply_refund":
+		applyRefund(w, r)
+	case "cancel_refund":
+		cancelRefund(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

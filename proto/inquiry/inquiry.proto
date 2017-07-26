@@ -32,6 +32,8 @@ service Inquiry {
     rpc CheckDrawPasswd(PasswdRequest) returns (common.CommReply) {}
     rpc DelUser(PhoneRequest) returns (common.CommReply) {}
     rpc SetDoctor(PhoneRequest) returns (common.CommReply) {}
+    rpc ApplyRefund(common.CommRequest) returns (common.CommReply) {}
+    rpc CancelRefund(common.CommRequest) returns (common.CommReply) {}
 }
 
 message CodeRequest {

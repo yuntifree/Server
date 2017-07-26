@@ -13,7 +13,12 @@ import (
 )
 
 const (
-	feeRate = 1.2
+	feeRate           = 1.2
+	initStatus        = 0
+	inquiryStatus     = 1
+	finStatus         = 2
+	refundApplyStatus = 3
+	refundStatus      = 4
 )
 
 type server struct{}

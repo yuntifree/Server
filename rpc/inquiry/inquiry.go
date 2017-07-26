@@ -6,6 +6,7 @@ import (
 	"Server/util"
 	"database/sql"
 	"log"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -121,6 +122,102 @@ func (s *server) Feedback(ctx context.Context, in *inquiry.FeedRequest) (*common
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	util.PubRPCSuccRsp(w, "inquiry", "Feedback")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func getLastCtime(db *sql.DB, hid, doctor int64) int64 {
+	var ts int64
+	err := db.QueryRow("SELECT UNIX_TIMESTAMP(ctime) FROM chat WHERE hid = ? AND uid = ? ORDER BY id DESC LIMIT 1",
+		hid, doctor).Scan(&ts)
+	if err == nil && ts != 0 {
+		return ts
+	}
+	return 0
+}
+
+func (s *server) ApplyRefund(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "ApplyRefund")
+	role := getUserRole(db, in.Head.Uid)
+	if role != 0 {
+		log.Printf("ApplyRefund illegal role:%d", in.Head.Uid)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	var hid, status, ctime int64
+	err := db.QueryRow("SELECT id, status, UNIX_TIMESTAMP(ctime) FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", in.Id, in.Head.Uid).
+		Scan(&hid, &status, &ctime)
+	if err != nil {
+		log.Printf("ApplyRefund get inquiry info failed:%d %d %v",
+			in.Head.Uid, in.Id, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if status != inquiryStatus {
+		log.Printf("ApplyRefund illegal status:%d %d", hid, status)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	last := getLastCtime(db, hid, in.Id)
+	var intervals int64
+	if last == 0 {
+		intervals = time.Now().Unix() - ctime
+	} else {
+		intervals = time.Now().Unix() - last
+	}
+	_, err = db.Exec("INSERT INTO refund_history(hid, intervals, ctime) values (?, ?, NOW())",
+		hid, intervals)
+	if err != nil {
+		log.Printf("ApplyRefund record failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE inquiry_history SET status = 3 WHERE id = ?", hid)
+	if err != nil {
+		log.Printf("ApplyRefund update status failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "ApplyRefund")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func (s *server) CancelRefund(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "CancelRefund")
+	role := getUserRole(db, in.Head.Uid)
+	if role != 0 {
+		log.Printf("CancelRefund illegal role:%d", in.Head.Uid)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	var hid, status int64
+	err := db.QueryRow("SELECT id, status FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", in.Id, in.Head.Uid).
+		Scan(&hid, &status)
+	if err != nil {
+		log.Printf("ApplyRefund get inquiry info failed:%d %d %v",
+			in.Head.Uid, in.Id, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if status != refundApplyStatus {
+		log.Printf("CancelRefund illegal status:%d %d", hid, status)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE refund_history SET status = 2 WHERE hid = ? ORDER BY id DESC LIMIT 1", hid)
+	if err != nil {
+		log.Printf("CancelRefund update status failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	_, err = db.Exec("UPDATE inquiry_history SET status = 1 WHERE id = ?", hid)
+	if err != nil {
+		log.Printf("CancelRefund update status failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "inquiry", "CancelRefund")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }

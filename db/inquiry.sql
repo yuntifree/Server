@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS inquiry_history (
     -- 4-退款成功
     status  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
-    -- interval 医生第一条回复时间间隔
-    interval int unsigned NOT NULL DEFAULT 0,
+    -- intervals 医生第一条回复时间间隔
+    intervals int unsigned NOT NULL DEFAULT 0,
     ctime datetime NOT NULL DEFAULT '2017-01-01',
     etime datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
@@ -199,8 +199,10 @@ CREATE TABLE IF NOT EXISTS refund_history (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     -- hid inquiry_history id
     hid     bigint unsigned NOT NULL,
-    -- interval 和医生上一次回复的时间间隔(单位s)
-    interval    int unsigned NOT NULL DEFAULT 0,
+    -- intervals 和医生上一次回复的时间间隔(单位s)
+    intervals    int unsigned NOT NULL DEFAULT 0,
+    -- 0-apply 1-succ 2-cancel 3-reject
+    status  tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(hid)
