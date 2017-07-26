@@ -11,10 +11,41 @@ import (
 	"golang.org/x/net/context"
 )
 
+func getUserRole(db *sql.DB, uid int64) int64 {
+	var role int64
+	err := db.QueryRow("SELECT role FROM users WHERE uid = ?", uid).Scan(&role)
+	if err != nil {
+		log.Printf("getUserRole failed:%d %v", uid, err)
+	}
+	return role
+}
+
 func (s *server) SendChat(ctx context.Context, in *inquiry.ChatRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "SendChat")
-	res, err := db.Exec("INSERT INTO chat(uid, tuid, type, content, ctime) VALUES (?, ?, ?, ?, NOW())",
-		in.Head.Uid, in.Tuid, in.Type, in.Content)
+	role := getUserRole(db, in.Head.Uid)
+	var hid, status int64
+	var doctor, patient int64
+	if role == 1 {
+		doctor = in.Head.Uid
+		patient = in.Tuid
+	} else {
+		doctor = in.Tuid
+		patient = in.Head.Uid
+	}
+	err := db.QueryRow("SELECT id, status FROM inquiry_history WHERE doctor = ? AND patient = ? ORDER BY id DESC LIMIT 1", doctor, patient).Scan(&hid, &status)
+	if err != nil {
+		log.Printf("SendChat get inquiry info failed:%d %d %v", doctor,
+			patient, err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	if status != 1 && role == 0 {
+		log.Printf("illegal status for patient to send chat:%d %d",
+			hid, status)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+
+	res, err := db.Exec("INSERT INTO chat(uid, tuid, type, content, hid, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+		in.Head.Uid, in.Tuid, in.Type, in.Content, hid)
 	if err != nil {
 		log.Printf("SendChat insert failed:%d %d %v", in.Head.Uid,
 			in.Tuid, err)

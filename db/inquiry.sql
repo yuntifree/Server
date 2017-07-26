@@ -112,9 +112,12 @@ CREATE TABLE IF NOT EXISTS inquiry_history (
     fee     int unsigned NOT NULL DEFAULT 0,
     doctor_fee int unsigned NOT NULL DEFAULT 0,
     form_id varchar(128) NOT NULL DEFAULT '',
-    -- status 0-待支付 1-支付成功(问诊中) 2-问诊结束
+    -- status 0-待支付 1-支付成功(问诊中) 2-问诊结束 3-申请退款 
+    -- 4-退款成功
     status  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    -- interval 医生第一条回复时间间隔
+    interval int unsigned NOT NULL DEFAULT 0,
     ctime datetime NOT NULL DEFAULT '2017-01-01',
     etime datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
@@ -151,6 +154,8 @@ CREATE TABLE IF NOT EXISTS chat (
     ack     tinyint unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     acktime   datetime NOT NULL DEFAULT '2017-01-01',
+    -- hid inquiry_history id
+    hid     int unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(id),
     KEY(uid),
     KEY(tuid),
@@ -188,4 +193,15 @@ CREATE TABLE IF NOT EXISTS feedback (
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(uid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS refund_history (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    -- hid inquiry_history id
+    hid     bigint unsigned NOT NULL,
+    -- interval 和医生上一次回复的时间间隔(单位s)
+    interval    int unsigned NOT NULL DEFAULT 0,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(hid)
 ) ENGINE = InnoDB;
