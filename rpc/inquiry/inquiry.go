@@ -185,6 +185,13 @@ func (s *server) ApplyRefund(ctx context.Context, in *inquiry.RefundRequest) (*c
 		return &common.CommReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
+	_, err = db.Exec("INSERT INTO chat(type, uid, tuid, hid, content, ctime) VALUES (3, ?, ?, ?, '咨询者正申请退款\n您仍可发起对话引导咨询者取消退款', NOW())",
+		in.Head.Uid, in.Doctor, hid)
+	if err != nil {
+		log.Printf("ApplyRefund insert chat failed:%d %v", hid, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
 	util.PubRPCSuccRsp(w, "inquiry", "ApplyRefund")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
