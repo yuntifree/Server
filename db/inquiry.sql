@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS chat (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     uid     int unsigned NOT NULL,
     tuid    int unsigned NOT NULL,
-    -- type 0-text 1-image
+    -- type 1-text 2-image 3-申请退款 
     type    tinyint unsigned NOT NULL DEFAULT 0,
     content varchar(512) NOT NULL,
     ack     tinyint unsigned NOT NULL DEFAULT 0,
@@ -209,4 +209,31 @@ CREATE TABLE IF NOT EXISTS refund_history (
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(hid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS bank_card (
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    uid     int unsigned NOT NULL,
+    owner   varchar(128) NOT NULL,
+    bank    varchar(256) NOT NULL,
+    branch  varchar(256) NOT NULL,
+    cardno  varchar(32) NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(uid)
+) ENGINE = InnoDB;
+
+-- OSS
+CREATE TABLE IF NOT EXISTS back_login (
+    uid     int unsigned NOT NULL AUTO_INCREMENT,
+    username    varchar(32) NOT NULL,
+    password    varchar(32) NOT NULL,
+    salt        varchar(32) NOT NULL,
+    login_time  datetime NOT NULL DEFAULT '2016-01-01',
+    expire_time  datetime NOT NULL DEFAULT '2016-01-01',
+    skey        varchar(32) NOT NULL,
+    deleted     tinyint unsigned NOT NULL DEFAULT 0,
+    ctime       datetime NOT NULL DEFAULT '2016-01-01',
+    PRIMARY KEY(uid),
+    UNIQUE KEY(username)
 ) ENGINE = InnoDB;

@@ -727,6 +727,28 @@ func setDoctor(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	return nil
 }
 
+func getBankCard(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+	uuid := util.GenUUID()
+
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "GetBankCard",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Seq: seq, Num: num})
+	httpserver.CheckRPCErr(rpcerr, "GetBankCard")
+	res := resp.Interface().(*inquiry.BankCardReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetBankCard")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -872,6 +894,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		applyRefund(w, r)
 	case "cancel_refund":
 		cancelRefund(w, r)
+	case "get_bank_card":
+		getBankCard(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

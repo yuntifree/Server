@@ -34,6 +34,21 @@ service Inquiry {
     rpc SetDoctor(PhoneRequest) returns (common.CommReply) {}
     rpc ApplyRefund(RefundRequest) returns (common.CommReply) {}
     rpc CancelRefund(common.CommRequest) returns (common.CommReply) {}
+    rpc GetBankCard(common.CommRequest) returns (BankCardReply) {}
+}
+
+message BankCardInfo {
+    int64 id = 1;
+    string owner = 2;
+    string bank = 3;
+    string branch = 4;
+    string cardno = 5;
+}
+
+message BankCardReply {
+    common.Head head = 1;
+    repeated BankCardInfo infos = 2;
+    int64 hasmore = 3;
 }
 
 message RefundRequest {
