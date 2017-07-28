@@ -576,12 +576,13 @@ func applyDraw(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.InitInquiry(r)
 	uid := req.GetParamInt("uid")
 	fee := req.GetParamInt("fee")
+	cardid := req.GetParamInt("cardid")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
 		uid, "ApplyDraw",
 		&inquiry.DrawRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Fee: fee})
+			Fee: fee, Cardid: cardid})
 	httpserver.CheckRPCErr(rpcerr, "ApplyDraw")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyDraw")

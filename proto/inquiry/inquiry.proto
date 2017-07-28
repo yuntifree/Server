@@ -239,6 +239,7 @@ message WalletReply {
 message DrawRequest {
     common.Head head = 1;
     int64 fee = 2;
+    int64 cardid = 3;
 }
 
 message FinInquiryRequest {

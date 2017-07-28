@@ -154,8 +154,8 @@ func (s *server) ApplyDraw(ctx context.Context, in *inquiry.DrawRequest) (*commo
 			in.Fee)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 	}
-	_, err = db.Exec("INSERT INTO draw_history(uid, fee, ctime) VALUES (?, ?, NOW())",
-		in.Head.Uid, in.Fee)
+	_, err = db.Exec("INSERT INTO draw_history(uid, fee, cardid, ctime) VALUES (?, ?, ?, NOW())",
+		in.Head.Uid, in.Fee, in.Cardid)
 	if err != nil {
 		log.Printf("ApplyDraw record failed, uid:%d %d, %v", in.Head.Uid,
 			in.Fee, err)

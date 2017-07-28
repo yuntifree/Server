@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS draw_history (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     uid     int unsigned NOT NULL,
     fee     int unsigned NOT NULL,
+    cardid  int unsigned NOT NULL DEFAULT 0,
     -- status 0-申请 1-审核通过 2-转账成功 3-审核失败
     -- 4-转账失败
     status  tinyint unsigned NOT NULL,
