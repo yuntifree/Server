@@ -52,6 +52,32 @@ func (s *server) GetBankCard(ctx context.Context, in *common.CommRequest) (*inqu
 		Infos: infos, Hasmore: hasmore}, nil
 }
 
+func addBankCard(db *sql.DB, uid int64, info *inquiry.BankCardInfo) (int64, error) {
+	res, err := db.Exec("INSERT IGNORE INTO bank_card(uid, owner, bank, branch, cardno, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+		uid, info.Owner, info.Bank, info.Branch, info.Cardno)
+	if err != nil {
+		log.Printf("addBankCard insert failed:%v", err)
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("addBankCard get insert id failed:%v", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func (s *server) AddBankCard(ctx context.Context, in *inquiry.BankCardRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "inquiry", "AddBankCard")
+	id, err := addBankCard(db, in.Head.Uid, in.Info)
+	if err != nil || id == 0 {
+		log.Printf("AddBankCard failed:%v", err)
+		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
+	}
+	return &common.CommReply{Head: &common.Head{Retcode: 0},
+		Id: id}, nil
+}
+
 func (s *server) SetDrawPasswd(ctx context.Context, in *inquiry.PasswdRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "SetDrawPasswd")
 	salt := util.GenSalt()

@@ -749,6 +749,31 @@ func getBankCard(w http.ResponseWriter, r *http.Request) (apperr *util.AppError)
 	return nil
 }
 
+func addBankCard(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitInquiry(r)
+	uid := req.GetParamInt("uid")
+	owner := req.GetParamString("owner")
+	bank := req.GetParamString("bank")
+	branch := req.GetParamString("branch")
+	cardno := req.GetParamString("cardno")
+	uuid := util.GenUUID()
+
+	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
+		uid, "AddBankCard",
+		&inquiry.BankCardRequest{Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &inquiry.BankCardInfo{Owner: owner, Bank: bank,
+				Branch: branch, Cardno: cardno}})
+	httpserver.CheckRPCErr(rpcerr, "AddBankCard")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddBankCard")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func wxPay(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitInquiry(r)
@@ -896,6 +921,8 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		cancelRefund(w, r)
 	case "get_bank_card":
 		getBankCard(w, r)
+	case "add_bank_card":
+		addBankCard(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

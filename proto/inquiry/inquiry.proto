@@ -35,6 +35,7 @@ service Inquiry {
     rpc ApplyRefund(RefundRequest) returns (common.CommReply) {}
     rpc CancelRefund(common.CommRequest) returns (common.CommReply) {}
     rpc GetBankCard(common.CommRequest) returns (BankCardReply) {}
+    rpc AddBankCard(BankCardRequest) returns (common.CommReply) {}
 }
 
 message BankCardInfo {
@@ -43,6 +44,11 @@ message BankCardInfo {
     string bank = 3;
     string branch = 4;
     string cardno = 5;
+}
+
+message BankCardRequest {
+    common.Head head = 1;
+    BankCardInfo info = 2;
 }
 
 message BankCardReply {
