@@ -1,11 +1,15 @@
 package weixin
 
 import (
+	"Server/util"
 	"bytes"
 	"crypto/md5"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
@@ -19,6 +23,10 @@ const (
 	InquiryMerID  = "1482126772"
 	InquiryMerKey = "AB1640D05DD44FCBB448EBBEE03274E3"
 	callbackURL   = "https://api.yunxingzh.com/inquiry/wx_pay_callback"
+	transferURL   = "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers"
+	caPath        = "/data/darren/rootca.pem"
+	crtPath       = "/data/darren/apiclient_cert.pem"
+	keyPath       = "/data/darren/apiclient_key.pem"
 )
 
 //UnifyOrderReq unify order request
@@ -69,6 +77,97 @@ type NotifyRequest struct {
 	TimeEnd       string `xml:"time_end"`
 	FeeType       string `xml:"fee_type"`
 	IsSubscribe   string `xml:"is_subscribe"`
+}
+
+//TransferRequest transfer request
+type TransferRequest struct {
+	MchAppid       string `xml:"mch_appid"`
+	Mchid          string `xml:"mchid"`
+	NonceStr       string `xml:"nonce_str"`
+	Sign           string `xml:"sign"`
+	PartnerTradeNo string `xml:"partner_trade_no"`
+	Openid         string `xml:"openid"`
+	CheckName      string `xml:"check_name"`
+	Amount         int64  `xml:"amount"`
+	Desc           string `xml:"desc"`
+	SpbillCreateIP string `xml:"spbill_create_ip"`
+}
+
+func calcTransferSign(req TransferRequest, merKey string) string {
+	m := make(map[string]interface{})
+	m["mch_appid"] = req.MchAppid
+	m["mchid"] = req.Mchid
+	m["nonce_str"] = req.NonceStr
+	m["spbill_create_ip"] = req.SpbillCreateIP
+	m["partner_trade_no"] = req.PartnerTradeNo
+	m["check_name"] = req.CheckName
+	m["openid"] = req.Openid
+	m["desc"] = req.Desc
+	m["amount"] = req.Amount
+	return CalcSign(m, merKey)
+}
+
+func TransferPay(openid, tradeno, ip string, amount int64) {
+	var req TransferRequest
+	req.MchAppid = InquiryAppid
+	req.Mchid = InquiryMerID
+	req.NonceStr = util.GenSalt()
+	req.PartnerTradeNo = tradeno
+	req.Openid = openid
+	req.CheckName = "NO_CHECK"
+	req.Amount = amount
+	req.Desc = "提现"
+	req.SpbillCreateIP = ip
+	req.Sign = calcTransferSign(req, InquiryMerKey)
+
+	transfer(req)
+}
+
+func transfer(req TransferRequest) {
+	pool := x509.NewCertPool()
+	caCert, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		log.Printf("ReadFile err:%v", err)
+		return
+	}
+	pool.AppendCertsFromPEM(caCert)
+	cliCrt, err := tls.LoadX509KeyPair(crtPath, keyPath)
+	if err != nil {
+		log.Printf("LoadX509KeyPair err:%v", err)
+		return
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:      pool,
+			Certificates: []tls.Certificate{cliCrt},
+		},
+	}
+	client := &http.Client{Transport: tr}
+	body, err := xml.Marshal(req)
+	if err != nil {
+		log.Printf("xml marshal failed:%v", err)
+		return
+	}
+	log.Printf("body:%s", string(body))
+	request, err := http.NewRequest("POST", transferURL, bytes.NewReader(body))
+	if err != nil {
+		log.Printf("NewRequest failed:%v", err)
+		return
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Printf("request failed:%v", err)
+		return
+	}
+	defer resp.Body.Close()
+	rspbody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("ReadAll resp failed:%v", err)
+		return
+	}
+	log.Printf("rspbody:%s", string(rspbody))
+	return
 }
 
 //VerifyNotify verify notify sign
