@@ -104,16 +104,15 @@ type SimpleResponse struct {
 
 //RefundRequest refund request info
 type RefundRequest struct {
-	Appid         string `xml:"appid"`
-	MchID         string `xml:"mch_id"`
-	NonceStr      string `xml:"nonce_str"`
-	Sign          string `xml:"sign"`
-	OutTradeNO    string `xml:"out_trade_no"`
-	OutRefundNO   string `xml:"out_refund_no"`
-	TotalFee      int64  `xml:"total_fee"`
-	RefundFee     int64  `xml:"refund_fee"`
-	OpUserID      string `xml:"op_user_id"`
-	RefundAccount string `xml:"refund_account"`
+	Appid       string `xml:"appid"`
+	MchID       string `xml:"mch_id"`
+	NonceStr    string `xml:"nonce_str"`
+	Sign        string `xml:"sign"`
+	OutTradeNO  string `xml:"out_trade_no"`
+	OutRefundNO string `xml:"out_refund_no"`
+	TotalFee    int64  `xml:"total_fee"`
+	RefundFee   int64  `xml:"refund_fee"`
+	OpUserID    string `xml:"op_user_id"`
 }
 
 func calcRefundSign(req RefundRequest, merKey string) string {
@@ -126,7 +125,6 @@ func calcRefundSign(req RefundRequest, merKey string) string {
 	m["total_fee"] = req.TotalFee
 	m["refund_fee"] = req.RefundFee
 	m["op_user_id"] = req.OpUserID
-	m["refund_account"] = req.RefundAccount
 	return CalcSign(m, merKey)
 }
 
@@ -162,7 +160,6 @@ func Refund(outTradeNO, outRefundNO string, totalFee, refundFee int64) bool {
 	req.TotalFee = totalFee
 	req.RefundFee = refundFee
 	req.OpUserID = InquiryMerID
-	req.RefundAccount = "REFUND_SOURCE_RECHARGE_FUNDS"
 	req.Sign = calcRefundSign(req, InquiryMerKey)
 
 	return refund(req)
