@@ -67,14 +67,27 @@ func finInquiry(db *sql.DB, uid, tuid int64) error {
 		log.Printf("finInquiry query failed:%d %d %v", uid, tuid, err)
 		return err
 	}
-	if status == 2 {
-		log.Printf("finInquiry finish closed inquiry:%d %d %d", uid, tuid, hid)
+	if status != inquiryStatus {
+		log.Printf("finInquiry finish illegal inquiry status:%d %d %d %d", uid,
+			tuid, hid, status)
 		return nil
 	}
+
 	_, err = db.Exec("UPDATE relations SET status = 2 WHERE id = ?", id)
 	if err != nil {
 		log.Printf("finInquiry update relations failed:%d %d %v", uid,
 			tuid, err)
+		return err
+	}
+	var fee int64
+	err = db.QueryRow("SELECT doctor_fee FROM inquiry_history WHERE id = ?", hid).Scan(&fee)
+	if err != nil {
+		log.Printf("finInquiry get doctor fee failed:%d %v", hid, err)
+		return err
+	}
+	_, err = db.Exec("UPDATE users SET balance = balance + ?, total_fee = total_fee + ? WHERE uid = ?", fee, fee, uid)
+	if err != nil {
+		log.Printf("finInquiry update doctor balance failed:%d %v", uid, err)
 		return err
 	}
 	_, err = db.Exec("UPDATE inquiry_history SET status = 2, etime = NOW() WHERE id = ?", hid)

@@ -166,7 +166,7 @@ func (s *server) WxPayCB(ctx context.Context, in *pay.WxPayCBRequest) (*common.C
 	}
 	log.Printf("after update relations flag, doctor:%d patient:%d %s",
 		doctor, patient, in.Oid)
-	_, err = db.Exec("UPDATE users SET hasrelation = 1, balance = balance + ?, totalfee = totalfee + ? WHERE uid = ?", in.Fee, in.Fee, doctor)
+	_, err = db.Exec("UPDATE users SET hasrelation = 1 WHERE uid = ?", doctor)
 	if err != nil {
 		log.Printf("WxPayCB update user hasrelation failed:%d %v", pid, err)
 		return &common.CommReply{
