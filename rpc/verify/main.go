@@ -860,7 +860,7 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 		log.Printf("getLoginImg failed:%v", err)
 	}
 	defer rows.Close()
-	c := getCurTime()
+	c := util.GetCurTimeNum()
 	for rows.Next() {
 		var banner string
 		var stime, etime int64
@@ -939,14 +939,6 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		}
 	}
 	return
-}
-
-func getCurTime() int64 {
-	now := time.Now()
-	hour := now.Hour()
-	min := now.Minute()
-	v := hour*100 + min
-	return int64(v)
 }
 
 func isTaobaoTime() bool {

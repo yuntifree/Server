@@ -30,3 +30,12 @@ func TruncTime(tt time.Time, interval int) time.Time {
 	min = (min / interval) * interval
 	return time.Date(year, month, day, hour, min, 0, 0, local)
 }
+
+//GetCurTimeNum convert curtime to number
+func GetCurTimeNum() int64 {
+	now := time.Now()
+	hour := now.Hour()
+	min := now.Minute()
+	v := hour*100 + min
+	return int64(v)
+}

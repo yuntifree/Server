@@ -936,7 +936,7 @@ func (s *server) ModPortalMenu(ctx context.Context, in *config.MenuRequest) (*co
 
 func getTravelAd(db *sql.DB) []*config.TravelAdInfo {
 	var infos []*config.TravelAdInfo
-	rows, err := db.Query("SELECT id, img, title, dst FROM travel_ad WHERE online = 1 AND deleted = 0")
+	rows, err := db.Query("SELECT id, img, title, dst, stime, etime FROM travel_ad WHERE online = 1 AND deleted = 0")
 	if err != nil {
 		log.Printf("getTravelAd failed:%v", err)
 		return infos
@@ -944,12 +944,17 @@ func getTravelAd(db *sql.DB) []*config.TravelAdInfo {
 	defer rows.Close()
 	for rows.Next() {
 		var info config.TravelAdInfo
-		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst)
+		var stime, etime int64
+		err = rows.Scan(&info.Id, &info.Img, &info.Title, &info.Dst,
+			&stime, &etime)
 		if err != nil {
 			log.Printf("getTravelAd scan failed:%v", err)
 			continue
 		}
-		infos = append(infos, &info)
+		now := util.GetCurTimeNum()
+		if (stime == 0 && etime == 0) || (stime <= now && now < etime) {
+			infos = append(infos, &info)
+		}
 	}
 	return infos
 }
