@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,6 +28,8 @@ const (
 	caPath        = "/data/darren/rootca.pem"
 	crtPath       = "/data/darren/apiclient_cert.pem"
 	keyPath       = "/data/darren/apiclient_key.pem"
+	refundURL     = "https://api.mch.weixin.qq.com/secapi/pay/refund"
+	succCode      = "SUCCESS"
 )
 
 //UnifyOrderReq unify order request
@@ -93,6 +96,135 @@ type TransferRequest struct {
 	SpbillCreateIP string `xml:"spbill_create_ip"`
 }
 
+//SimpleResponse simple response to verify return_code
+type SimpleResponse struct {
+	ReturnCode string `xml:"return_code"`
+	ReturnMsg  string `xml:"return_msg"`
+}
+
+//RefundRequest refund request info
+type RefundRequest struct {
+	Appid         string `xml:"appid"`
+	MchID         string `xml:"mch_id"`
+	NonceStr      string `xml:"nonce_str"`
+	Sign          string `xml:"sign"`
+	OutTradeNO    string `xml:"out_trade_no"`
+	OutRefundNO   string `xml:"out_refund_no"`
+	TotalFee      int64  `xml:"total_fee"`
+	RefundFee     int64  `xml:"refund_fee"`
+	OpUserID      string `xml:"op_user_id"`
+	RefundAccount string `xml:"refund_account"`
+}
+
+func calcRefundSign(req RefundRequest, merKey string) string {
+	m := make(map[string]interface{})
+	m["appid"] = req.Appid
+	m["mch_id"] = req.MchID
+	m["nonce_str"] = req.NonceStr
+	m["out_trade_no"] = req.OutTradeNO
+	m["out_refund_no"] = req.OutRefundNO
+	m["total_fee"] = req.TotalFee
+	m["refund_fee"] = req.RefundFee
+	m["op_user_id"] = req.OpUserID
+	m["refund_account"] = req.RefundAccount
+	return CalcSign(m, merKey)
+}
+
+func checkRsp(body io.ReadCloser) bool {
+	defer body.Close()
+	rspbody, err := ioutil.ReadAll(body)
+	if err != nil {
+		log.Printf("ReadAll resp failed:%v", err)
+		return false
+	}
+	var rs SimpleResponse
+	dec := xml.NewDecoder(bytes.NewReader(rspbody))
+	err = dec.Decode(&rs)
+	if err != nil {
+		log.Printf("decode failed:%s %v", rspbody, err)
+		return false
+	}
+	if rs.ReturnCode != succCode {
+		log.Printf("fail response:%s", rspbody)
+		return false
+	}
+	return true
+}
+
+//Refund refund money for outTradeNO
+func Refund(outTradeNO, outRefundNO string, totalFee, refundFee int64) bool {
+	var req RefundRequest
+	req.Appid = InquiryAppid
+	req.MchID = InquiryMerID
+	req.NonceStr = util.GenSalt()
+	req.OutTradeNO = outTradeNO
+	req.OutRefundNO = outRefundNO
+	req.TotalFee = totalFee
+	req.RefundFee = refundFee
+	req.OpUserID = InquiryMerID
+	req.RefundAccount = "REFUND_SOURCE_RECHARGE_FUNDS"
+	req.Sign = calcRefundSign(req, InquiryMerKey)
+
+	return refund(req)
+}
+
+func refund(req RefundRequest) bool {
+	pool := x509.NewCertPool()
+	caCert, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		log.Printf("ReadFile err:%v", err)
+		return false
+	}
+	pool.AppendCertsFromPEM(caCert)
+	cliCrt, err := tls.LoadX509KeyPair(crtPath, keyPath)
+	if err != nil {
+		log.Printf("LoadX509KeyPair err:%v", err)
+		return false
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:      pool,
+			Certificates: []tls.Certificate{cliCrt},
+		},
+	}
+	client := &http.Client{Transport: tr}
+	body, err := xml.Marshal(req)
+	if err != nil {
+		log.Printf("xml marshal failed:%v", err)
+		return false
+	}
+	log.Printf("body:%s", string(body))
+	request, err := http.NewRequest("POST", refundURL, bytes.NewReader(body))
+	if err != nil {
+		log.Printf("NewRequest failed:%v", err)
+		return false
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Printf("request failed:%v", err)
+		return false
+	}
+	defer resp.Body.Close()
+	rspbody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("ReadAll resp failed:%v", err)
+		return false
+	}
+	var rs SimpleResponse
+	dec := xml.NewDecoder(bytes.NewReader(rspbody))
+	err = dec.Decode(&rs)
+	if err != nil {
+		log.Printf("decode failed:%s %v", rspbody, err)
+		return false
+	}
+	if rs.ReturnCode != succCode {
+		log.Printf("fail response:%s", rspbody)
+		return false
+	}
+	return true
+}
+
 func calcTransferSign(req TransferRequest, merKey string) string {
 	m := make(map[string]interface{})
 	m["mch_appid"] = req.MchAppid
@@ -107,7 +239,8 @@ func calcTransferSign(req TransferRequest, merKey string) string {
 	return CalcSign(m, merKey)
 }
 
-func TransferPay(openid, tradeno, ip string, amount int64) {
+//TransferPay transfer money to openid
+func TransferPay(openid, tradeno, ip string, amount int64) bool {
 	var req TransferRequest
 	req.MchAppid = InquiryAppid
 	req.Mchid = InquiryMerID
@@ -120,21 +253,43 @@ func TransferPay(openid, tradeno, ip string, amount int64) {
 	req.SpbillCreateIP = ip
 	req.Sign = calcTransferSign(req, InquiryMerKey)
 
-	transfer(req)
+	return transfer(req)
 }
 
-func transfer(req TransferRequest) {
+func genTLSTrans() *http.Transport {
 	pool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(caPath)
 	if err != nil {
 		log.Printf("ReadFile err:%v", err)
-		return
+		return nil
 	}
 	pool.AppendCertsFromPEM(caCert)
 	cliCrt, err := tls.LoadX509KeyPair(crtPath, keyPath)
 	if err != nil {
 		log.Printf("LoadX509KeyPair err:%v", err)
-		return
+		return nil
+	}
+
+	return &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:      pool,
+			Certificates: []tls.Certificate{cliCrt},
+		},
+	}
+}
+
+func transfer(req TransferRequest) bool {
+	pool := x509.NewCertPool()
+	caCert, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		log.Printf("ReadFile err:%v", err)
+		return false
+	}
+	pool.AppendCertsFromPEM(caCert)
+	cliCrt, err := tls.LoadX509KeyPair(crtPath, keyPath)
+	if err != nil {
+		log.Printf("LoadX509KeyPair err:%v", err)
+		return false
 	}
 
 	tr := &http.Transport{
@@ -147,27 +302,37 @@ func transfer(req TransferRequest) {
 	body, err := xml.Marshal(req)
 	if err != nil {
 		log.Printf("xml marshal failed:%v", err)
-		return
+		return false
 	}
 	log.Printf("body:%s", string(body))
 	request, err := http.NewRequest("POST", transferURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("NewRequest failed:%v", err)
-		return
+		return false
 	}
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Printf("request failed:%v", err)
-		return
+		return false
 	}
 	defer resp.Body.Close()
 	rspbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("ReadAll resp failed:%v", err)
-		return
+		return false
 	}
-	log.Printf("rspbody:%s", string(rspbody))
-	return
+	var rs SimpleResponse
+	dec := xml.NewDecoder(bytes.NewReader(rspbody))
+	err = dec.Decode(&rs)
+	if err != nil {
+		log.Printf("decode failed:%s %v", rspbody, err)
+		return false
+	}
+	if rs.ReturnCode != succCode {
+		log.Printf("fail response:%s", rspbody)
+		return false
+	}
+	return true
 }
 
 //VerifyNotify verify notify sign
