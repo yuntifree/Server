@@ -41,6 +41,12 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		addAdBanner(w, r)
 	case "mod_ad_banner":
 		modAdBanner(w, r)
+	case "get_travel_ad":
+		getTravelAd(w, r)
+	case "add_travel_ad":
+		addTravelAd(w, r)
+	case "mod_travel_ad":
+		modTravelAd(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
@@ -259,6 +265,86 @@ func modLoginImg(w http.ResponseWriter, r *http.Request) {
 	httpserver.CheckRPCErr(rpcerr, "ModLoginImg")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ModLoginImg")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func getTravelAd(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	stype := req.GetParamInt("type")
+	seq := req.GetParamInt("seq")
+	num := req.GetParamInt("num")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "FetchTravelAd",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid}, Type: stype, Seq: seq, Num: num})
+	httpserver.CheckRPCErr(rpcerr, "FetchTravelAd")
+	res := resp.Interface().(*config.TravelAdReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "FetchTravelAd")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func addTravelAd(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	stype := req.GetParamInt("type")
+	stime := req.GetParamIntDef("stime", 0)
+	etime := req.GetParamIntDef("etime", 0)
+	img := req.GetParamString("img")
+	title := req.GetParamString("title")
+	dst := req.GetParamString("dst")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType,
+		uid, "AddTravelAd",
+		&config.TravelAdRequest{
+			Head: &common.Head{Sid: uuid},
+			Info: &config.TravelAdInfo{Type: stype, Title: title,
+				Dst: dst, Stime: stime,
+				Etime: etime, Img: img}})
+	httpserver.CheckRPCErr(rpcerr, "AddTravelAd")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddTravelAd")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func modTravelAd(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	stime := req.GetParamIntDef("stime", 0)
+	etime := req.GetParamIntDef("etime", 0)
+	img := req.GetParamString("img")
+	title := req.GetParamString("title")
+	dst := req.GetParamString("dst")
+	online := req.GetParamIntDef("online", 0)
+	deleted := req.GetParamIntDef("deleted", 0)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType,
+		uid, "ModTravelAd",
+		&config.TravelAdRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &config.TravelAdInfo{Id: id,
+				Title: title, Dst: dst,
+				Stime: stime, Etime: etime, Img: img,
+				Online: online, Deleted: deleted}})
+	httpserver.CheckRPCErr(rpcerr, "ModTravelAd")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModTravelAd")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)

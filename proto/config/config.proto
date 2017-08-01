@@ -32,6 +32,9 @@ service Config{
     rpc GetAdBanner(common.CommRequest) returns (AdBannerReply) {}
     rpc AddAdBanner(AdBannerRequest) returns (common.CommReply) {}
     rpc ModAdBanner(AdBannerRequest) returns (common.CommReply) {}
+    rpc FetchTravelAd(common.CommRequest) returns (TravelAdReply) {}
+    rpc AddTravelAd(TravelAdRequest) returns (common.CommReply) {}
+    rpc ModTravelAd(TravelAdRequest) returns (common.CommReply) {}
 }
 
 message AdBannerInfo {
@@ -266,11 +269,23 @@ message TravelAdInfo {
     string title = 2;
     string img = 3;
     string dst = 4;
+    int64 stime = 5;
+    int64 etime = 6;
+    int64 online = 7;
+    int64 deleted = 8;
+    int64 type = 9;
 }
 
 message TravelAdReply {
     common.Head head = 1;
     repeated TravelAdInfo infos = 2;
+    int64 total = 3;
+    int64 hasmore = 4;
+}
+
+message TravelAdRequest {
+    common.Head head = 1;
+    TravelAdInfo info = 2;
 }
 
 message AdClickInfo {
