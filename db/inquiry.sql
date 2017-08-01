@@ -168,10 +168,11 @@ CREATE TABLE IF NOT EXISTS draw_history (
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     uid     int unsigned NOT NULL,
     fee     int unsigned NOT NULL,
-    cardid  int unsigned NOT NULL DEFAULT 0,
     -- status 0-申请 1-审核通过 2-转账成功 3-审核失败
     -- 4-转账失败
     status  tinyint unsigned NOT NULL,
+    op_uid  int unsigned NOT NULL DEFAULT 0,
+    partner_trade_no varchar(64) NOT NULL DEFAULT '',
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     rtime   datetime NOT NULL DEFAULT '2017-01-01',
     ptime   datetime NOT NULL DEFAULT '2017-01-01',
@@ -212,18 +213,6 @@ CREATE TABLE IF NOT EXISTS refund_history (
     KEY(hid)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS bank_card (
-    id      bigint unsigned NOT NULL AUTO_INCREMENT,
-    uid     int unsigned NOT NULL,
-    owner   varchar(128) NOT NULL,
-    bank    varchar(256) NOT NULL,
-    branch  varchar(256) NOT NULL,
-    cardno  varchar(32) NOT NULL,
-    ctime   datetime NOT NULL DEFAULT '2017-01-01',
-    PRIMARY KEY(id),
-    KEY(uid)
-) ENGINE = InnoDB;
-
 -- OSS
 CREATE TABLE IF NOT EXISTS back_login (
     uid     int unsigned NOT NULL AUTO_INCREMENT,
@@ -238,3 +227,4 @@ CREATE TABLE IF NOT EXISTS back_login (
     PRIMARY KEY(uid),
     UNIQUE KEY(username)
 ) ENGINE = InnoDB;
+
