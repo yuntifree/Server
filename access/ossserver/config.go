@@ -202,13 +202,15 @@ func getLoginImg(w http.ResponseWriter, r *http.Request) {
 	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	stype := req.GetParamInt("type")
+	pos := req.GetParamIntDef("pos", 0)
 	seq := req.GetParamInt("seq")
 	num := req.GetParamInt("num")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetLoginImg",
 		&common.CommRequest{
-			Head: &common.Head{Sid: uuid}, Type: stype, Seq: seq, Num: num})
+			Head: &common.Head{Sid: uuid}, Type: stype, Seq: seq, Num: num,
+			Subtype: pos})
 	httpserver.CheckRPCErr(rpcerr, "GetLoginImg")
 	res := resp.Interface().(*config.LoginImgReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetLoginImg")
@@ -223,6 +225,7 @@ func addLoginImg(w http.ResponseWriter, r *http.Request) {
 	req.InitCheckOss(r)
 	uid := req.GetParamInt("uid")
 	stype := req.GetParamInt("type")
+	pos := req.GetParamInt("pos")
 	stime := req.GetParamIntDef("stime", 0)
 	etime := req.GetParamIntDef("etime", 0)
 	img := req.GetParamString("img")
@@ -233,7 +236,7 @@ func addLoginImg(w http.ResponseWriter, r *http.Request) {
 		&config.LoginImgRequest{
 			Head: &common.Head{Sid: uuid},
 			Info: &config.LoginImgInfo{Type: stype, Stime: stime,
-				Etime: etime, Img: img}})
+				Etime: etime, Img: img, Pos: pos}})
 	httpserver.CheckRPCErr(rpcerr, "AddLoginImg")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddLoginImg")

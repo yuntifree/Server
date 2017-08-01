@@ -309,6 +309,7 @@ message LoginImgInfo {
     int64 online = 5;
     int64 type = 6;
     int64 deleted = 7;
+    int64 pos = 8;
 }
 
 message LoginImgReply {

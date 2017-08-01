@@ -12,9 +12,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-func getLoginImg(db *sql.DB, stype, seq, num int64) []*config.LoginImgInfo {
+func getLoginImg(db *sql.DB, stype, pos, seq, num int64) []*config.LoginImgInfo {
 	query := "SELECT id, img, stime, etime, online FROM login_banner WHERE deleted = 0 "
 	query += fmt.Sprintf(" AND type = %d", stype)
+	if pos != 0 {
+		query += fmt.Sprintf(" AND pos = %d", pos)
+	}
 	if seq != 0 {
 		query += fmt.Sprintf(" AND id < %d", seq)
 	}
@@ -39,9 +42,13 @@ func getLoginImg(db *sql.DB, stype, seq, num int64) []*config.LoginImgInfo {
 	return infos
 }
 
-func getTotalLoginImg(db *sql.DB, stype int64) int64 {
+func getTotalLoginImg(db *sql.DB, stype, pos int64) int64 {
 	var cnt int64
-	err := db.QueryRow("SELECT COUNT(id) FROM login_banner WHERE type = ? AND deleted = 0", stype).Scan(&cnt)
+	query := fmt.Sprintf("SELECT COUNT(id) FROM login_banner WHERE type = %d AND deleted = 0", stype)
+	if pos != 0 {
+		query += fmt.Sprintf(" AND pos = %d", pos)
+	}
+	err := db.QueryRow(query).Scan(&cnt)
 	if err != nil {
 		log.Printf("getTotalLoginImg failed:%v", err)
 	}
@@ -50,12 +57,12 @@ func getTotalLoginImg(db *sql.DB, stype int64) int64 {
 
 func (s *server) GetLoginImg(ctx context.Context, in *common.CommRequest) (*config.LoginImgReply, error) {
 	util.PubRPCRequest(w, "config", "GetLoginImg")
-	infos := getLoginImg(db, in.Type, in.Seq, in.Num)
+	infos := getLoginImg(db, in.Type, in.Subtype, in.Seq, in.Num)
 	var hasmore int64
 	if len(infos) >= int(in.Num) {
 		hasmore = 1
 	}
-	total := getTotalLoginImg(db, in.Type)
+	total := getTotalLoginImg(db, in.Type, in.Subtype)
 	util.PubRPCSuccRsp(w, "config", "GetLoginImg")
 	return &config.LoginImgReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
@@ -63,8 +70,8 @@ func (s *server) GetLoginImg(ctx context.Context, in *common.CommRequest) (*conf
 }
 
 func addLoginImg(db *sql.DB, info *config.LoginImgInfo) (int64, error) {
-	res, err := db.Exec("INSERT INTO login_banner(type, img, stime, etime, ctime) VALUES (?, ?, ?, ?, NOW())",
-		info.Type, info.Img, info.Stime, info.Etime)
+	res, err := db.Exec("INSERT INTO login_banner(type, pos, img, stime, etime, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+		info.Type, info.Pos, info.Img, info.Stime, info.Etime)
 	if err != nil {
 		log.Printf("addLoginImg failed:%+v %v", info, err)
 		return 0, err
