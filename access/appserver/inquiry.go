@@ -576,13 +576,12 @@ func applyDraw(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	req.InitInquiry(r)
 	uid := req.GetParamInt("uid")
 	fee := req.GetParamInt("fee")
-	cardid := req.GetParamInt("cardid")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
 		uid, "ApplyDraw",
 		&inquiry.DrawRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Fee: fee, Cardid: cardid})
+			Fee: fee})
 	httpserver.CheckRPCErr(rpcerr, "ApplyDraw")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ApplyDraw")
@@ -721,53 +720,6 @@ func setDoctor(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	httpserver.CheckRPCErr(rpcerr, "SetDoctor")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "SetDoctor")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func getBankCard(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitInquiry(r)
-	uid := req.GetParamInt("uid")
-	seq := req.GetParamInt("seq")
-	num := req.GetParamInt("num")
-	uuid := util.GenUUID()
-
-	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
-		uid, "GetBankCard",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Seq: seq, Num: num})
-	httpserver.CheckRPCErr(rpcerr, "GetBankCard")
-	res := resp.Interface().(*inquiry.BankCardReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "GetBankCard")
-
-	body := httpserver.GenResponseBody(res, false)
-	w.Write(body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
-func addBankCard(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.InitInquiry(r)
-	uid := req.GetParamInt("uid")
-	owner := req.GetParamString("owner")
-	bank := req.GetParamString("bank")
-	branch := req.GetParamString("branch")
-	cardno := req.GetParamString("cardno")
-	uuid := util.GenUUID()
-
-	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType,
-		uid, "AddBankCard",
-		&inquiry.BankCardRequest{Head: &common.Head{Sid: uuid, Uid: uid},
-			Info: &inquiry.BankCardInfo{Owner: owner, Bank: bank,
-				Branch: branch, Cardno: cardno}})
-	httpserver.CheckRPCErr(rpcerr, "AddBankCard")
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCode(res.Head.Retcode, "AddBankCard")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)
@@ -920,10 +872,6 @@ func inquiryHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 		applyRefund(w, r)
 	case "cancel_refund":
 		cancelRefund(w, r)
-	case "get_bank_card":
-		getBankCard(w, r)
-	case "add_bank_card":
-		addBankCard(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}

@@ -4,8 +4,6 @@ import (
 	"Server/proto/common"
 	"Server/proto/inquiry"
 	"Server/util"
-	"database/sql"
-	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
@@ -14,69 +12,6 @@ import (
 const (
 	minDraw = 5000
 )
-
-func getBankCard(db *sql.DB, uid, seq, num int64) []*inquiry.BankCardInfo {
-	query := fmt.Sprintf("SELECT id, owner, bank, branch, cardno FROM bank_card WHERE uid = %d", uid)
-	if seq != 0 {
-		query += fmt.Sprintf(" AND id < %d", seq)
-	}
-	query += fmt.Sprintf(" ORDER BY id DESC LIMIT %d", num)
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Printf("getBankCard query failed:%v", err)
-		return nil
-	}
-	var infos []*inquiry.BankCardInfo
-	defer rows.Close()
-	for rows.Next() {
-		var info inquiry.BankCardInfo
-		err = rows.Scan(&info.Id, &info.Owner, &info.Bank, &info.Branch,
-			&info.Cardno)
-		if err != nil {
-			log.Printf("getBankCard scan failed:%v", err)
-			continue
-		}
-		infos = append(infos, &info)
-	}
-	return infos
-}
-
-func (s *server) GetBankCard(ctx context.Context, in *common.CommRequest) (*inquiry.BankCardReply, error) {
-	util.PubRPCRequest(w, "inquiry", "GetBankCard")
-	infos := getBankCard(db, in.Head.Uid, in.Seq, in.Num)
-	var hasmore int64
-	if len(infos) >= int(in.Num) {
-		hasmore = 1
-	}
-	return &inquiry.BankCardReply{Head: &common.Head{Retcode: 0},
-		Infos: infos, Hasmore: hasmore}, nil
-}
-
-func addBankCard(db *sql.DB, uid int64, info *inquiry.BankCardInfo) (int64, error) {
-	res, err := db.Exec("INSERT IGNORE INTO bank_card(uid, owner, bank, branch, cardno, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
-		uid, info.Owner, info.Bank, info.Branch, info.Cardno)
-	if err != nil {
-		log.Printf("addBankCard insert failed:%v", err)
-		return 0, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		log.Printf("addBankCard get insert id failed:%v", err)
-		return 0, err
-	}
-	return id, nil
-}
-
-func (s *server) AddBankCard(ctx context.Context, in *inquiry.BankCardRequest) (*common.CommReply, error) {
-	util.PubRPCRequest(w, "inquiry", "AddBankCard")
-	id, err := addBankCard(db, in.Head.Uid, in.Info)
-	if err != nil || id == 0 {
-		log.Printf("AddBankCard failed:%v", err)
-		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
-	}
-	return &common.CommReply{Head: &common.Head{Retcode: 0},
-		Id: id}, nil
-}
 
 func (s *server) SetDrawPasswd(ctx context.Context, in *inquiry.PasswdRequest) (*common.CommReply, error) {
 	util.PubRPCRequest(w, "inquiry", "SetDrawPasswd")
@@ -154,8 +89,8 @@ func (s *server) ApplyDraw(ctx context.Context, in *inquiry.DrawRequest) (*commo
 			in.Fee)
 		return &common.CommReply{Head: &common.Head{Retcode: 1}}, nil
 	}
-	_, err = db.Exec("INSERT INTO draw_history(uid, fee, cardid, ctime) VALUES (?, ?, ?, NOW())",
-		in.Head.Uid, in.Fee, in.Cardid)
+	_, err = db.Exec("INSERT INTO draw_history(uid, fee, ctime) VALUES (?, ?, NOW())",
+		in.Head.Uid, in.Fee)
 	if err != nil {
 		log.Printf("ApplyDraw record failed, uid:%d %d, %v", in.Head.Uid,
 			in.Fee, err)
