@@ -140,7 +140,9 @@ CREATE TABLE IF NOT EXISTS orders (
     prepayid varchar(64) NOT NULL DEFAULT '',
     ctime datetime NOT NULL DEFAULT '2017-01-01',
     ftime datetime NOT NULL DEFAULT '2017-01-01',
-    -- status 0-未支付 1-支付成功
+    rtime datetime NOT NULL DEFAULT '2017-01-01',
+    refundno varchar(64) NOT NULL DEFAULT '',
+    -- status 0-未支付 1-支付成功 2-退款成功
     status  tinyint unsigned NOT NULL DEFAULT 0,
     PRIMARY KEY(id),
     UNIQUE KEY(oid)

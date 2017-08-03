@@ -144,6 +144,11 @@ message AccessRequest {
     PortalInfo info = 2;
 }
 
+message AdBanner {
+    int64 id = 1;
+    string img = 2;
+}
+
 message CheckReply {
     common.Head head = 1;
     int64 autologin = 2;
@@ -156,6 +161,7 @@ message CheckReply {
     string wxauthurl = 9;
     int64 taobao = 10;
     string cover = 11;
+    repeated AdBanner ads = 12;
 }
 
 message SubscribeRequest {

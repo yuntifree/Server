@@ -836,15 +836,8 @@ func isUnitAp(db *sql.DB, apmac string, unit int64) bool {
 	return false
 }
 
-func getLoginImg(db *sql.DB, acname, apmac string) string {
-	var img string
-	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
-	if img != "" {
-		return img
-	}
-
-	img = defLoginImg
-	btype := 0
+func getLoginAdType(db *sql.DB, acname, apmac string) int64 {
+	var btype int64
 	if util.IsTestAcname(acname) {
 		btype = 3
 	} else if isEduAp(db, apmac) {
@@ -855,7 +848,19 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 	} else if util.IsWjjAcname(acname) {
 		btype = 1
 	}
-	rows, err := db.Query("SELECT img, stime, etime FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 ORDER BY id DESC", btype)
+	return btype
+}
+
+func getLoginImg(db *sql.DB, acname, apmac string) string {
+	var img string
+	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
+	if img != "" {
+		return img
+	}
+
+	img = defLoginImg
+	btype := getLoginAdType(db, acname, apmac)
+	rows, err := db.Query("SELECT img, stime, etime FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 AND pos = 0 ORDER BY id DESC", btype)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
 	}
@@ -965,6 +970,43 @@ func isSpecTaobaoTime() bool {
 	return false
 }
 
+func getLoginAds(db *sql.DB, adtype int64) []*verify.AdBanner {
+	rows, err := db.Query(`SELECT id, pos, img, stime, etime FROM login_banner 
+	WHERE type = ? AND online = 1 AND deleted = 0 AND pos > 0 
+	ORDER BY pos`, adtype)
+	if err != nil {
+		log.Printf("getLoginAds failed:%v", err)
+		return nil
+	}
+	defer rows.Close()
+	var ads []*verify.AdBanner
+	var npos int64
+	for rows.Next() {
+		var ad verify.AdBanner
+		var pos, stime, etime int64
+		err = rows.Scan(&ad.Id, &pos, &ad.Img, &stime, &etime)
+		if err != nil {
+			log.Printf("getLoginAds scan failed:%v", err)
+			continue
+		}
+		if pos <= npos {
+			continue
+		}
+		now := util.GetCurTimeNum()
+		if pos == npos {
+			if stime <= now && now < etime {
+				ads[len(ads)-1] = &ad
+			}
+		} else if pos < npos {
+			if (stime == 0 && etime == 0) || (stime <= now && now < etime) {
+				ads = append(ads, &ad)
+				npos = pos
+			}
+		}
+	}
+	return ads
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
@@ -995,11 +1037,13 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		taobao = 1
 		cover, _ = getSpecTaobaoInfo(db)
 	}
+	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
+	ads := getLoginAds(db, adtype)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
 		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
-		Wxauthurl: authurl, Taobao: taobao, Cover: cover}, nil
+		Wxauthurl: authurl, Taobao: taobao, Cover: cover, Ads: ads}, nil
 }
 
 func genPortalDst(db *sql.DB, openid string) string {

@@ -208,6 +208,7 @@ func refund(req RefundRequest) bool {
 		log.Printf("ReadAll resp failed:%v", err)
 		return false
 	}
+	log.Printf("resp:%s", string(rspbody))
 	var rs SimpleResponse
 	dec := xml.NewDecoder(bytes.NewReader(rspbody))
 	err = dec.Decode(&rs)
