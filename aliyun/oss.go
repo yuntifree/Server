@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	innerEndpoint   = "oss-cn-shenzhen-internal.aliyuncs.com"
 	endpoint        = "oss-cn-shenzhen.aliyuncs.com"
 	accessKeyID     = "LTAIOpvgiTmAKJNi"
 	accessKeySecret = "apT9ttTZcedRj5bPdOlmLgvT8vM4R4"
@@ -52,7 +53,7 @@ func UploadOssImgFromFile(filename, filepath string) bool {
 }
 
 func uploadOssBucketFromFile(filename, filepath, ossbucket string) bool {
-	client, err := oss.New(endpoint, accessKeyID, accessKeySecret)
+	client, err := oss.New(innerEndpoint, accessKeyID, accessKeySecret)
 	if err != nil {
 		log.Printf("oss init failed:%v", err)
 		return false

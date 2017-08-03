@@ -28,7 +28,7 @@ func main() {
 	dir := flag.String("dir", "/data/dev/html", "image directory")
 	flag.Parse()
 	c := make(chan notify.EventInfo, 100)
-	if err := notify.Watch(*dir, c, notify.Create); err != nil {
+	if err := notify.Watch(*dir, c, notify.InCloseWrite); err != nil {
 		log.Fatal(err)
 	}
 	defer notify.Stop(c)
