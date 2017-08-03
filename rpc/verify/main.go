@@ -989,6 +989,8 @@ func getLoginAds(db *sql.DB, adtype int64) []*verify.AdBanner {
 			log.Printf("getLoginAds scan failed:%v", err)
 			continue
 		}
+		log.Printf("id:%d pos:%d img:%s, stime:%d etime:%d",
+			ad.Id, pos, ad.Img, stime, etime)
 		if pos <= npos {
 			continue
 		}
@@ -997,7 +999,7 @@ func getLoginAds(db *sql.DB, adtype int64) []*verify.AdBanner {
 			if stime <= now && now < etime {
 				ads[len(ads)-1] = &ad
 			}
-		} else if pos < npos {
+		} else if pos > npos {
 			if (stime == 0 && etime == 0) || (stime <= now && now < etime) {
 				ads = append(ads, &ad)
 				npos = pos
