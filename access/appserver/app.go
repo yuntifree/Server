@@ -390,6 +390,28 @@ func reportAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func reportAdView(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	usermac := req.GetParamString("wlanusermac")
+	apmac := req.GetParamString("wlanapmac")
+	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
+	id := req.GetParamInt("id")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "ReportAdView",
+		&config.AdViewRequest{Head: &common.Head{Sid: uuid},
+			Usermac: usermac, Apmac: apmac, Id: id})
+	httpserver.CheckRPCErrCallback(rpcerr, "PortalLogin", req.Callback)
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "ReportAdView", req.Callback)
+
+	body := httpserver.GenResponseBodyCallback(res, req.Callback, false)
+	req.WriteRsp(w, body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1972,6 +1994,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_wifi", httpserver.AppHandler(reportWifi))
 	mux.Handle("/report_click", httpserver.AppHandler(reportClick))
 	mux.Handle("/report_ad_click", httpserver.AppHandler(reportAdClick))
+	mux.Handle("/report_ad_view", httpserver.AppHandler(reportAdView))
 	mux.Handle("/report_apmac", httpserver.AppHandler(reportApmac))
 	mux.Handle("/connect_wifi", httpserver.AppHandler(connectWifi))
 	mux.Handle("/upload_callback", httpserver.AppHandler(uploadCallback))

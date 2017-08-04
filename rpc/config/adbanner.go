@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/net/context"
@@ -120,5 +121,54 @@ func (s *server) ModAdBanner(ctx context.Context, in *config.AdBannerRequest) (*
 	util.PubRPCSuccRsp(w, "config", "ModAdBanner")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+	}, nil
+}
+
+func genViewTable() string {
+	now := time.Now()
+	return fmt.Sprintf("banner_view_%4d%02d", now.Year(), now.Month())
+}
+
+func createViewTable(db *sql.DB, tname string) error {
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s LIKE banner_view", tname)
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("crateViewTable %s failed:%v", tname, err)
+	}
+	return nil
+}
+
+func (s *server) ReportAdView(ctx context.Context, in *config.AdViewRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "AdViewRequest")
+	table := genViewTable()
+	err := createViewTable(db, table)
+	if err != nil {
+		log.Printf("ReportAdView createViewTable failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid},
+		}, nil
+	}
+	query := fmt.Sprintf("INSERT INTO %s (usermac, apmac, bid, ctime) VALUES(?, ?, ?, NOW())",
+		table)
+	_, err = db.Exec(query, in.Usermac, in.Apmac, in.Id)
+	if err != nil {
+		log.Printf("ReportAdView record view failed:%s %s %d %v",
+			in.Usermac, in.Apmac, in.Id, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1},
+		}, nil
+	}
+	_, err = db.Exec(`INSERT INTO banner_view_stat(bid, view_cnt, ctime) 
+		VALUES(?, 1, CURDATE()) ON DUPLICATE KEY UPDATE view_cnt = view_cnt + 1`,
+		in.Id)
+	if err != nil {
+		log.Printf("ReportAdView record stat failed:%d %v", in.Id, err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1},
+		}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "AdViewRequest")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0},
 	}, nil
 }

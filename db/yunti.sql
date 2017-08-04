@@ -703,6 +703,29 @@ CREATE TABLE IF NOT EXISTS login_banner
     KEY(etime)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS banner_view
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    usermac     varchar(48) NOT NULL,
+    apmac   varchar(48) NOT NULL,
+    bid     int unsigned NOT NULL,
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    KEY(usermac),
+    KEY(apmac),
+    KEY(bid)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS banner_view_stat
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    bid     int unsigned NOT NULL,
+    view_cnt int unsigned NOT NULL DEFAULT 0,
+    ctime   date NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id),
+    UNIQUE KEY(bid, ctime)
+) ENGINE = InnoDB;
+
 -- 修改记录
 CREATE TABLE IF NOT EXISTS login_banner_history
 (
