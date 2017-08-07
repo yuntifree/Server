@@ -390,28 +390,6 @@ func reportAdClick(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
-func reportAdView(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
-	var req httpserver.Request
-	req.Init(r)
-	usermac := req.GetParamString("wlanusermac")
-	apmac := req.GetParamString("wlanapmac")
-	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
-	id := req.GetParamInt("id")
-
-	uuid := util.GenUUID()
-	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "ReportAdView",
-		&config.AdViewRequest{Head: &common.Head{Sid: uuid},
-			Usermac: usermac, Apmac: apmac, Id: id})
-	httpserver.CheckRPCErrCallback(rpcerr, "PortalLogin", req.Callback)
-	res := resp.Interface().(*common.CommReply)
-	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "ReportAdView", req.Callback)
-
-	body := httpserver.GenResponseBodyCallback(res, req.Callback, false)
-	req.WriteRsp(w, body)
-	httpserver.ReportSuccResp(r.RequestURI)
-	return nil
-}
-
 func fetchWifi(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1650,16 +1628,21 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		tid = tids[0]
 	}
 	arr := strings.Split(extend, ",")
-	if len(arr) != 5 {
+	if len(arr) < 5 {
 		log.Printf("auth parse extend failed:%s", extend)
 	} else {
 		log.Printf("form:%v", r.Form)
+		var appid string
+		if len(arr) > 5 {
+			appid = arr[5]
+		}
 
 		uuid := util.GenUUID()
 		_, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "RecordWxConn",
 			&verify.WxConnRequest{Head: &common.Head{Sid: uuid},
 				Openid: openid, Acname: arr[0], Userip: arr[1],
-				Acip: arr[2], Usermac: arr[3], Apmac: arr[4], Tid: tid})
+				Acip: arr[2], Usermac: arr[3], Apmac: arr[4],
+				Appid: appid, Tid: tid})
 		if rpcerr.Interface() != nil {
 			log.Printf("auth RecordWxConn failed:%v", rpcerr)
 		}
@@ -1994,7 +1977,6 @@ func NewAppServer() http.Handler {
 	mux.Handle("/report_wifi", httpserver.AppHandler(reportWifi))
 	mux.Handle("/report_click", httpserver.AppHandler(reportClick))
 	mux.Handle("/report_ad_click", httpserver.AppHandler(reportAdClick))
-	mux.Handle("/report_ad_view", httpserver.AppHandler(reportAdView))
 	mux.Handle("/report_apmac", httpserver.AppHandler(reportApmac))
 	mux.Handle("/connect_wifi", httpserver.AppHandler(connectWifi))
 	mux.Handle("/upload_callback", httpserver.AppHandler(uploadCallback))

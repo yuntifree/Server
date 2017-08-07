@@ -179,4 +179,5 @@ message WxConnRequest {
     string userip = 6;
     string apmac = 7;
     string tid = 8;
+    string appid = 9;
 }

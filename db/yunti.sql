@@ -708,12 +708,22 @@ CREATE TABLE IF NOT EXISTS banner_view
     id      bigint unsigned NOT NULL AUTO_INCREMENT,
     usermac     varchar(48) NOT NULL,
     apmac   varchar(48) NOT NULL,
-    bid     int unsigned NOT NULL,
+    bid_1     int unsigned NOT NULL DEFAULT 0,
+    bid_2     int unsigned NOT NULL DEFAULT 0,
+    bid_3     int unsigned NOT NULL DEFAULT 0,
+    bid_4     int unsigned NOT NULL DEFAULT 0,
+    bid_5     int unsigned NOT NULL DEFAULT 0,
+    bid_6     int unsigned NOT NULL DEFAULT 0,
+    bid_7     int unsigned NOT NULL DEFAULT 0,
+    bid_8     int unsigned NOT NULL DEFAULT 0,
+    bid_9     int unsigned NOT NULL DEFAULT 0,
+    bid_10     int unsigned NOT NULL DEFAULT 0,
+    bid_11     int unsigned NOT NULL DEFAULT 0,
+    bid_12     int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(usermac),
-    KEY(apmac),
-    KEY(bid)
+    KEY(apmac)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS banner_view_stat

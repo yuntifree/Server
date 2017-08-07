@@ -35,14 +35,6 @@ service Config{
     rpc FetchTravelAd(common.CommRequest) returns (TravelAdReply) {}
     rpc AddTravelAd(TravelAdRequest) returns (common.CommReply) {}
     rpc ModTravelAd(TravelAdRequest) returns (common.CommReply) {}
-    rpc ReportAdView(AdViewRequest) returns (common.CommReply) {}
-}
-
-message AdViewRequest {
-    common.Head head = 1;
-    string usermac = 2;
-    string apmac = 3;
-    int64 id = 4;
 }
 
 message AdBannerInfo {

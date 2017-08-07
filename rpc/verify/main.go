@@ -1009,6 +1009,61 @@ func getLoginAds(db *sql.DB, adtype int64) []*verify.AdBanner {
 	return ads
 }
 
+func genViewTable() string {
+	now := time.Now()
+	return fmt.Sprintf("banner_view_%4d%02d", now.Year(), now.Month())
+}
+
+func createViewTable(db *sql.DB, tname string) error {
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s LIKE banner_view", tname)
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("crateViewTable %s failed:%v", tname, err)
+	}
+	return nil
+}
+
+func recordAdView(db *sql.DB, apmac, usermac string, ads []*verify.AdBanner) {
+	table := genViewTable()
+	err := createViewTable(db, table)
+	if err != nil {
+		log.Printf("recordAdView createViewTable failed:%v", err)
+		return
+	}
+	if len(ads) == 0 {
+		log.Printf("recordAdView empty ads, apmac:%s usermac:%s",
+			apmac, usermac)
+		return
+	}
+	var ids [12]int64
+	for i := 0; i < len(ads) && i < 12; i++ {
+		ids[i] = ads[i].Id
+	}
+
+	query := fmt.Sprintf(`INSERT INTO %s (usermac, apmac, bid_1, bid_2, 
+	bid_3, bid_4, bid_5, bid_6, bid_7, bid_8, bid_9, bid_10, bid_11,
+	bid_12, ctime) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+		table)
+	_, err = db.Exec(query, usermac, apmac, ids[0], ids[1],
+		ids[2], ids[3], ids[4], ids[5], ids[6], ids[7], ids[8], ids[9],
+		ids[10], ids[11])
+	if err != nil {
+		log.Printf("ReportAdView record view failed:%s %s %+v %v",
+			usermac, apmac, ads, err)
+		return
+	}
+
+	for i := 0; i < len(ads); i++ {
+		_, err = db.Exec(`INSERT INTO banner_view_stat(bid, view_cnt, ctime) 
+		VALUES(?, 1, CURDATE()) ON DUPLICATE KEY UPDATE view_cnt = view_cnt + 1`,
+			ads[i].Id)
+		if err != nil {
+			log.Printf("ReportAdView record stat failed:%d %v", ads[i].Id, err)
+			continue
+		}
+	}
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
@@ -1041,6 +1096,7 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	}
 	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
+	recordAdView(db, in.Info.Apmac, in.Info.Usermac, ads)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
@@ -1105,9 +1161,22 @@ func (s *server) CheckSubscribe(ctx context.Context, in *verify.SubscribeRequest
 func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*common.CommReply, error) {
 	log.Printf("RecordWxConn request:%v", in)
 	util.PubRPCRequest(w, "verify", "RecordWxConn")
-	_, err := db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
-		in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid,
-		in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
+	var err error
+	if in.Appid == "" {
+		_, err = db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
+			in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid,
+			in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
+	} else {
+		_, err = db.Exec(`INSERT INTO wx_conn_info(appid, openid, acname, 
+		acip, usermac, userip, apmac, tid, ctime, etime) VALUES(?, ?, ?,
+		?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MiNUTE)) 
+		ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?,
+		userip = ?, apmac = ?, tid = ?, subscribe = 0, 
+		etime = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
+			in.Appid, in.Openid, in.Acname, in.Acip, in.Usermac,
+			in.Userip, in.Apmac, in.Tid, in.Acname, in.Acip,
+			in.Usermac, in.Userip, in.Apmac, in.Tid)
+	}
 	if err != nil {
 		log.Printf("RecordWxConn failed:%v", err)
 	}
