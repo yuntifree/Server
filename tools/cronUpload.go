@@ -13,7 +13,7 @@ import (
 
 const (
 	dir     = "/data/seaportsp/attachment/images"
-	baseURL = "http://img.yunxingzh.com"
+	baseURL = "http://yuntiimgs.oss-cn-shenzhen-internal.aliyuncs.com"
 )
 
 func main() {
