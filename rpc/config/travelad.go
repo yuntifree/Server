@@ -152,9 +152,9 @@ func modTravelAd(db *sql.DB, info *config.TravelAdInfo) error {
 		dst = fmt.Sprintf("%s?type=%d", redirectURL, rtype)
 	}
 	_, err := db.Exec(`UPDATE travel_ad Set img = ?, dst = ?, title = ?, 
-	stime = ?, etime = ?, online = ?, deleted = ?`,
+	stime = ?, etime = ?, online = ?, deleted = ? WHERE id = ?`,
 		info.Img, dst, info.Title, info.Stime, info.Etime,
-		info.Online, info.Deleted)
+		info.Online, info.Deleted, info.Id)
 	if err != nil {
 		log.Printf("modTravelAd failed:%v", err)
 		return err
