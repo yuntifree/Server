@@ -129,3 +129,52 @@ func (s *server) ModLoginImg(ctx context.Context, in *config.LoginImgRequest) (*
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
 }
+
+func getOnlineLoginImg(db *sql.DB) []*config.LoginImgInfo {
+	rows, err := db.Query("SELECT id, img FROM login_banner WHERE online = 1 AND deleted = 0 AND intranet = 0")
+	if err != nil {
+		log.Printf("getOnlineLoginImg failed:%v", err)
+		return nil
+	}
+	defer rows.Close()
+	var infos []*config.LoginImgInfo
+	for rows.Next() {
+		var info config.LoginImgInfo
+		err = rows.Scan(&info.Id, &info.Img)
+		if err != nil {
+			log.Printf("getOnlineLoginImg scan failed:%v", err)
+			continue
+		}
+		infos = append(infos, &info)
+	}
+	return infos
+}
+
+func (s *server) GetOnlineLoginImg(ctx context.Context, in *common.CommRequest) (*config.LoginImgReply, error) {
+	util.PubRPCRequest(w, "config", "GetOnlineLoginImg")
+	infos := getOnlineLoginImg(db)
+	util.PubRPCSuccRsp(w, "config", "GetOnlineLoginImg")
+	return &config.LoginImgReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Infos: infos}, nil
+}
+
+func ackLoginImg(db *sql.DB, id int64) error {
+	_, err := db.Exec("UPDATE login_banner SET intranet = 1 WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *server) AckLoginImg(ctx context.Context, in *common.CommRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "AckLoginImg")
+	err := ackLoginImg(db, in.Id)
+	if err != nil {
+		log.Printf("AckLoginImg failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	util.PubRPCSuccRsp(w, "config", "AckLoginImg")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}

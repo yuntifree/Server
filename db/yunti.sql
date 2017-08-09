@@ -696,11 +696,16 @@ CREATE TABLE IF NOT EXISTS login_banner
     etime   int unsigned NOT NULL DEFAULT 0,
     online  tinyint unsigned NOT NULL DEFAULT 0,
     deleted tinyint unsigned NOT NULL DEFAULT 0,
+    intranet   tinyint unsigned NOT NULL DEFAULT 0,
+    pos     int unsigned NOT NULL DEFAULT 0,
     ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    mtime   datetime NOT NULL DEFAULT '2017-01-01',
     PRIMARY KEY(id),
     KEY(type),
     KEY(stime),
-    KEY(etime)
+    KEY(etime),
+    KEY(mtime),
+    KEY(pos)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS banner_view

@@ -35,6 +35,8 @@ service Config{
     rpc FetchTravelAd(common.CommRequest) returns (TravelAdReply) {}
     rpc AddTravelAd(TravelAdRequest) returns (common.CommReply) {}
     rpc ModTravelAd(TravelAdRequest) returns (common.CommReply) {}
+    rpc GetOnlineLoginImg(common.CommRequest) returns (LoginImgReply) {}
+    rpc AckLoginImg(common.CommRequest) returns (common.CommReply) {}
 }
 
 message AdBannerInfo {

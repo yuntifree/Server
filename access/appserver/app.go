@@ -1227,6 +1227,45 @@ func getPortalConf(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func getOnlineLoginImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetOnlineLoginImg",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetOnlineLoginImg")
+	res := resp.Interface().(*config.LoginImgReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetOnlineLoginImg")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
+func ackLoginImg(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AckLoginImg",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}, Id: id})
+	httpserver.CheckRPCErr(rpcerr, "AckLoginImg")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AckLoginImg")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func getPortalContent(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
@@ -1990,6 +2029,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_def_head", httpserver.AppHandler(getDefHead))
 	mux.Handle("/get_portal_menu", httpserver.AppHandler(getPortalMenu))
 	mux.Handle("/get_portal_conf", httpserver.AppHandler(getPortalConf))
+	mux.Handle("/get_online_loginimg", httpserver.AppHandler(getOnlineLoginImg))
 	mux.Handle("/get_portal_content", httpserver.AppHandler(getPortalContent))
 	mux.Handle("/get_mpwx_info", httpserver.AppHandler(getMpwxInfo))
 	mux.Handle("/get_mpwx_article", httpserver.AppHandler(getMpwxArticle))
@@ -2010,6 +2050,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/xcx_login", httpserver.AppHandler(xcxLogin))
 	mux.Handle("/get_stations", httpserver.AppHandler(getStations))
 	mux.Handle("/submit_reserve_info", httpserver.AppHandler(submitReserveInfo))
+	mux.Handle("/ack_loginimg", httpserver.AppHandler(ackLoginImg))
 	mux.Handle("/get_reserve_info", httpserver.AppHandler(getReserveInfo))
 	mux.Handle("/submit_donate_info", httpserver.AppHandler(submitDonateInfo))
 	mux.Handle("/get_travel_ad", httpserver.AppHandler(getTravelAd))
