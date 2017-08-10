@@ -3,6 +3,7 @@ package main
 import (
 	"Server/util"
 	"encoding/json"
+	"flag"
 	"log"
 	"os"
 	"strings"
@@ -13,7 +14,7 @@ const (
 	ackURL = "http://120.76.236.185/ack_loginimg"
 	uid    = 137
 	token  = "6ba9ac5a422d4473b337d57376dd3488"
-	dir    = "/data/tmp/"
+	defDir = "/data/tmp/"
 )
 
 type GetRequest struct {
@@ -47,10 +48,12 @@ type AckResponse struct {
 }
 
 func main() {
+	dir := flag.String("dir", defDir, "image directory")
+	flag.Parse()
 	images := getOnlineImages()
 	log.Printf("images:%+v", images)
 	for _, v := range images {
-		handleImage(v)
+		handleImage(v, *dir)
 	}
 }
 
@@ -120,11 +123,12 @@ func ackLoginImg(id int64) {
 	}
 }
 
-func handleImage(img Image) {
+func handleImage(img Image, dir string) {
 	filename := extractFilename(img.Img)
 	path := dir + filename
 	if existsFile(path) {
-		log.Printf("file:%s exists", filename)
+		log.Printf("path:%s exists", filename)
+		ackLoginImg(img.Id)
 		return
 	}
 	resp, err := util.HTTPRequest(img.Img, "")
