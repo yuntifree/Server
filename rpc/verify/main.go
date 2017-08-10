@@ -1202,8 +1202,30 @@ func refreshActiveTime(db *sql.DB, uid int64) {
 	}
 }
 
+func genOnlineTable() string {
+	now := time.Now()
+	return fmt.Sprintf("online_record_%04d%02d", now.Year(), now.Month())
+}
+
+func createOnlineTable(db *sql.DB, table string) error {
+	_, err := db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s LIKE online_record", table))
+	if err != nil {
+		log.Printf("createOnlineTable %s failed:%v", table, err)
+		return err
+	}
+	return nil
+}
+
 func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInfo) {
-	_, err := db.Exec("INSERT INTO online_record(uid, phone, usermac, apmac, acname, ctime) VALUES (?, ?, ?, ?, ?, NOW())",
+	table := genOnlineTable()
+	err := createOnlineTable(db, table)
+	if err != nil {
+		log.Printf("addOnlineRecord online record failed:%d %s %v %v",
+			uid, phone, info, err)
+		return
+	}
+	query := fmt.Sprintf("INSERT INTO %s(uid, phone, usermac, apmac, acname,ctime) VALUES (?, ?, ?, ?, ?, NOW())", table)
+	_, err = db.Exec(query,
 		uid, phone, info.Usermac, info.Apmac, info.Acname)
 	if err != nil {
 		log.Printf("addOnlineRecord online record failed:%d %s %v %v",
