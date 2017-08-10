@@ -99,7 +99,7 @@ func (s *server) AddLoginImg(ctx context.Context, in *config.LoginImgRequest) (*
 }
 
 func modLoginImg(db *sql.DB, uid int64, info *config.LoginImgInfo) error {
-	_, err := db.Exec("UPDATE login_banner SET img = ?, stime = ?, etime = ?, online = ?, deleted = ? WHERE id = ?",
+	_, err := db.Exec("UPDATE login_banner SET img = ?, stime = ?, etime = ?, online = ?, deleted = ?, mtime = NOW(), intranet = 0 WHERE id = ?",
 		info.Img, info.Stime, info.Etime, info.Online, info.Deleted,
 		info.Id)
 	if err != nil {
