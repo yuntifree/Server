@@ -14,6 +14,8 @@ const (
 	WxAppkey       = "829008d0ae26aa03522bc0dbc370d790"
 	WxDgAppid      = "wxbf43854270af39aa"
 	WxDgAppkey     = "3adcb7719d35c0fcf0dd9cc9d12a2565"
+	seaportAppid   = "wx14606cf1ccfb0695"
+	seaportSecret  = "6200630df4cb44d31cc16674a7802658"
 	wxTokenURL     = "https://api.weixin.qq.com/sns/oauth2/access_token"
 	wxInfoURL      = "https://api.weixin.qq.com/sns/userinfo"
 	wxAuthURL      = "https://open.weixin.qq.com/connect/oauth2/authorize"
@@ -208,6 +210,9 @@ func GetAccessToken(db *sql.DB, atype int64) string {
 	if atype == 1 {
 		appid = WxAppid
 		appsec = WxAppkey
+	} else if atype == 2 {
+		appid = seaportAppid
+		appsec = seaportSecret
 	}
 	err := db.QueryRow("SELECT access_token FROM wx_token WHERE appid = ? AND expire_time > NOW()", appid).Scan(&accesstoken)
 	if err != nil && err != sql.ErrNoRows {
