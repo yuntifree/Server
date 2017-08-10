@@ -6,7 +6,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"strings"
 )
 
 const (
@@ -82,14 +81,6 @@ func getOnlineImages() []Image {
 	return rsp.Data.Infos
 }
 
-func extractFilename(path string) string {
-	pos := strings.LastIndex(path, "/")
-	if pos != -1 {
-		return path[pos+1:]
-	}
-	return path
-}
-
 func existsFile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
@@ -124,7 +115,7 @@ func ackLoginImg(id int64) {
 }
 
 func handleImage(img Image, dir string) {
-	filename := extractFilename(img.Img)
+	filename := util.ExtractFilename(img.Img)
 	path := dir + filename
 	if existsFile(path) {
 		log.Printf("path:%s exists", filename)

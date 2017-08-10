@@ -2,25 +2,17 @@ package main
 
 import (
 	"Server/aliyun"
+	"Server/util"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/rjeczalik/notify"
 )
 
-func extractFilename(path string) string {
-	pos := strings.LastIndex(path, "/")
-	if pos != -1 {
-		return path[pos+1:]
-	}
-	return path
-}
-
 func uploadFile(path string) bool {
-	filename := extractFilename(path)
+	filename := util.ExtractFilename(path)
 	return aliyun.UploadOssImgFromFile(filename, path)
 }
 

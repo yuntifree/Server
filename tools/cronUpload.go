@@ -2,12 +2,12 @@ package main
 
 import (
 	"Server/aliyun"
+	"Server/util"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -23,7 +23,7 @@ func main() {
 		mtime := info.ModTime()
 		if mode.IsRegular() && !mtime.Before(now.Add(-5*60*time.Second)) {
 			fmt.Println("regualar file:", path)
-			filename := extractFilename(path)
+			filename := util.ExtractFilename(path)
 			if !hasUploadFile(filename) {
 				fmt.Println("upload file:", path)
 				if !uploadFile(path) {
@@ -35,16 +35,8 @@ func main() {
 	})
 }
 
-func extractFilename(path string) string {
-	pos := strings.LastIndex(path, "/")
-	if pos != -1 {
-		return path[pos+1:]
-	}
-	return path
-}
-
 func uploadFile(path string) bool {
-	filename := extractFilename(path)
+	filename := util.ExtractFilename(path)
 	return aliyun.UploadOssImgFromFile(filename, path)
 }
 
