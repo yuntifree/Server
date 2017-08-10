@@ -851,6 +851,12 @@ func getLoginAdType(db *sql.DB, acname, apmac string) int64 {
 	return btype
 }
 
+func toIntranetURL(url string) string {
+	inner := "http://192.168.102.51:8088/"
+	filename := util.ExtractFilename(url)
+	return inner + filename
+}
+
 func getLoginImg(db *sql.DB, acname, apmac string) string {
 	var img string
 	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
@@ -860,7 +866,7 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 
 	img = defLoginImg
 	btype := getLoginAdType(db, acname, apmac)
-	rows, err := db.Query("SELECT img, stime, etime FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 AND pos = 0 ORDER BY id DESC", btype)
+	rows, err := db.Query("SELECT img, stime, etime, intranet FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 AND pos = 0 ORDER BY id DESC", btype)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
 	}
@@ -868,19 +874,26 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 	c := util.GetCurTimeNum()
 	for rows.Next() {
 		var banner string
-		var stime, etime int64
-		err = rows.Scan(&banner, &stime, &etime)
+		var stime, etime, intranet int64
+		err = rows.Scan(&banner, &stime, &etime, &intranet)
 		if err != nil {
 			log.Printf("getLoginImg scan failed:%v", err)
 			continue
 		}
 		if stime == 0 && etime == 0 {
 			if !isUnitAp(db, apmac, huayanghuUnit) {
-				img = banner
+				if intranet == 0 {
+					img = banner
+				} else {
+					img = toIntranetURL(banner)
+				}
 			}
 		}
 		if stime <= c && c <= etime {
-			return banner
+			if intranet == 0 {
+				return banner
+			}
+			return toIntranetURL(banner)
 		}
 	}
 	return img
