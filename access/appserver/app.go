@@ -38,7 +38,7 @@ const (
 	maxZipcode   = 820000
 	portalDst    = "http://120.25.133.234/"
 	postLoginURL = "http://wx.yunxingzh.com/wx/h5/wxpostlogin.html"
-	succLoginURL = "http://wx.yunxingzh.com/scenestest201704071912/scenes.html?unid=195"
+	succLoginURL = "http://www.seaportsp.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile"
 	defLoginURL  = "http://192.168.100.4:8080/login201703171857/"
 )
 const (
@@ -1603,7 +1603,7 @@ func jumpOnline(w http.ResponseWriter, r *http.Request) {
 	}
 	redirect := wxHost + "wx_mp_login"
 	redirect += "?echostr=" + echostr
-	dst := util.GenRedirectURL(redirect)
+	dst := util.GenSeaportRedirect(redirect)
 	log.Printf("jumpOnline redirect:%s", dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
@@ -1634,7 +1634,7 @@ func checkSubscribe(w http.ResponseWriter, r *http.Request) {
 	}
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.VerifyServerType, 0, "CheckSubscribe",
-		&verify.SubscribeRequest{Head: &common.Head{Sid: uuid}, Type: 0,
+		&verify.SubscribeRequest{Head: &common.Head{Sid: uuid}, Type: 2,
 			Openid: openid})
 	if rpcerr.Interface() != nil {
 		dst = fmt.Sprintf("%s?uid=%s&token=%s&ts=%d&s=1", dst, uid, token,

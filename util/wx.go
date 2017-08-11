@@ -35,6 +35,10 @@ func GenRedirectURL(redirect string) string {
 	return fmt.Sprintf("%s?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=list#wechat_redirect", wxAuthURL, WxDgAppid, url.QueryEscape(redirect))
 }
 
+func GenSeaportRedirect(redirect string) string {
+	return fmt.Sprintf("%s?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=list#wechat_redirect", wxAuthURL, seaportAppid, url.QueryEscape(redirect))
+}
+
 //GetCodeToken use code to get wx login info
 func GetCodeToken(code string) (wxi WxInfo, err error) {
 	url := wxTokenURL + "?appid=" + WxDgAppid + "&secret=" + WxDgAppkey + "&code=" + code + "&grant_type=authorization_code"
@@ -226,7 +230,7 @@ func GetAccessToken(db *sql.DB, atype int64) string {
 		log.Printf("getAccessToken GetWxToken failed:%v", err)
 	}
 	log.Printf("getAccessToken appid:%s appsec:%s accesstoken:%s", appid, appsec, accesstoken)
-	_, err = db.Exec("INSERT INTO wx_token(appid, secret, access_token, expire_time) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 2 HOUR)) ON DUPLICATE KEY UPDATE access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 2 HOUR)",
+	_, err = db.Exec("INSERT INTO wx_token(appid, secret, access_token, expire_time) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE)) ON DUPLICATE KEY UPDATE access_token = ?, expire_time = DATE_ADD(NOW(), INTERVAL 10 MINUTE)",
 		appid, appsec, accesstoken, accesstoken)
 	if err != nil {
 		log.Printf("getAccessToken record failed:%v", err)
