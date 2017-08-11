@@ -58,7 +58,7 @@ func getTasks(db *sql.DB) []*Task {
 	for rows.Next() {
 		var t Task
 		err = rows.Scan(&t.Id, &t.Info.Openid, &t.Info.Acname,
-			&t.Info.Acip, &t.Info.Usermac,
+			&t.Info.Acip, &t.Info.Usermac, &t.Info.Userip,
 			&t.Info.Phone)
 		if err != nil {
 			log.Printf("getTasks scan failed:%v", err)
