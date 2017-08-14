@@ -937,6 +937,9 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 			def = 8
 		} else if apmac == "a85840ccf1a0" {
 			def = 7
+		} else if acname == "AC_120_A_08" || acname == "AC_120_A_09" ||
+			acname == "AC_120_A_07" || acname == "AC_120_A_10" {
+			def = 2
 		} else if util.IsWjjKongguAcname(acname) {
 			def = 4
 		} else if util.IsWjjAcname(acname) {
