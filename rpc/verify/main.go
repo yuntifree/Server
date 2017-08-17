@@ -929,7 +929,6 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
 	}
-	log.Printf("appid:%s", appid)
 
 	if appid == "" || !checkSpareTime(stime, etime) {
 		var def int64
@@ -943,17 +942,16 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else if util.IsWjjKongguAcname(acname) {
 			def = 4
 		} else if util.IsWjjAcname(acname) {
-			def = 6
+			def = 2 //6
 		} else if util.IsKongguAcname(acname) {
-			def = 5
+			def = 2 //5
 		} else if util.IsLzfAcname(acname) {
-			def = 3
+			def = 2 //3
 		} else if util.IsTestAcname(acname) {
 			def = 2
 		} else {
-			def = 1
+			def = 2 //1
 		}
-		log.Printf("def:%d", def)
 		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
@@ -1096,8 +1094,8 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
 			in.Info.Apmac)
 
-		log.Printf("acname:%s apmac:%s shopid:%s", in.Info.Acname,
-			in.Info.Apmac, shopid)
+		log.Printf("acname:%s apmac:%s usermac:%s shopid:%s", in.Info.Acname,
+			in.Info.Apmac, in.Info.Usermac, shopid)
 	}
 	var taobao int64
 	var cover string
