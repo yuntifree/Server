@@ -68,7 +68,7 @@ func checkRpcStat(db *sql.DB, rpc rpcMethod) {
 
 	if req >= 10 {
 		rate := succ * 100 / req
-		if rate < 95 {
+		if rate < 90 {
 			content := fmt.Sprintf("%s RPC Method: %s-%s req:%d succ:%d rate:%d",
 				ctime, rpc.Service, rpc.Method, req, succ, rate)
 			log.Printf("SendAlertMail %s", content)
