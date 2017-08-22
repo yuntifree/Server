@@ -98,6 +98,10 @@ func genInquiryDsn() string {
 	return "access:^yunti9df3b01c$@tcp(" + masterRds + ":3306)/inquiry?charset=utf8"
 }
 
+func genWeixinDsn() string {
+	return "access:^yunti9df3b01c$@tcp(" + masterRds + ":3306)/weixin?charset=utf8"
+}
+
 //InitDB connect to rds
 func InitDB(readonly bool) (*sql.DB, error) {
 	dsn := genDsn(readonly)
@@ -113,6 +117,12 @@ func InitMonitorDB() (*sql.DB, error) {
 //InitInquiryDB connect to inquiry rds
 func InitInquiryDB() (*sql.DB, error) {
 	dsn := genInquiryDsn()
+	return sql.Open("mysql", dsn)
+}
+
+//InitWxDB connect to inquiry rds
+func InitWxDB() (*sql.DB, error) {
+	dsn := genWeixinDsn()
 	return sql.Open("mysql", dsn)
 }
 
