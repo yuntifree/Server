@@ -36,6 +36,7 @@ const (
 	taobaoBannerType     = 9
 	specTaobaoBannerType = 12
 	huayanghuUnit        = 4
+	onlineScore          = 5
 )
 
 type server struct{}
@@ -724,6 +725,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	} else {
 		img, dst = getTaobaoInfo(db)
 	}
+	//addUserScore(db, uid, onlineScore)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
@@ -857,7 +859,7 @@ func toIntranetURL(url string) string {
 	return inner + filename
 }
 
-func getLoginImg(db *sql.DB, acname, apmac string) string {
+func getLoginImg(db *sql.DB, acname, apmac, usermac string) string {
 	var img string
 	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
 	if img != "" {
@@ -882,7 +884,7 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 		}
 		if stime == 0 && etime == 0 {
 			if !isUnitAp(db, apmac, huayanghuUnit) {
-				if intranet == 0 {
+				if intranet == 0 || acname == "AC_SSH_A_04" || usermac == "0C:51:01:5D:FD:70" {
 					img = banner
 				} else {
 					img = toIntranetURL(banner)
@@ -890,7 +892,7 @@ func getLoginImg(db *sql.DB, acname, apmac string) string {
 			}
 		}
 		if stime <= c && c <= etime {
-			if intranet == 0 {
+			if intranet == 0 || acname == "AC_SSH_A_04" || usermac == "0C:51:01:5D:FD:70" {
 				return banner
 			}
 			return toIntranetURL(banner)
@@ -936,15 +938,14 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 			def = 8
 		} else if apmac == "a85840ccf1a0" {
 			def = 7
-		} else if acname == "AC_120_A_08" || acname == "AC_120_A_09" ||
-			acname == "AC_120_A_07" || acname == "AC_120_A_10" {
-			def = 2
+		} else if acname == "AC_120_A_08" || acname == "AC_120_A_09" {
+			def = 9
 		} else if util.IsWjjKongguAcname(acname) {
-			def = 4
+			def = 2 //4
 		} else if util.IsWjjAcname(acname) {
 			def = 2 //6
 		} else if util.IsKongguAcname(acname) {
-			def = 2 //5
+			def = 5
 		} else if util.IsLzfAcname(acname) {
 			def = 2 //3
 		} else if util.IsTestAcname(acname) {
@@ -1083,7 +1084,7 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
-	img := getLoginImg(db, in.Info.Acname, in.Info.Apmac)
+	img := getLoginImg(db, in.Info.Acname, in.Info.Apmac, in.Info.Usermac)
 	var appid, secret, shopid, authurl string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
@@ -1419,12 +1420,21 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	} else {
 		img, dst = getTaobaoInfo(db)
 	}
+	//addUserScore(db, uid, onlineScore)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
 		Head: &common.Head{Retcode: 0, Uid: uid}, Token: token, Portaldir: dir,
 		Portaltype: ptype, Adtype: adtype, Cover: img,
 		Dst: dst}, nil
+}
+
+func addUserScore(db *sql.DB, uid, score int64) {
+	_, err := db.Exec("UPDATE user SET score = score + ? WHERE uid = ?",
+		score, uid)
+	if err != nil {
+		log.Printf("addUserScore failed:%d %v", uid, err)
+	}
 }
 
 func main() {
