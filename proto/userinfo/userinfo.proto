@@ -9,6 +9,22 @@ service Userinfo{
     rpc ModInfo(InfoRequest) returns (common.CommReply) {}
     rpc GetDefHead(common.CommRequest) returns (HeadReply) {}
     rpc GenRandNick(common.CommRequest) returns (NickReply) {}
+    rpc GetUserScore(common.CommRequest) returns (ScoreReply) {}
+}
+
+message ScoreReply {
+    common.Head head = 1;
+    int64 score = 2;
+    int64 sign = 3;
+    repeated ScoreItem items = 4;
+}
+
+message ScoreItem {
+    int64 id = 1;
+    int64 score = 2;
+    string img = 3;
+    string title = 4;
+    int64 status = 5;
 }
 
 message InfoRequest {
@@ -24,6 +40,7 @@ message InfoReply {
     int64 total = 4;
     int64 save = 5;
     string tip = 6;
+    int64 score = 7;
 }
 
 message HeadInfo {

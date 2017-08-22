@@ -36,8 +36,8 @@ func genUserTip(traffic int64) string {
 func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo.InfoReply, error) {
 	util.PubRPCRequest(w, "userinfo", "GetInfo")
 	var headurl, nickname string
-	var total, save int64
-	err := db.QueryRow("SELECT headurl, nickname, times, traffic FROM user WHERE uid = ?", in.Head.Uid).Scan(&headurl, &nickname, &total, &save)
+	var total, save, score int64
+	err := db.QueryRow("SELECT headurl, nickname, times, traffic, score FROM user WHERE uid = ?", in.Head.Uid).Scan(&headurl, &nickname, &total, &save, &score)
 	if err != nil {
 		log.Printf("GetInfo query failed:%v", err)
 		return &userinfo.InfoReply{
@@ -52,7 +52,7 @@ func (s *server) GetInfo(ctx context.Context, in *common.CommRequest) (*userinfo
 	}
 	return &userinfo.InfoReply{
 		Head: &common.Head{Retcode: 0}, Headurl: headurl, Nickname: string(nick),
-		Total: total, Save: save, Tip: tip}, nil
+		Total: total, Save: save, Tip: tip, Score: score}, nil
 }
 
 func getDefHead(db *sql.DB, stype int64) []*userinfo.HeadInfo {
@@ -146,6 +146,59 @@ func (s *server) ModInfo(ctx context.Context, in *userinfo.InfoRequest) (*common
 	util.PubRPCSuccRsp(w, "userinfo", "ModInfo")
 	return &common.CommReply{
 		Head: &common.Head{Retcode: 0}}, nil
+}
+
+func getUserScore(db *sql.DB, uid int64) int64 {
+	var score int64
+	err := db.QueryRow("SELECT score FROM user WHERE uid = ?", uid).
+		Scan(&score)
+	if err != nil {
+		log.Printf("getUserScore query failed:%v", err)
+	}
+	return score
+}
+
+func hasSign(db *sql.DB, uid int64) int64 {
+	var cnt int64
+	err := db.QueryRow("SELECT COUNT(id) FROM signin_history WHERE ctime >= CURDATE() AND uid = ?", uid).Scan(&cnt)
+	if err != nil {
+		log.Printf("hasSign query failed:%v", err)
+	}
+	if cnt > 0 {
+		return 1
+	}
+	return 0
+}
+
+func getScoreItems(db *sql.DB, uid int64) []*userinfo.ScoreItem {
+	rows, err := db.Query("SELECT i.id, i.img, i.score, IFNULL(u.status,0) FROM score_item i LEFT JOIN user_score_item u ON i.id = u.item AND u.uid = ? AND i.deleted = 0", uid)
+	if err != nil {
+		log.Printf("getScoreItems query failed:%v", err)
+		return nil
+	}
+	defer rows.Close()
+	var items []*userinfo.ScoreItem
+	for rows.Next() {
+		var item userinfo.ScoreItem
+		err = rows.Scan(&item.Id, &item.Img, &item.Score, &item.Status)
+		if err != nil {
+			log.Printf("getScoreItems scan failed:%v", err)
+			continue
+		}
+		items = append(items, &item)
+	}
+	return items
+}
+
+func (s *server) GetUserScore(ctx context.Context, in *common.CommRequest) (*userinfo.ScoreReply, error) {
+	util.PubRPCRequest(w, "userinfo", "GetUserScore")
+	score := getUserScore(db, in.Head.Uid)
+	sign := hasSign(db, in.Head.Uid)
+	items := getScoreItems(db, in.Head.Uid)
+	util.PubRPCSuccRsp(w, "userinfo", "GetUserScore")
+	return &userinfo.ScoreReply{
+		Head: &common.Head{Retcode: 0}, Score: score, Sign: sign,
+		Items: items}, nil
 }
 
 func main() {
