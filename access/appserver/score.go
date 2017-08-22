@@ -45,3 +45,24 @@ func dailySign(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
+
+func exchangeScore(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	num := req.GetParamIntDef("num", 1)
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.UserinfoServerType, uid, "ExchangeScore",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}, Id: id, Num: num})
+	httpserver.CheckRPCErr(rpcerr, "ExchangeScore")
+	res := resp.Interface().(*userinfo.ScoreReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ExchangeScore")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}

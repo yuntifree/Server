@@ -26,6 +26,7 @@ enum ErrCode{
     CHECK_PASSWD = 10020;
     HAS_SIGN = 10021;
     INSUFFICIENT_SCORE = 10022;
+    HAS_EXCHANGE = 10023;
 }
 
 message Head {

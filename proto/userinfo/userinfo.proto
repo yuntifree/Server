@@ -11,6 +11,7 @@ service Userinfo{
     rpc GenRandNick(common.CommRequest) returns (NickReply) {}
     rpc GetUserScore(common.CommRequest) returns (ScoreReply) {}
     rpc DailySign(common.CommRequest) returns (ScoreReply) {}
+    rpc ExchangeScore(common.CommRequest) returns (ScoreReply) {}
 }
 
 message ScoreReply {

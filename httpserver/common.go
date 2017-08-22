@@ -66,6 +66,8 @@ const (
 	ErrMinDraw
 	ErrCheckPasswd
 	ErrHasSign
+	ErrScore
+	ErrHasExchange
 )
 
 var w *nsq.Producer
@@ -805,6 +807,10 @@ func CheckRPCCodeCallback(retcode common.ErrCode, method, callback string) {
 		panic(util.AppError{ErrCheckPasswd, "密码错误", callback})
 	} else if retcode == common.ErrCode_HAS_SIGN {
 		panic(util.AppError{ErrHasSign, "今天已经签到过了", callback})
+	} else if retcode == common.ErrCode_INSUFFICIENT_SCORE {
+		panic(util.AppError{ErrScore, "积分不足", callback})
+	} else if retcode == common.ErrCode_HAS_EXCHANGE {
+		panic(util.AppError{ErrHasExchange, "已经兑换过该商品", callback})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~", callback})
 	}

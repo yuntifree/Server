@@ -2057,6 +2057,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/get_ad_click", httpserver.AppHandler(getAdClick))
 	mux.Handle("/get_user_score", httpserver.AppHandler(getUserScore))
 	mux.Handle("/daily_sign", httpserver.AppHandler(dailySign))
+	mux.Handle("/exchange_score", httpserver.AppHandler(exchangeScore))
 	mux.Handle("/inquiry/", httpserver.AppHandler(inquiryHandler))
 	mux.Handle("/", http.FileServer(http.Dir("/data/server/html")))
 	return mux

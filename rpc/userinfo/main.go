@@ -237,6 +237,78 @@ func incrUserScore(db *sql.DB, uid, score int64) {
 	}
 }
 
+func descUserScore(db *sql.DB, uid, score int64) {
+	_, err := db.Exec("UPDATE user SET score = IF(score > ?, score - ?, 0) WHERE uid = ?",
+		score, score, uid)
+	if err != nil {
+		log.Printf("descUserScore failed:%d %d %v", uid, score, err)
+	}
+}
+
+func getItemScore(db *sql.DB, id int64) int64 {
+	var score int64
+	err := db.QueryRow("SELECT score FROM score_item WHERE id = ?", id).Scan(&score)
+	if err != nil {
+		log.Printf("getItemScore failed:%d %v", id, err)
+	}
+	return score
+}
+
+func recordExchange(db *sql.DB, uid, item, num, score int64) {
+	_, err := db.Exec(`INSERT INTO exchange_history(uid, item, num, score, ctime) 
+	VALUES (?, ?, ?, ?, NOW())`,
+		uid, item, num, score)
+	if err != nil {
+		log.Printf("recordExchange insert history failed:%d %d %d %v",
+			uid, item, num, err)
+		return
+	}
+	_, err = db.Exec(`INSERT INTO user_score_item(uid, item, total, status)
+	VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE total = total + ?`,
+		uid, item, num, num)
+	if err != nil {
+		log.Printf("recordExchange insert user_score_item failed:%d %d %d %v",
+			uid, item, num, err)
+		return
+
+	}
+	return
+}
+
+func hasExchange(db *sql.DB, uid, item int64) bool {
+	var total int64
+	err := db.QueryRow("SELECT total FROM user_score_item WHERE uid = ? AND item = ?",
+		uid, item).Scan(&total)
+	if err != nil {
+		log.Printf("hasExchange query failed:%v", err)
+	}
+	return total > 0
+}
+
+func (s *server) ExchangeScore(ctx context.Context, in *common.CommRequest) (*userinfo.ScoreReply, error) {
+	util.PubRPCRequest(w, "userinfo", "ExchangeScore")
+	if hasExchange(db, in.Head.Uid, in.Id) {
+		log.Printf("has exchange:%d %d", in.Head.Uid, in.Id)
+		return &userinfo.ScoreReply{
+			Head: &common.Head{Retcode: common.ErrCode_HAS_EXCHANGE}}, nil
+	}
+
+	itemScore := getItemScore(db, in.Id)
+	score := getUserScore(db, in.Head.Uid)
+	if score < itemScore*in.Num {
+		log.Printf("not enough score:%d %d %d", in.Head.Uid, score, in.Num)
+		return &userinfo.ScoreReply{
+			Head: &common.Head{Retcode: common.ErrCode_INSUFFICIENT_SCORE}}, nil
+	}
+	log.Printf("descUserScore uid:%d score:%d", in.Head.Uid, itemScore*in.Num)
+	descUserScore(db, in.Head.Uid, itemScore*in.Num)
+	recordExchange(db, in.Head.Uid, in.Id, in.Num, itemScore*in.Num)
+	score = getUserScore(db, in.Head.Uid)
+	util.PubRPCSuccRsp(w, "userinfo", "ExchangeScore")
+	return &userinfo.ScoreReply{
+		Head: &common.Head{Retcode: 0}, Score: score}, nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", util.UserinfoServerPort)
 	if err != nil {
