@@ -26,3 +26,22 @@ func getUserScore(w http.ResponseWriter, r *http.Request) (apperr *util.AppError
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
+
+func dailySign(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.UserinfoServerType, uid, "DailySign",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "DailySign")
+	res := resp.Interface().(*userinfo.ScoreReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "DailySign")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}

@@ -20,6 +20,7 @@ const (
 	femaleType = 0
 	maleType   = 1
 	saveRate   = 0.03 / (1024.0 * 1024.0)
+	signScore  = 50
 )
 
 type server struct{}
@@ -199,6 +200,41 @@ func (s *server) GetUserScore(ctx context.Context, in *common.CommRequest) (*use
 	return &userinfo.ScoreReply{
 		Head: &common.Head{Retcode: 0}, Score: score, Sign: sign,
 		Items: items}, nil
+}
+
+func (s *server) DailySign(ctx context.Context, in *common.CommRequest) (*userinfo.ScoreReply, error) {
+	util.PubRPCRequest(w, "userinfo", "DailySign")
+	res, err := db.Exec("INSERT IGNORE INTO signin_history(uid, ctime) VALUES (?, CURDATE())", in.Head.Uid)
+	if err != nil {
+		log.Printf("DailySign insert failed:%v", err)
+		return &userinfo.ScoreReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DailySign get rows affected failed:%v", err)
+		return &userinfo.ScoreReply{
+			Head: &common.Head{Retcode: 1}}, nil
+	}
+	if cnt == 0 {
+		log.Printf("has signed:%d", in.Head.Uid)
+		return &userinfo.ScoreReply{
+			Head: &common.Head{Retcode: common.ErrCode_HAS_SIGN}}, nil
+
+	}
+	incrUserScore(db, in.Head.Uid, signScore)
+	score := getUserScore(db, in.Head.Uid)
+	util.PubRPCSuccRsp(w, "userinfo", "DailySign")
+	return &userinfo.ScoreReply{
+		Head: &common.Head{Retcode: 0}, Score: score}, nil
+}
+
+func incrUserScore(db *sql.DB, uid, score int64) {
+	_, err := db.Exec("UPDATE user SET score = score + ? WHERE uid = ?",
+		score, uid)
+	if err != nil {
+		log.Printf("incrUserScore failed:%d %d %v", uid, score, err)
+	}
 }
 
 func main() {

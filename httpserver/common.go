@@ -65,6 +65,7 @@ const (
 	ErrBalance
 	ErrMinDraw
 	ErrCheckPasswd
+	ErrHasSign
 )
 
 var w *nsq.Producer
@@ -802,6 +803,8 @@ func CheckRPCCodeCallback(retcode common.ErrCode, method, callback string) {
 		panic(util.AppError{ErrMinDraw, "未达到最低提现金额", callback})
 	} else if retcode == common.ErrCode_CHECK_PASSWD {
 		panic(util.AppError{ErrCheckPasswd, "密码错误", callback})
+	} else if retcode == common.ErrCode_HAS_SIGN {
+		panic(util.AppError{ErrHasSign, "今天已经签到过了", callback})
 	} else if retcode != 0 {
 		panic(util.AppError{int(retcode), "服务器又傲娇了~", callback})
 	}

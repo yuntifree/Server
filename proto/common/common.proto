@@ -24,6 +24,8 @@ enum ErrCode{
     INSUFFICIENT_BALANCE = 10018;
     MIN_DRAW = 10019;
     CHECK_PASSWD = 10020;
+    HAS_SIGN = 10021;
+    INSUFFICIENT_SCORE = 10022;
 }
 
 message Head {
