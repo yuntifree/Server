@@ -725,7 +725,7 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 	} else {
 		img, dst = getTaobaoInfo(db)
 	}
-	//addUserScore(db, uid, onlineScore)
+	addUserScore(db, uid, onlineScore)
 	util.PubRPCSuccRsp(w, "verify", "PortalLogin")
 	log.Printf("PortalLogin succ request:%v uid:%d, token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
@@ -1420,7 +1420,7 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	} else {
 		img, dst = getTaobaoInfo(db)
 	}
-	//addUserScore(db, uid, onlineScore)
+	addUserScore(db, uid, onlineScore)
 	util.PubRPCSuccRsp(w, "verify", "OneClickLogin")
 	log.Printf("OneClickLogin succ request:%v uid:%d token:%s", in, uid, token)
 	return &verify.PortalLoginReply{
