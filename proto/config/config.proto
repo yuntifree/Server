@@ -18,6 +18,7 @@ service Config{
     rpc GetMpwxInfo(common.CommRequest) returns (MpwxInfoReply) {}
     rpc GetMpwxArticle(common.CommRequest) returns (MpwxArticleReply) {}
     rpc Redirect(common.CommRequest) returns (RedirectReply) {}
+    rpc RedirectShop(common.CommRequest) returns (RedirectReply) {}
     rpc SubmitReserveInfo(ReserveRequest) returns (ReserveReply) {}
     rpc GetReserveInfo(GetReserveRequest) returns (ReserveInfoReply) {}
     rpc SubmitDonateInfo(DonateRequest) returns (common.CommReply) {}

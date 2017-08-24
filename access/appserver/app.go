@@ -1799,6 +1799,32 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func getRedirectShopDst(uid int64) string {
+	dst := "https://jinshuju.net/f/XxGrCw"
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "RedirectShop",
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+	if rpcerr.Interface() != nil {
+		return dst
+	}
+	res := resp.Interface().(*config.RedirectReply)
+	if res.Head.Retcode != 0 {
+		return dst
+	}
+	return res.Dst
+}
+
+func redirectShop(w http.ResponseWriter, r *http.Request) {
+	httpserver.ReportRequest(r.RequestURI)
+	var req httpserver.Request
+	req.InitCheckApp(r)
+	uid := req.GetParamInt("uid")
+
+	dst := getRedirectShopDst(uid)
+	w.Header().Set("Cache-Control", "no-cache")
+	http.Redirect(w, r, dst, http.StatusMovedPermanently)
+}
+
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
@@ -2043,6 +2069,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/test", httpserver.AppHandler(printHead))
 	mux.HandleFunc("/portal", portal)
 	mux.HandleFunc("/redirect", redirect)
+	mux.HandleFunc("/redirect_shop", redirectShop)
 	mux.HandleFunc("/wx_mp_login", wxMpLogin)
 	mux.HandleFunc("/get_jsapi_sign", getJsapiSign)
 	mux.HandleFunc("/pingpp_webhook", pingppWebhook)

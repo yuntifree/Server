@@ -33,6 +33,7 @@ const (
 	portalBannerV2Type = 6
 	statInterval       = 15
 	travelAdType       = 1
+	defHead            = "http://img.yunxingzh.com/4c3a1447-ff5d-4163-90c6-4f8f1167392a.png"
 )
 
 type server struct{}
@@ -751,6 +752,49 @@ func (s *server) Redirect(ctx context.Context, in *common.CommRequest) (*config.
 	util.PubRPCRequest(w, "config", "Redirect")
 	dst := getRedirect(db, in.Id)
 	util.PubRPCSuccRsp(w, "config", "Redirect")
+	return &config.RedirectReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
+}
+
+func (s *server) RedirectShop(ctx context.Context, in *common.CommRequest) (*config.RedirectReply, error) {
+	util.PubRPCRequest(w, "config", "RedirectShop")
+	var phone, headurl string
+	err := db.QueryRow("SELECT phone, headurl FROM user WHERE uid = ?",
+		in.Head.Uid).
+		Scan(&phone, &headurl)
+	if err != nil {
+		log.Printf("RedirectShop query user info failed:%v", err)
+		return &config.RedirectReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if len(phone) != 11 {
+		log.Printf("illegal phone:%d %s", in.Head.Uid, phone)
+		return &config.RedirectReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if headurl == "" {
+		headurl = defHead
+	}
+	nickname := phone[0:3] + "xxxx" + phone[7:]
+	openid := "wap_user_2_" + phone
+	salt := util.GenSalt()
+	salt = salt[0:16]
+	pwd := util.GetMD5Hash("20170824" + salt)
+	var cnt int64
+	err = db.QueryRow("SELECT COUNT(id) FROM eshop.ims_ewei_shop_member WHERE openid = ?", openid).Scan(&cnt)
+	if cnt == 0 {
+		_, err := db.Exec(`INSERT INTO eshop.ims_ewei_shop_member(uniacid, mobile,
+		avatar, nickname, openid, pwd, salt, createtime, mobileverify, comefrom)
+		VALUES (2, ?, ?, ?, ?, ?, ?, NOW(), 1, 'mobile')`,
+			phone, headurl, nickname, openid, pwd, salt)
+		if err != nil {
+			log.Printf("insert eshop member failed:%v", err)
+			return &config.RedirectReply{
+				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+		}
+	}
+	dst := "http://wxdev.yunxingzh.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile&openid=" + openid
+	util.PubRPCSuccRsp(w, "config", "RedirectShop")
 	return &config.RedirectReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
 }
