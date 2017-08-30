@@ -74,11 +74,13 @@ func submitCode(w http.ResponseWriter, r *http.Request) {
 	var req httpserver.Request
 	req.Init(r)
 	code := req.GetParamString("code")
+	appid := req.GetParamStringDef("appid", "")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.InquiryServerType, 0, "SubmitCode",
 		&inquiry.CodeRequest{
-			Head: &common.Head{Sid: uuid}, Code: code})
+			Head: &common.Head{Sid: uuid}, Code: code,
+			Appid: appid})
 	httpserver.CheckRPCErr(rpcerr, "SubmitCode")
 	res := resp.Interface().(*inquiry.LoginReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "SubmitCode")

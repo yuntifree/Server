@@ -34,7 +34,13 @@ func hasPatient(db *sql.DB, uid int64) int64 {
 
 func (s *server) SubmitCode(ctx context.Context, in *inquiry.CodeRequest) (*inquiry.LoginReply, error) {
 	log.Printf("SubmitCode request uid:%d code:%s", in.Head.Uid, in.Code)
-	openid, skey, err := weixin.GetInquirySession(in.Code)
+	var openid, skey string
+	var err error
+	if in.Appid == weixin.DgyAppid {
+		openid, skey, err = weixin.GetDgySession(in.Code)
+	} else {
+		openid, skey, err = weixin.GetInquirySession(in.Code)
+	}
 	if err != nil {
 		log.Printf("SubmitCode GetSession failed:%v", err)
 		return &inquiry.LoginReply{

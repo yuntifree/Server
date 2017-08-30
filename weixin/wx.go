@@ -15,6 +15,8 @@ const (
 	baseurl          = "https://api.weixin.qq.com/sns/jscode2session"
 	InquiryAppid     = "wx22f7ce89ec239c32"
 	InquiryAppsecret = "0a126ec36e6b99da43cb1740d52f7d90"
+	DgyAppid         = "wxb5c7692e667731fc"
+	DgyAppsecret     = "e74c0945c26c5fd5f7cd51f116a4b525"
 )
 
 //WaterMark watermark
@@ -44,6 +46,11 @@ func GetSession(code string) (openid, sessionkey string, err error) {
 //GetInquirySession  get inquiry session key and openid
 func GetInquirySession(code string) (openid, sessionkey string, err error) {
 	return getAppSession(code, InquiryAppid, InquiryAppsecret)
+}
+
+//GetDgySession get dgy session key and openid
+func GetDgySession(code string) (openid, sessionkey string, err error) {
+	return getAppSession(code, DgyAppid, DgyAppsecret)
 }
 
 //getAppSession get session key and openid for appid

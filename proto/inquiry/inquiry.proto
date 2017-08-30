@@ -45,6 +45,7 @@ message RefundRequest {
 message CodeRequest {
     common.Head head = 1;
     string code = 2;
+    string appid = 3;
 }
 
 message LoginReply {
