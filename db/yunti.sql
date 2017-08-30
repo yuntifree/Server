@@ -758,3 +758,13 @@ CREATE TABLE IF NOT EXISTS login_banner_history
     KEY(bid),
     KEY(uid)
 ) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS unit_info
+(
+    id      bigint unsigned NOT NULL AUTO_INCREMENT,
+    wifi    tinyint unsigned NOT NULL DEFAULT 0,
+    address varchar(512) NOT NULL DEFAULT '',
+    phone   varchar(16) NOT NULL DEFAULT '',
+    ctime   datetime NOT NULL DEFAULT '2017-01-01',
+    PRIMARY KEY(id)
+) ENGINE = InnoDB;
