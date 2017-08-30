@@ -854,9 +854,12 @@ func getLoginAdType(db *sql.DB, acname, apmac string) int64 {
 }
 
 func toIntranetURL(url string) string {
-	inner := "http://192.168.102.51:8088/"
-	filename := util.ExtractFilename(url)
-	return inner + filename
+	/*
+		inner := "http://192.168.102.51:8088/"
+		filename := util.ExtractFilename(url)
+		return inner + filename
+	*/
+	return url
 }
 
 func getLoginImg(db *sql.DB, acname, apmac, usermac string) string {
