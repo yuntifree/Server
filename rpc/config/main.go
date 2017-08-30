@@ -793,7 +793,7 @@ func (s *server) RedirectShop(ctx context.Context, in *common.CommRequest) (*con
 				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 		}
 	}
-	dst := "http://wxdev.yunxingzh.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile&openid=" + openid
+	dst := "http://dev.seaportsp.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile&openid=" + openid
 	util.PubRPCSuccRsp(w, "config", "RedirectShop")
 	return &config.RedirectReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
@@ -1073,6 +1073,20 @@ func (s *server) GetAdClick(ctx context.Context, in *common.CommRequest) (*confi
 	return &config.AdClickReply{
 		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
 		Total: total, Infos: infos, Downurl: downurl}, nil
+}
+
+func (s *server) SubmitUnitInfo(ctx context.Context, in *config.UnitRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "SubmitUnitInfo")
+	_, err := db.Exec(`INSERT INTO unit_info(wifi, address, phone, ctime) 
+	VALUES (?, ?, ?, NOW())`,
+		in.Wifi, in.Address, in.Phone)
+	if err != nil {
+		log.Printf("SubmitUnitInfo insert failed:%v", err)
+	}
+	util.PubRPCSuccRsp(w, "config", "SubmitUnitInfo")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+	}, nil
 }
 
 func main() {

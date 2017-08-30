@@ -38,6 +38,14 @@ service Config{
     rpc ModTravelAd(TravelAdRequest) returns (common.CommReply) {}
     rpc GetOnlineLoginImg(common.CommRequest) returns (LoginImgReply) {}
     rpc AckLoginImg(common.CommRequest) returns (common.CommReply) {}
+    rpc SubmitUnitInfo(UnitRequest) returns (common.CommReply) {}
+}
+
+message UnitRequest {
+    common.Head head = 1;
+    int64 wifi = 2;
+    string address = 3;
+    string phone = 4;
 }
 
 message AdBannerInfo {

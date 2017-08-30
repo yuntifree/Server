@@ -1984,6 +1984,28 @@ func submitXcxCode(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 	return nil
 }
 
+func submitUnitInfo(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
+	var req httpserver.Request
+	req.Init(r)
+	wifi := req.GetParamInt("wifi")
+	address := req.GetParamString("address")
+	phone := req.GetParamString("phone")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "SubmitUnitInfo",
+		&config.UnitRequest{
+			Head: &common.Head{Sid: uuid}, Wifi: wifi,
+			Address: address, Phone: phone})
+	httpserver.CheckRPCErr(rpcerr, "SubmitUnitInfo")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "SubmitUnitInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+	return nil
+}
+
 func xcxLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) {
 	var req httpserver.Request
 	req.Init(r)
@@ -2080,6 +2102,7 @@ func NewAppServer() http.Handler {
 	mux.Handle("/ack_loginimg", httpserver.AppHandler(ackLoginImg))
 	mux.Handle("/get_reserve_info", httpserver.AppHandler(getReserveInfo))
 	mux.Handle("/submit_donate_info", httpserver.AppHandler(submitDonateInfo))
+	mux.Handle("/submit_unit_info", httpserver.AppHandler(submitUnitInfo))
 	mux.Handle("/get_travel_ad", httpserver.AppHandler(getTravelAd))
 	mux.Handle("/get_ad_click", httpserver.AppHandler(getAdClick))
 	mux.Handle("/get_user_score", httpserver.AppHandler(getUserScore))
