@@ -187,6 +187,7 @@ func getVideos(db *sql.DB, seq int64) []*hot.HotsInfo {
 		}
 		info.Images = img[:1]
 		info.Id = info.Seq
+		info.Dst += "&uc_param_str=frdnpfvecplabtbmntnwpvssbinipr"
 		infos = append(infos, &info)
 	}
 	return infos
