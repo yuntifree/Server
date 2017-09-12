@@ -793,10 +793,50 @@ func (s *server) RedirectShop(ctx context.Context, in *common.CommRequest) (*con
 				Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 		}
 	}
+	recordCouponInfo(db, openid)
 	dst := "http://dev.seaportsp.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile&openid=" + openid
 	util.PubRPCSuccRsp(w, "config", "RedirectShop")
 	return &config.RedirectReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Dst: dst}, nil
+}
+
+func recordCouponInfo(db *sql.DB, openid string) {
+	var cnt int64
+	err := db.QueryRow(`SELECT COUNT(id) FROM eshop.ims_ewei_shop_coupon_data 
+	WHERE couponid = 6  AND gettype = 0 AND openid = ?`,
+		openid).Scan(&cnt)
+	if err != nil {
+		log.Printf("recordCouponInfo query failed:%s %v", openid, err)
+		return
+	}
+	if cnt > 0 {
+		log.Printf("recordCouponInfo has get coupon:%s %d", openid, cnt)
+		return
+	}
+
+	_, err = db.Exec(`INSERT INTO eshop.ims_ewei_shop_coupon_data(uniacid, openid,
+	couponid, gettype, gettime, senduid) VALUES (2, ?, 6, 0, 
+	UNIX_TIMESTAMP(NOW()), 1)`, openid)
+	if err != nil {
+		log.Printf("recordCouponInfo insert ims_ewei_shop_coupon_data failed:%s %v",
+			openid, err)
+		return
+	}
+	now := time.Now()
+	rd := util.Rand() % 1000000
+	logno := fmt.Sprintf("CC%04d%02d%02d%02d%02d%02d%06d",
+		now.Year(), now.Month(), now.Day(), now.Hour(),
+		now.Minute(), now.Second(), rd)
+	_, err = db.Exec(`INSERT INTO eshop.ims_ewei_shop_coupon_log(uniacid,openid,
+	couponid, status, paystatus, creditstatus, createtime, getfrom, logno)
+	VALUES (2, ?, 6, 1, -1, -1, UNIX_TIMESTAMP(NOW()), 0, ?)`,
+		openid, logno)
+	if err != nil {
+		log.Printf("recordCouponInfo insert ims_ewei_shop_coupon_data failed:%s %v",
+			openid, err)
+		return
+	}
+	return
 }
 
 func genReserveCode() int64 {
