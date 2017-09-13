@@ -996,9 +996,9 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 	log.Printf("FetchLatestVersion request uid:%d term:%d versoin:%d channel:%s",
 		in.Head.Uid, in.Head.Term, in.Head.Version, in.Channel)
 	var version int64
-	var vname, downurl string
-	err := db.QueryRow("SELECT version, vname, downurl FROM app_channel WHERE channel = ?",
-		in.Channel).Scan(&version, &vname, &downurl)
+	var vname, downurl, title, desc string
+	err := db.QueryRow("SELECT version, vname, downurl, title, description FROM app_channel WHERE channel = ?",
+		in.Channel).Scan(&version, &vname, &downurl, &title, &desc)
 	if err != nil {
 		log.Printf("FetchLatestVersion failed:%v", err)
 		return &fetch.VersionReply{
@@ -1011,7 +1011,7 @@ func (s *server) FetchLatestVersion(ctx context.Context, in *fetch.VersionReques
 	util.PubRPCSuccRsp(w, "fetch", "FetchLatestVersion")
 	return &fetch.VersionReply{
 		Head:    &common.Head{Retcode: 0, Uid: in.Head.Uid, Sid: in.Head.Sid},
-		Version: vname, Downurl: downurl}, nil
+		Version: vname, Downurl: downurl, Title: title, Desc: desc}, nil
 }
 
 func (s *server) FetchPortal(ctx context.Context, in *common.CommRequest) (*fetch.PortalReply, error) {
@@ -1086,7 +1086,7 @@ func getTotalChannelVersion(db *sql.DB) int64 {
 
 func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo {
 	var infos []*common.ChannelVersionInfo
-	rows, err := db.Query("SELECT id, channel, cname, version, vname, downurl FROM app_channel ORDER BY id LIMIT ?, ?",
+	rows, err := db.Query("SELECT id, channel, cname, version, vname, downurl, title, desc FROM app_channel ORDER BY id LIMIT ?, ?",
 		seq, num)
 	if err != nil {
 		log.Printf("getChannelVersion failed:%v", err)
@@ -1096,7 +1096,8 @@ func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo 
 	defer rows.Close()
 	for rows.Next() {
 		var info common.ChannelVersionInfo
-		err := rows.Scan(&info.Id, &info.Channel, &info.Cname, &info.Version, &info.Vname, &info.Downurl)
+		err := rows.Scan(&info.Id, &info.Channel, &info.Cname, &info.Version,
+			&info.Vname, &info.Downurl, &info.Title, &info.Desc)
 		if err != nil {
 			log.Printf("getChannelVersion scan failed:%v", err)
 			continue

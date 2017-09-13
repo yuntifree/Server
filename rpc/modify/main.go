@@ -556,8 +556,9 @@ func (s *server) OnlinePortalDir(ctx context.Context, in *common.CommRequest) (*
 
 func (s *server) AddChannelVersion(ctx context.Context, in *modify.ChannelVersionRequest) (*common.CommReply, error) {
 	log.Printf("AddChannelVersion info:%v", in.Info)
-	res, err := db.Exec("INSERT IGNORE INTO app_channel(channel, cname, version, vname, downurl, ctime) VALUES (?,?,?,?,?, NOW())",
-		in.Info.Channel, in.Info.Cname, in.Info.Version, in.Info.Vname, in.Info.Downurl)
+	res, err := db.Exec("INSERT IGNORE INTO app_channel(channel, cname, version, vname, downurl, title, desc, ctime) VALUES (?,?,?,?,?,?,?, NOW())",
+		in.Info.Channel, in.Info.Cname, in.Info.Version, in.Info.Vname,
+		in.Info.Downurl, in.Info.Title, in.Info.Desc)
 	if err != nil {
 		log.Printf("AddChannelVersion query failed:%v", err)
 		return &common.CommReply{
@@ -585,6 +586,12 @@ func (s *server) ModChannelVersion(ctx context.Context, in *modify.ChannelVersio
 	}
 	if in.Info.Downurl != "" {
 		query += ", downurl = '" + in.Info.Downurl + "' "
+	}
+	if in.Info.Title != "" {
+		query += ", title = '" + in.Info.Title + "' "
+	}
+	if in.Info.Desc != "" {
+		query += ", description = '" + in.Info.Desc + "' "
 	}
 	query += fmt.Sprintf(" WHERE id = %d", in.Info.Id)
 	log.Printf("ModChannelVersion query:%s", query)

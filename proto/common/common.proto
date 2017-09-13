@@ -102,4 +102,6 @@ message ChannelVersionInfo {
     int64 version = 4;
     string downurl = 5;
     string cname = 6;
+    string title = 7;
+    string desc = 8;
 }
