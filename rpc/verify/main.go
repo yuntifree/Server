@@ -37,6 +37,7 @@ const (
 	specTaobaoBannerType = 12
 	huayanghuUnit        = 4
 	onlineScore          = 5
+	appDst               = "http://a.app.qq.com/o/simple.jsp?pkgname=com.yunxingzh.wireless"
 )
 
 type server struct{}
@@ -1101,25 +1102,38 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		log.Printf("acname:%s apmac:%s usermac:%s shopid:%s", in.Info.Acname,
 			in.Info.Apmac, in.Info.Usermac, shopid)
 	}
-	var taobao int64
-	var cover string
+	var taobao, logintype int64
+	var cover, dst string
+	logintype = 1
 	if in.Info.Acname == "AC_SSH_A_09" ||
 		(util.IsWjjAcname(in.Info.Acname) && isTaobaoTime()) {
 		taobao = 1
-		cover, _ = getTaobaoInfo(db)
+		logintype = 2
+		cover, dst = getTaobaoInfo(db)
 	}
 	if !util.IsKongguAcname(in.Info.Acname) && isSpecTaobaoTime() {
 		taobao = 1
-		cover, _ = getSpecTaobaoInfo(db)
+		logintype = 2
+		cover, dst = getSpecTaobaoInfo(db)
+	}
+	if util.IsLzfAcname(in.Info.Acname) {
+		logintype = 3
+		dst = appDst
+	}
+	if in.Info.Acname == "AC_SSH_A_04" {
+		logintype = 3
+		dst = appDst
 	}
 	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
 	recordAdView(db, in.Info.Apmac, in.Info.Usermac, ads)
+	log.Printf("logintype:%d dst:%s", logintype, dst)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
 		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
-		Wxauthurl: authurl, Taobao: taobao, Cover: cover, Ads: ads}, nil
+		Wxauthurl: authurl, Taobao: taobao, Cover: cover, Ads: ads,
+		Logintype: logintype, Dst: dst}, nil
 }
 
 func genPortalDst(db *sql.DB, openid string) string {

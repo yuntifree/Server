@@ -162,6 +162,7 @@ message CheckReply {
     int64 taobao = 10;
     string cover = 11;
     repeated AdBanner ads = 12;
+    int64 logintype = 13;
 }
 
 message SubscribeRequest {
