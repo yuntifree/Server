@@ -1819,8 +1819,12 @@ func redirectShop(w http.ResponseWriter, r *http.Request) {
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
+	params := req.GetParamStringDef("params", "")
 
 	dst := getRedirectShopDst(uid)
+	if params != "" {
+		dst += params
+	}
 	w.Header().Set("Cache-Control", "no-cache")
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
