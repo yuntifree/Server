@@ -1449,12 +1449,15 @@ func addChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	vname := req.GetParamString("vname")
 	version := req.GetParamInt("version")
 	downurl := req.GetParamString("downurl")
+	title := req.GetParamStringDef("title", "")
+	desc := req.GetParamStringDef("desc", "")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "AddChannelVersion",
 		&modify.ChannelVersionRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.ChannelVersionInfo{Channel: channel, Cname: cname,
-				Version: version, Vname: vname, Downurl: downurl}})
+				Version: version, Vname: vname, Downurl: downurl,
+				Title: title, Desc: desc}})
 	httpserver.CheckRPCErr(rpcerr, "AddChannelVersion")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "AddChannelVersion")
@@ -1474,12 +1477,15 @@ func modChannelVersion(w http.ResponseWriter, r *http.Request) (apperr *util.App
 	vname := req.GetParamStringDef("vname", "")
 	version := req.GetParamInt("version")
 	downurl := req.GetParamStringDef("downurl", "")
+	title := req.GetParamStringDef("title", "")
+	desc := req.GetParamStringDef("desc", "")
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ModifyServerType, uid, "ModChannelVersion",
 		&modify.ChannelVersionRequest{Head: &common.Head{Sid: uuid, Uid: uid},
 			Info: &common.ChannelVersionInfo{Id: id, Channel: channel, Cname: cname,
-				Version: version, Vname: vname, Downurl: downurl}})
+				Version: version, Vname: vname, Downurl: downurl, Title: title,
+				Desc: desc}})
 	httpserver.CheckRPCErr(rpcerr, "ModChannelVersion")
 	res := resp.Interface().(*common.CommReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "ModChannelVersion")

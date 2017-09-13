@@ -1086,7 +1086,7 @@ func getTotalChannelVersion(db *sql.DB) int64 {
 
 func getChannelVersion(db *sql.DB, seq, num int64) []*common.ChannelVersionInfo {
 	var infos []*common.ChannelVersionInfo
-	rows, err := db.Query("SELECT id, channel, cname, version, vname, downurl, title, desc FROM app_channel ORDER BY id LIMIT ?, ?",
+	rows, err := db.Query("SELECT id, channel, cname, version, vname, downurl, title, description FROM app_channel ORDER BY id LIMIT ?, ?",
 		seq, num)
 	if err != nil {
 		log.Printf("getChannelVersion failed:%v", err)
