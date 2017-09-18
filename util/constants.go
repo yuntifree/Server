@@ -62,6 +62,7 @@ const (
 	IosTerm             = 1
 	WebTerm             = 2
 	WxTerm              = 3
+	TestHuaweiVersion   = 13
 	LoginType           = 0
 	PortalType          = 1
 	LoginTestType       = 2

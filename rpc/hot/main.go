@@ -446,8 +446,12 @@ func (s *server) GetWeatherNews(ctx context.Context, in *common.CommRequest) (*h
 		log.Printf("getWeather failed:%v", err)
 		return &hot.WeatherNewsReply{Head: &common.Head{Retcode: 1}}, err
 	}
-
-	infos := getDgNews(db, 0, homeNewsNum)
+	var infos []*hot.HotsInfo
+	if in.Head.Term == util.AndroidTerm && in.Head.Version == util.TestHuaweiVersion {
+		infos = getHotNews(db, 0, homeNewsNum)
+	} else {
+		infos = getDgNews(db, 0, homeNewsNum)
+	}
 	if len(infos) >= 9 {
 		infos = append(infos[:0], infos[1], infos[3], infos[5], infos[7], infos[8])
 	}

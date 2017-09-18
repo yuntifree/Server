@@ -953,6 +953,9 @@ func getMenus(db *sql.DB, term, version int64) []*fetch.MenuInfo {
 	if term == 0 && (version <= 6 || version == 11) || term == 1 && version == 10 {
 		query += " AND ctype < 4 "
 	}
+	if term == util.AndroidTerm && version == util.TestHuaweiVersion {
+		query += " AND type != 4 "
+	}
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("getMenus failed:%v", err)

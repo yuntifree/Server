@@ -582,17 +582,22 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
-	response, err := getRspFromSSDB(hotWeatherKey)
-	if err == nil {
-		log.Printf("getRspFromSSDB succ key:%s\n", hotWeatherKey)
-		httpserver.RspGzip(w, []byte(response))
-		httpserver.ReportSuccResp(r.RequestURI)
-		return nil
+	term := req.GetParamInt("term")
+	version := req.GetParamInt("version")
+	if term != util.AndroidTerm || version != util.TestHuaweiVersion {
+		response, err := getRspFromSSDB(hotWeatherKey)
+		if err == nil {
+			log.Printf("getRspFromSSDB succ key:%s\n", hotWeatherKey)
+			httpserver.RspGzip(w, []byte(response))
+			httpserver.ReportSuccResp(r.RequestURI)
+			return nil
+		}
 	}
 
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.HotServerType, uid, "GetWeatherNews",
-		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
+		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid, Term: term,
+			Version: version}})
 	httpserver.CheckRPCErr(rpcerr, "GetWeatherNews")
 	res := resp.Interface().(*hot.WeatherNewsReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetWeatherNews")
@@ -611,8 +616,10 @@ func getWeatherNews(w http.ResponseWriter, r *http.Request) (apperr *util.AppErr
 			Msg: "marshal json failed"}
 	}
 	httpserver.RspGzip(w, body)
-	data := js.Get("data")
-	setSSDBCache(hotWeatherKey, data)
+	if term != util.AndroidTerm || version != util.TestHuaweiVersion {
+		data := js.Get("data")
+		setSSDBCache(hotWeatherKey, data)
+	}
 	httpserver.ReportSuccResp(r.RequestURI)
 	return nil
 }
