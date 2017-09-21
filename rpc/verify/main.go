@@ -52,19 +52,15 @@ func checkPhoneCode(db *sql.DB, phone string, code int64) (bool, error) {
 	}
 
 	var realcode, pid int64
-	err := db.QueryRow("SELECT code, pid FROM phone_code WHERE phone = ? AND used = 0 ORDER BY pid DESC LIMIT 1",
+	err := db.QueryRow(`SELECT code, pid FROM phone_code WHERE phone = ? 
+	AND used = 0 ORDER BY pid DESC LIMIT 1`,
 		phone).Scan(&realcode, &pid)
 	if err != nil {
 		return false, err
 	}
 
 	if realcode == code {
-		stmt, err := db.Prepare("UPDATE phone_code SET used = 1 WHERE pid = ?")
-		if err != nil {
-			log.Printf("update phone_code failed:%v", err)
-			return true, nil
-		}
-		_, err = stmt.Exec(pid)
+		_, err := db.Exec("UPDATE phone_code SET used = 1 WHERE pid = ?", pid)
 		if err != nil {
 			log.Printf("update phone_code failed:%v", err)
 			return true, nil
@@ -84,11 +80,15 @@ func getPhoneCode(phone string, ctype int64) (bool, error) {
 	}
 
 	var code int
-	err := db.QueryRow("SELECT code FROM phone_code WHERE phone = ? AND used = 0 AND etime > NOW() AND timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1",
+	err := db.QueryRow(`SELECT code FROM phone_code WHERE phone = ? 
+	AND used = 0 AND etime > NOW() AND 
+	timestampdiff(second, stime, now()) < 300 ORDER BY pid DESC LIMIT 1`,
 		phone).Scan(&code)
 	if err != nil {
 		code := util.Randn(randrange)
-		_, err := db.Exec("INSERT INTO phone_code(phone, code, ctime, stime, etime) VALUES (?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))",
+		_, err := db.Exec(`INSERT INTO phone_code(phone, code, ctime, 
+		stime, etime) VALUES (?, ?, NOW(), NOW(), 
+		DATE_ADD(NOW(), INTERVAL 5 MINUTE))`,
 			phone, code)
 		if err != nil {
 			log.Printf("insert into phone_code failed:%v", err)
@@ -130,7 +130,8 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	var uid, role int64
 	var epass string
 	var salt string
-	err := db.QueryRow("SELECT uid, password, salt, role FROM back_login WHERE username = ?",
+	err := db.QueryRow(`SELECT uid, password, salt, role FROM back_login 
+	WHERE username = ?`,
 		in.Username).Scan(&uid, &epass, &salt, &role)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
@@ -142,18 +143,21 @@ func (s *server) BackLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	}
 
 	token := util.GenSalt()
-	_, err = db.Exec("UPDATE back_login SET skey = ?, login_time = NOW(), expire_time = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+	_, err = db.Exec(`UPDATE back_login SET skey = ?, login_time = NOW(),
+	expire_time = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?`,
 		token, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
 	}
 
 	util.PubRPCSuccRsp(w, "verify", "BackLogin")
-	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token, Role: role}, nil
+	return &verify.LoginReply{Head: &common.Head{Uid: uid}, Token: token,
+		Role: role}, nil
 }
 
 func recordWxOpenid(db *sql.DB, uid, wtype int64, openid string) {
-	_, err := db.Exec("INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) VALUES (?, ?, ?, NOW())",
+	_, err := db.Exec(`INSERT IGNORE INTO wx_openid(uid, wtype, openid, ctime) 
+	VALUES (?, ?, ?, NOW())`,
 		uid, wtype, openid)
 	if err != nil {
 		log.Printf("record wx openid failed uid:%d wtype:%d openid:%s\n",
@@ -162,10 +166,12 @@ func recordWxOpenid(db *sql.DB, uid, wtype int64, openid string) {
 }
 
 func recordWxUnionid(db *sql.DB, uid int64, unionid string) {
-	_, err := db.Exec("INSERT INTO user_unionid(uid, unionid, ctime) VALUES(?, ?, NOW()) ON DUPLICATE KEY UPDATE unionid = ?",
+	_, err := db.Exec(`INSERT INTO user_unionid(uid, unionid, ctime) 
+	VALUES(?, ?, NOW()) ON DUPLICATE KEY UPDATE unionid = ?`,
 		uid, unionid, unionid)
 	if err != nil {
-		log.Printf("recordWxUnionid failed uid:%d unionid:%s err:%v\n", uid, unionid, err)
+		log.Printf("recordWxUnionid failed uid:%d unionid:%s err:%v\n",
+			uid, unionid, err)
 	}
 }
 
@@ -184,7 +190,9 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 	wifipass := util.GenWifiPass()
-	res, err := db.Exec("INSERT IGNORE INTO user(username, headurl, sex, token, private, wifi_passwd, etime, atime, ctime) VALUES (?, ?, ?, ?, ?,?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW())",
+	res, err := db.Exec(`INSERT IGNORE INTO user(username, headurl, sex, token,
+	private, wifi_passwd, etime, atime, ctime) VALUES (?, ?, ?, ?, ?,?,
+	DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), NOW())`,
 		wxi.UnionID, wxi.HeadURL, wxi.Sex, token, privdata, wifipass)
 	if err != nil {
 		log.Printf("insert user reord failed %s:%v", wxi.UnionID, err)
@@ -204,7 +212,9 @@ func (s *server) WxMpLogin(ctx context.Context, in *verify.LoginRequest) (*verif
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
 			return &verify.LoginReply{Head: &common.Head{Retcode: 1}}, err
 		}
-		_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() WHERE uid = ?",
+		_, err = db.Exec(`UPDATE user SET token = ?, private = ?, 
+		etime = DATE_ADD(NOW(), INTERVAL 30 DAY), atime = NOW() 
+		WHERE uid = ?`,
 			token, privdata, uid)
 		if err != nil {
 			log.Printf("search uid failed %s:%v", wxi.UnionID, err)
@@ -229,7 +239,8 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	var epass string
 	var salt string
 	var wifipass string
-	err := db.QueryRow("SELECT uid, password, salt, wifi_passwd FROM user WHERE username = ?",
+	err := db.QueryRow(`SELECT uid, password, salt, wifi_passwd FROM user 
+	WHERE username = ?`,
 		in.Username).Scan(&uid, &epass, &salt, &wifipass)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
@@ -243,7 +254,9 @@ func (s *server) Login(ctx context.Context, in *verify.LoginRequest) (*verify.Lo
 	token := util.GenSalt()
 	privdata := util.GenSalt()
 
-	_, err = db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY), model = ?, udid = ? WHERE uid = ?",
+	_, err = db.Exec(`UPDATE user SET token = ?, private = ?, 
+	etime = DATE_ADD(NOW(), INTERVAL 30 DAY), model = ?, udid = ? 
+	WHERE uid = ?`,
 		token, privdata, in.Model, in.Udid, uid)
 	if err != nil {
 		return &verify.LoginReply{Head: &common.Head{Retcode: 2}}, err
@@ -284,9 +297,9 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 		in.Username, token, privdata, salt, epass)
 	res, err := db.Exec(`INSERT IGNORE INTO user (username, password, salt, 
 	token, private, model, udid,
-	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime, bitmap) VALUES
-	(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),
-	DATE_ADD(NOW(), INTERVAL 30 DAY), ?)`,
+	channel, reg_ip, version, term, wifi_passwd, ctime, atime, etime, bitmap) 
+	VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),
+	?)`,
 		in.Username, epass, salt, token, privdata, in.Client.Model,
 		in.Client.Udid, in.Client.Channel, in.Client.Regip,
 		in.Client.Version, in.Client.Term, in.Code, bitmap)
@@ -305,13 +318,16 @@ func (s *server) Register(ctx context.Context, in *verify.RegisterRequest) (*ver
 	var headurl, nickname string
 	var pushtest int64
 	if uid == 0 {
-		err = db.QueryRow("SELECT uid, headurl, nickname FROM user WHERE username = ?", in.Username).Scan(&uid, &headurl, &nickname)
+		err = db.QueryRow(`SELECT uid, headurl, nickname FROM user WHERE 
+		username = ?`, in.Username).Scan(&uid, &headurl, &nickname)
 		if err != nil {
 			log.Printf("get user id failed:%v", err)
 			return &verify.RegisterReply{Head: &common.Head{Retcode: 1}}, err
 		}
 		log.Printf("scan uid:%d \n", uid)
-		_, err := db.Exec("UPDATE user SET password = ?, salt = ?, model = ?, udid = ?, version = ?, term = ?, atime = NOW(), bitmap = bitmap | ? WHERE uid = ?",
+		_, err := db.Exec(`UPDATE user SET password = ?, salt = ?, model = ?, 
+		udid = ?, version = ?, term = ?, atime = NOW(), bitmap = bitmap | ? 
+		WHERE uid = ?`,
 			epass, salt, in.Client.Model, in.Client.Udid, in.Client.Version,
 			in.Client.Term, bitmap, uid)
 		if err != nil {
@@ -367,7 +383,8 @@ func (s *server) CheckToken(ctx context.Context, in *verify.TokenRequest) (*comm
 		}
 		var tk string
 		var expire bool
-		err = db.QueryRow("SELECT token, IF(etime > NOW(), false, true) FROM user WHERE deleted = 0 AND uid = ?",
+		err = db.QueryRow(`SELECT token, IF(etime > NOW(), false, true) FROM 
+		user WHERE deleted = 0 AND uid = ?`,
 			in.Head.Uid).Scan(&tk, &expire)
 		if err != nil {
 			log.Printf("CheckToken select failed:%v", err)
@@ -400,7 +417,8 @@ func checkPrivdata(db *sql.DB, uid int64, token, privdata string) (bool, int64) 
 	var etoken string
 	var eprivdata string
 	var expire int64
-	err := db.QueryRow("SELECT token, private, UNIX_TIMESTAMP(etime) FROM user WHERE uid = ?", uid).
+	err := db.QueryRow(`SELECT token, private, UNIX_TIMESTAMP(etime) FROM user 
+	WHERE uid = ?`, uid).
 		Scan(&etoken, &eprivdata, &expire)
 	if err != nil {
 		log.Printf("query failed:%v", err)
@@ -418,8 +436,8 @@ func checkPrivdata(db *sql.DB, uid int64, token, privdata string) (bool, int64) 
 func checkBackupPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
 	var etoken string
 	var eprivdata string
-	err := db.QueryRow("SELECT token, private FROM token_backup WHERE uid = ?", uid).
-		Scan(&etoken, &eprivdata)
+	err := db.QueryRow("SELECT token, private FROM token_backup WHERE uid = ?",
+		uid).Scan(&etoken, &eprivdata)
 	if err != nil {
 		log.Printf("query failed:%v", err)
 		return false
@@ -434,7 +452,8 @@ func checkBackupPrivdata(db *sql.DB, uid int64, token, privdata string) bool {
 }
 
 func updatePrivdata(db *sql.DB, uid int64, token, privdata string) error {
-	_, err := db.Exec("UPDATE user SET token = ?, private = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?",
+	_, err := db.Exec(`UPDATE user SET token = ?, private = ?, 
+	etime = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE uid = ?`,
 		token, privdata, uid)
 	return err
 }
@@ -460,8 +479,9 @@ func (s *server) AutoLogin(ctx context.Context, in *verify.AutoRequest) (*verify
 	strTime := time.Now().Add(time.Duration(expire) * time.Second).
 		Format(util.TimeFormat)
 	util.PubRPCSuccRsp(w, "verify", "AutoLogin")
-	return &verify.RegisterReply{Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
-		Token: token, Privdata: privdata, Expire: expire, Expiretime: strTime}, nil
+	return &verify.RegisterReply{Head: &common.Head{Retcode: 0,
+		Uid: in.Head.Uid}, Token: token, Privdata: privdata, Expire: expire,
+		Expiretime: strTime}, nil
 }
 
 func unionToID(db *sql.DB, unionid string) (int64, error) {
@@ -476,7 +496,8 @@ func unionToID(db *sql.DB, unionid string) (int64, error) {
 
 func getUserOpenid(db *sql.DB, uid int64) string {
 	var openid string
-	err := db.QueryRow("SELECT openid FROM wx_openid WHERE wtype = 1 AND uid = ?", uid).Scan(&openid)
+	err := db.QueryRow(`SELECT openid FROM wx_openid WHERE wtype = 1 AND 
+	uid = ?`, uid).Scan(&openid)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getUserOpenid query failed:%v", err)
 	}
@@ -503,7 +524,8 @@ func (s *server) UnionLogin(ctx context.Context, in *verify.LoginRequest) (*veri
 }
 
 func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
-	_, err := db.Exec("UPDATE wx_token SET access_token = ?, api_ticket = ?, expire_time = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE appid = ?",
+	_, err := db.Exec(`UPDATE wx_token SET access_token = ?, api_ticket = ?,
+	expire_time = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE appid = ?`,
 		accessToken, ticket, appid)
 	if err != nil {
 		log.Printf("updateTokenTicket failed:%v", err)
@@ -513,7 +535,8 @@ func updateTokenTicket(db *sql.DB, appid, accessToken, ticket string) {
 func (s *server) GetWxTicket(ctx context.Context, in *verify.TicketRequest) (*verify.TicketReply, error) {
 	util.PubRPCRequest(w, "verify", "GetWxTicket")
 	var token, ticket string
-	err := db.QueryRow("SELECT access_token, api_ticket FROM wx_token WHERE expire_time > NOW() AND appid = ? LIMIT 1",
+	err := db.QueryRow(`SELECT access_token, api_ticket FROM wx_token WHERE
+	expire_time > NOW() AND appid = ? LIMIT 1`,
 		util.WxDgAppid).Scan(&token, &ticket)
 	if err == nil {
 		log.Printf("GetWxTicket select succ, token:%s ticket:%s\n", token, ticket)
@@ -545,7 +568,9 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 	if code == "" {
 		return
 	}
-	_, err := db.Exec("INSERT INTO zte_code(phone, code, type, ctime, mtime) VALUES (?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE code = ?, mtime = NOW()",
+	_, err := db.Exec(`INSERT INTO zte_code(phone, code, type, ctime, mtime) 
+	VALUES (?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE code = ?, 
+	mtime = NOW()`,
 		phone, code, stype, code)
 	if err != nil {
 		log.Printf("recordZteCode query failed:%s %s %d %v", phone, code, stype, err)
@@ -554,7 +579,9 @@ func recordZteCode(db *sql.DB, phone, code string, stype uint) {
 
 func isExceedCodeFrequency(db *sql.DB, phone string, stype uint) bool {
 	var flag int
-	err := db.QueryRow("SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 5 MINUTE), 0, 1) FROM zte_code WHERE phone = ? AND type = ?", phone, stype).Scan(&flag)
+	err := db.QueryRow(`SELECT IF(NOW() > DATE_ADD(mtime, INTERVAL 5 MINUTE), 
+	0, 1) FROM zte_code WHERE phone = ? AND type = ?`,
+		phone, stype).Scan(&flag)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("isExceedCodeFrequency query failed:%v", err)
 		return false
@@ -631,7 +658,9 @@ func updateUserBitmap(db *sql.DB, uid int64, bitmap uint) {
 
 func recordUserMac(db *sql.DB, uid int64, mac, phone string) {
 	mac = strings.Replace(mac, ":", "", -1)
-	_, err := db.Exec("INSERT INTO user_mac(mac, uid, phone, ctime, etime) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY)",
+	_, err := db.Exec(`INSERT INTO user_mac(mac, uid, phone, ctime, etime) 
+	VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)) ON DUPLICATE KEY
+	UPDATE uid = ?, phone = ?, etime = DATE_ADD(NOW(), INTERVAL 30 DAY)`,
 		mac, uid, phone, uid, phone)
 	if err != nil {
 		log.Printf("recordUserMac failed uid:%d mac:%s phone:%s err:%v",
@@ -691,7 +720,9 @@ func (s *server) PortalLogin(ctx context.Context, in *verify.PortalLoginRequest)
 		}
 	}
 
-	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), ?, 2, NOW()) ON DUPLICATE KEY UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?, aptime = NOW()",
+	res, err := db.Exec(`INSERT INTO user(username, phone, ctime, atime, bitmap,
+	term, aptime) VALUES (?, ?, NOW(), NOW(), ?, 2, NOW()) ON DUPLICATE KEY 
+	UPDATE phone = ?, atime = NOW(), bitmap = bitmap | ?, aptime = NOW()`,
 		in.Info.Phone, in.Info.Phone, (1 << stype), in.Info.Phone,
 		(1 << stype))
 	if err != nil {
@@ -785,7 +816,8 @@ func (s *server) WifiAccess(ctx context.Context, in *verify.AccessRequest) (*com
 }
 
 func recordPortalMac(db *sql.DB, mac string) {
-	_, err := db.Exec("INSERT INTO portal_mac(mac, ctime, atime) VALUES (?, NOW(), NOW()) ON DUPLICATE KEY UPDATE atime = NOW()", mac)
+	_, err := db.Exec(`INSERT INTO portal_mac(mac, ctime, atime) VALUES (?, 
+	NOW(), NOW()) ON DUPLICATE KEY UPDATE atime = NOW()`, mac)
 	if err != nil {
 		log.Printf("recordPortalMac failed, mac:%s error:%v", mac, err)
 	}
@@ -829,7 +861,8 @@ func isEduAp(db *sql.DB, apmac string) bool {
 
 func isUnitAp(db *sql.DB, apmac string, unit int64) bool {
 	var unid int64
-	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).Scan(&unid)
+	err := db.QueryRow("SELECT unid FROM ap_info WHERE mac = ?", apmac).
+		Scan(&unid)
 	if err != nil {
 		return false
 	}
@@ -865,14 +898,17 @@ func toIntranetURL(url string) string {
 
 func getLoginImg(db *sql.DB, acname, apmac, usermac string) string {
 	var img string
-	db.QueryRow("SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid AND a.mac = ? AND l.deleted = 0", apmac).Scan(&img)
+	db.QueryRow(`SELECT l.img FROM login_img l, ap_info a WHERE l.unid = a.unid
+	AND a.mac = ? AND l.deleted = 0`, apmac).Scan(&img)
 	if img != "" {
 		return img
 	}
 
 	img = defLoginImg
 	btype := getLoginAdType(db, acname, apmac)
-	rows, err := db.Query("SELECT img, stime, etime, intranet FROM login_banner WHERE type = ? AND online = 1 AND deleted = 0 AND pos = 0 ORDER BY id DESC", btype)
+	rows, err := db.Query(`SELECT img, stime, etime, intranet FROM login_banner 
+	WHERE type = ? AND online = 1 AND deleted = 0 AND pos = 0 ORDER BY id DESC`,
+		btype)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getLoginImg failed:%v", err)
 	}
@@ -888,7 +924,8 @@ func getLoginImg(db *sql.DB, acname, apmac, usermac string) string {
 		}
 		if stime == 0 && etime == 0 {
 			if !isUnitAp(db, apmac, huayanghuUnit) {
-				if intranet == 0 || acname == "AC_SSH_A_04" || usermac == "0C:51:01:5D:FD:70" {
+				if intranet == 0 || acname == "AC_SSH_A_04" ||
+					usermac == "0C:51:01:5D:FD:70" {
 					img = banner
 				} else {
 					img = toIntranetURL(banner)
@@ -896,7 +933,8 @@ func getLoginImg(db *sql.DB, acname, apmac, usermac string) string {
 			}
 		}
 		if stime <= c && c <= etime {
-			if intranet == 0 || acname == "AC_SSH_A_04" || usermac == "0C:51:01:5D:FD:70" {
+			if intranet == 0 || acname == "AC_SSH_A_04" ||
+				usermac == "0C:51:01:5D:FD:70" {
 				return banner
 			}
 			return toIntranetURL(banner)
@@ -930,7 +968,8 @@ func checkSpareTime(stime, etime int64) bool {
 
 func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
 	var stime, etime int64
-	err := db.QueryRow("SELECT appid, secret, shopid, authurl, w.stime, w.etime FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?", apmac).
+	err := db.QueryRow(`SELECT appid, secret, shopid, authurl, w.stime, w.etime 
+	FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?`, apmac).
 		Scan(&appid, &secret, &shopid, &authurl, &stime, &etime)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("getWxAppinfo failed:%v", err)
@@ -957,7 +996,8 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else {
 			def = 2 //1
 		}
-		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE def = ? LIMIT 1", def).Scan(&appid, &secret, &shopid, &authurl)
+		err = db.QueryRow(`SELECT appid, secret, shopid, authurl FROM wx_appinfo
+		WHERE def = ? LIMIT 1`, def).Scan(&appid, &secret, &shopid, &authurl)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("getWxAppinfo get default failed:%v", err)
 		}
@@ -1139,7 +1179,10 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 func genPortalDst(db *sql.DB, openid string) string {
 	var uid int64
 	var acname, apmac, token string
-	err := db.QueryRow("SELECT u.uid, u.token, i.name, w.apmac FROM user u, online_status o, wx_conn w, ac_info i WHERE u.phone = o.phone AND o.mac = w.usermac AND o.acip = i.ip AND w.openid = ?", openid).Scan(&uid, &token, &acname, &apmac)
+	err := db.QueryRow(`SELECT u.uid, u.token, i.name, w.apmac FROM user u, 
+	online_status o, wx_conn w, ac_info i WHERE u.phone = o.phone AND 
+	o.mac = w.usermac AND o.acip = i.ip AND w.openid = ?`, openid).
+		Scan(&uid, &token, &acname, &apmac)
 	if err != nil {
 		log.Printf("genPortalDst failed:%v", err)
 		return ""
@@ -1153,7 +1196,8 @@ func genPortalDst(db *sql.DB, openid string) string {
 }
 
 func updateSubscribe(db *sql.DB, openid string) {
-	_, err := db.Exec("UPDATE wx_conn SET subscribe = 1, stime = NOW() WHERE openid = ?", openid)
+	_, err := db.Exec(`UPDATE wx_conn SET subscribe = 1, stime = NOW() WHERE 
+	openid = ?`, openid)
 	if err != nil {
 		log.Printf("updateSubscribe failed:%v", err)
 	}
@@ -1162,7 +1206,10 @@ func updateSubscribe(db *sql.DB, openid string) {
 func getOnlineInfo(db *sql.DB, openid string) (util.OnlineInfo, error) {
 	var info util.OnlineInfo
 	info.Openid = openid
-	err := db.QueryRow("SELECT w.usermac, w.acname, o.phone, o.ip, o.acip FROM wx_conn w, online_status o WHERE w.usermac = o.mac AND w.etime > NOW() AND w.openid = ?", openid).Scan(&info.Usermac, &info.Acname, &info.Phone, &info.Userip, &info.Acip)
+	err := db.QueryRow(`SELECT w.usermac, w.acname, o.phone, o.ip, o.acip FROM
+	wx_conn w, online_status o WHERE w.usermac = o.mac AND w.etime > NOW() AND 
+	w.openid = ?`, openid).Scan(&info.Usermac, &info.Acname, &info.Phone,
+		&info.Userip, &info.Acip)
 	if err != nil {
 		log.Printf("getOnlineInfo query failed:%v", err)
 	}
@@ -1195,9 +1242,13 @@ func (s *server) RecordWxConn(ctx context.Context, in *verify.WxConnRequest) (*c
 	util.PubRPCRequest(w, "verify", "RecordWxConn")
 	var err error
 	if in.Appid == "" {
-		_, err = db.Exec("INSERT INTO wx_conn(openid, acname, acip, usermac, userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE acname = ?, acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
-			in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid,
-			in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
+		_, err = db.Exec(`INSERT INTO wx_conn(openid, acname, acip, usermac, 
+		userip, apmac, tid, ctime, etime) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(),
+		DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE acname = ?, 
+		acip = ?, usermac = ?, userip = ?, apmac = ?, tid = ?, 
+		etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)`,
+			in.Openid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac,
+			in.Tid, in.Acname, in.Acip, in.Usermac, in.Userip, in.Apmac, in.Tid)
 	} else {
 		_, err = db.Exec(`INSERT INTO wx_conn_info(appid, openid, acname, 
 		acip, usermac, userip, apmac, tid, ctime, etime) VALUES(?, ?, ?,
@@ -1240,7 +1291,8 @@ func genOnlineTable() string {
 }
 
 func createOnlineTable(db *sql.DB, table string) error {
-	_, err := db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s LIKE online_record", table))
+	_, err := db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s LIKE 
+	online_record`, table))
 	if err != nil {
 		log.Printf("createOnlineTable %s failed:%v", table, err)
 		return err
@@ -1256,14 +1308,18 @@ func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInf
 			uid, phone, info, err)
 		return
 	}
-	query := fmt.Sprintf("INSERT INTO %s(uid, phone, usermac, apmac, acname,ctime) VALUES (?, ?, ?, ?, ?, NOW())", table)
+	query := fmt.Sprintf(`INSERT INTO %s(uid, phone, usermac, apmac, acname,
+	ctime) VALUES (?, ?, ?, ?, ?, NOW())`, table)
 	_, err = db.Exec(query,
 		uid, phone, info.Usermac, info.Apmac, info.Acname)
 	if err != nil {
 		log.Printf("addOnlineRecord online record failed:%d %s %v %v",
 			uid, phone, info, err)
 	}
-	_, err = db.Exec("INSERT INTO online_status(phone, mac, ip, apmac, acip, ctime, etime) VALUES (?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE ip = ?, apmac = ?, acip = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)",
+	_, err = db.Exec(`INSERT INTO online_status(phone, mac, ip, apmac, acip, 
+	ctime, etime) VALUES (?, ?, ?, ?, ?, NOW(), 
+	DATE_ADD(NOW(), INTERVAL 1 HOUR)) ON DUPLICATE KEY UPDATE ip = ?, apmac = ?,
+	acip = ?, etime = DATE_ADD(NOW(), INTERVAL 1 HOUR)`,
 		phone, info.Usermac, info.Userip, info.Apmac, info.Acip, info.Userip,
 		info.Apmac, info.Acip)
 	if err != nil {
@@ -1274,7 +1330,8 @@ func addOnlineRecord(db *sql.DB, uid int64, phone string, info *verify.PortalInf
 
 func hasMacRecord(db *sql.DB, usermac string) bool {
 	var cnt int64
-	err := db.QueryRow("SELECT COUNT(id) FROM user_mac WHERE mac = ?", usermac).Scan(&cnt)
+	err := db.QueryRow("SELECT COUNT(id) FROM user_mac WHERE mac = ?",
+		usermac).Scan(&cnt)
 	if err != nil {
 		log.Printf("hasMacRecord query failed:%v", err)
 		return false
@@ -1290,7 +1347,8 @@ func oneClickLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 	var phone string
 	usermac := strings.Replace(in.Info.Usermac, ":", "", -1)
 	log.Printf("usermac:%s", usermac)
-	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", usermac).
+	err := db.QueryRow(`SELECT m.phone, u.uid FROM user_mac m, user u WHERE 
+	m.uid = u.uid AND m.mac = ?`, usermac).
 		Scan(&phone, &uid)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
@@ -1332,7 +1390,9 @@ func portalLogin(db *sql.DB, in *verify.PortalLoginRequest) (int64, error) {
 		}
 	}
 
-	res, err := db.Exec("INSERT INTO user(username, phone, ctime, atime, bitmap, term, aptime) VALUES (?, ?, NOW(), NOW(), 3, 2, NOW()) ON DUPLICATE KEY UPDATE atime = NOW(), bitmap = 3, aptime = NOW()",
+	res, err := db.Exec(`INSERT INTO user(username, phone, ctime, atime, bitmap,
+	term, aptime) VALUES (?, ?, NOW(), NOW(), 3, 2, NOW()) ON DUPLICATE KEY 
+	UPDATE atime = NOW(), bitmap = 3, aptime = NOW()`,
 		in.Info.Usermac, specPhone)
 	if err != nil {
 		log.Printf("portalLogin insert user failed, request:%v", in)
@@ -1385,7 +1445,8 @@ func (s *server) OneClickLogin(ctx context.Context, in *verify.AccessRequest) (*
 	var uid int64
 	var phone string
 	usermac := strings.Replace(in.Info.Usermac, ":", "", -1)
-	err := db.QueryRow("SELECT m.phone, u.uid FROM user_mac m, user u WHERE m.uid = u.uid AND m.mac = ?", usermac).
+	err := db.QueryRow(`SELECT m.phone, u.uid FROM user_mac m, user u WHERE 
+	m.uid = u.uid AND m.mac = ?`, usermac).
 		Scan(&phone, &uid)
 	if err != nil {
 		log.Printf("OneClickLogin query failed:%v", err)
