@@ -1807,7 +1807,7 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRedirectShopDst(uid int64) string {
-	dst := "https://jinshuju.net/f/XxGrCw"
+	dst := "http://dev.seaportsp.com/app/index.php?i=2&c=entry&m=ewei_shopv2&do=mobile"
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "RedirectShop",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
@@ -1823,6 +1823,7 @@ func getRedirectShopDst(uid int64) string {
 
 func redirectShop(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
+	log.Printf("redirectShop request:%s", r.RequestURI)
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")

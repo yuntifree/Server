@@ -758,19 +758,22 @@ func (s *server) Redirect(ctx context.Context, in *common.CommRequest) (*config.
 
 func (s *server) RedirectShop(ctx context.Context, in *common.CommRequest) (*config.RedirectReply, error) {
 	util.PubRPCRequest(w, "config", "RedirectShop")
-	var phone, headurl string
-	err := db.QueryRow("SELECT phone, headurl FROM user WHERE uid = ?",
+	var phone, headurl, username string
+	err := db.QueryRow("SELECT phone, headurl, username FROM user WHERE uid = ?",
 		in.Head.Uid).
-		Scan(&phone, &headurl)
+		Scan(&phone, &headurl, &username)
 	if err != nil {
 		log.Printf("RedirectShop query user info failed:%v", err)
 		return &config.RedirectReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
-	if len(phone) != 11 {
+	if len(phone) != 11 && len(username) != 11 {
 		log.Printf("illegal phone:%d %s", in.Head.Uid, phone)
 		return &config.RedirectReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+	if len(phone) != 11 && len(username) == 11 {
+		phone = username
 	}
 	if headurl == "" {
 		headurl = defHead
