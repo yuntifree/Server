@@ -878,8 +878,7 @@ func getLoginAdType(db *sql.DB, acname, apmac string) int64 {
 		btype = 3
 	} else if isEduAp(db, apmac) {
 		btype = 4
-	} else if util.IsKongguAcname(acname) ||
-		acname == "AC_120_A_01" {
+	} else if util.IsKongguAcname(acname) {
 		btype = 2
 	} else if util.IsWjjAcname(acname) {
 		btype = 1
@@ -986,7 +985,7 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else if util.IsWjjKongguAcname(acname) {
 			def = 2 //4
 		} else if util.IsWjjAcname(acname) {
-			def = 2 //6
+			def = 10 //6
 		} else if util.IsKongguAcname(acname) {
 			def = 5
 		} else if util.IsLzfAcname(acname) {
@@ -1048,8 +1047,8 @@ func getLoginAds(db *sql.DB, adtype int64) []*verify.AdBanner {
 			log.Printf("getLoginAds scan failed:%v", err)
 			continue
 		}
-		log.Printf("id:%d pos:%d img:%s, stime:%d etime:%d",
-			ad.Id, pos, ad.Img, stime, etime)
+		//log.Printf("id:%d pos:%d img:%s, stime:%d etime:%d",
+		//	ad.Id, pos, ad.Img, stime, etime)
 		if pos <= npos {
 			continue
 		}
@@ -1161,13 +1160,16 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 		dst = appDst
 	}
 	if in.Info.Acname == "AC_SSH_A_04" {
-		logintype = 3
-		dst = appDst
+		//logintype = 3
+		//dst = appDst
+		taobao = 1
+		logintype = 2
+		cover, dst = getSpecTaobaoInfo(db)
 	}
 	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
 	recordAdView(db, in.Info.Apmac, in.Info.Usermac, ads)
-	log.Printf("logintype:%d dst:%s", logintype, dst)
+	//log.Printf("adtype:%d logintype:%d dst:%s ads:%+v", adtype, logintype, dst, ads)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
