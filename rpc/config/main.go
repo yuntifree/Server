@@ -768,7 +768,7 @@ func (s *server) RedirectShop(ctx context.Context, in *common.CommRequest) (*con
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
 	if len(phone) != 11 && len(username) != 11 {
-		log.Printf("illegal phone:%d %s", in.Head.Uid, phone)
+		log.Printf("illegal phone:%d %s %s", in.Head.Uid, phone, username)
 		return &config.RedirectReply{
 			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
 	}
