@@ -30,6 +30,9 @@ var sshAcnames = []string{
 	"AC-SSH-02-11",
 	"AC_JYJ_01",
 	"JYJ_RJ01",
+	"AC_JYJ_02",
+	"AC_JYJ_03",
+	"AC_JYJ_04",
 }
 
 var wjjAcnames = []string{
