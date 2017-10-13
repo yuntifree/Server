@@ -1812,10 +1812,12 @@ func getRedirectShopDst(uid int64) string {
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "RedirectShop",
 		&common.CommRequest{Head: &common.Head{Sid: uuid, Uid: uid}})
 	if rpcerr.Interface() != nil {
+		log.Printf("getRedirectShopDst err:%v", rpcerr.Interface())
 		return dst
 	}
 	res := resp.Interface().(*config.RedirectReply)
 	if res.Head.Retcode != 0 {
+		log.Printf("getRedirectShopDst uid:%d retcode:%d", uid, res.Head.Retcode)
 		return dst
 	}
 	return res.Dst
@@ -1823,7 +1825,6 @@ func getRedirectShopDst(uid int64) string {
 
 func redirectShop(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
-	log.Printf("redirectShop request:%s", r.RequestURI)
 	var req httpserver.Request
 	req.InitCheckApp(r)
 	uid := req.GetParamInt("uid")
@@ -1833,7 +1834,8 @@ func redirectShop(w http.ResponseWriter, r *http.Request) {
 	if params != "" {
 		dst += params
 	}
-	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Cache-Control", "no-store")
+	log.Printf("redirectShop request:%s dst:%s", r.RequestURI, dst)
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
