@@ -748,12 +748,11 @@ func GetWJNews() []News {
 func gbToUtf8(input []byte) []byte {
 	out := make([]byte, len(input)*2)
 	out = out[:]
-	bytesRead, bytesWritten, err := iconv.Convert(input, out, "gb2312", "utf-8")
+	_, bytesWritten, err := iconv.Convert(input, out, "gb2312", "utf-8")
 	if err != nil {
 		log.Printf("iconv.Convert failed:%s %v", string(input), err)
 	}
-	log.Printf("read:%d write:%d", bytesRead, bytesWritten)
-	return out
+	return out[:bytesWritten]
 }
 
 func getURLBase(url string) string {

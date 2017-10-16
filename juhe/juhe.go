@@ -281,6 +281,7 @@ func GetNews(stype int) []News {
 		ns.Md5 = util.GetMD5Hash(ns.Title)
 		ns.Date, _ = info.Get("date").String()
 		ns.URL, _ = info.Get("url").String()
+		log.Printf("url:%s", ns.URL)
 		d, err := goquery.NewDocument(ns.URL)
 		if err != nil {
 			log.Printf("fetch url failed:%v", err)
@@ -326,7 +327,7 @@ func GetImages(d *goquery.Document, url string) ([]string, error) {
 	sel.Each(func(i int, n *goquery.Selection) {
 		if val, ok := n.Attr("class"); ok {
 			if val == "img-wrap" {
-				if href, ok := n.Attr("href"); ok {
+				if href, ok := n.Attr("data-href"); ok {
 					images = append(images, href)
 				}
 			}
