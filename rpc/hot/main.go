@@ -34,7 +34,7 @@ const (
 	typeGame
 	typeDgNews
 	typeAmuse
-	typeJoke
+	typeTopic
 )
 
 type server struct{}
@@ -339,6 +339,8 @@ func (s *server) GetHots(ctx context.Context, in *common.CommRequest) (*hot.Hots
 		infos = getDgNews(db, in.Seq, util.MaxListSize)
 	} else if in.Type == typeAmuse {
 		infos = getNews(db, in.Seq, util.MaxListSize, 4)
+	} else if in.Type == typeTopic {
+		infos = getNews(db, in.Seq, util.MaxListSize, 19)
 	}
 	util.PubRPCSuccRsp(w, "hot", "GetHots")
 	return &hot.HotsReply{
