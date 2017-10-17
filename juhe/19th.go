@@ -107,6 +107,14 @@ func getTopicNewsInfo(url string) (news News, err error) {
 		}
 	})
 
+	sou := d.Find(".text_con .text_c .sou").Text()
+	sou = string(gbToUtf8([]byte(sou)))
+	pos := strings.Index(sou, "日")
+	if pos != -1 {
+		sou = sou[pos+3:]
+	}
+	news.Date += " " + sou + ":00"
+
 	var images []string
 	var content []Content
 	d.Find(".show_text .pic_c").Each(func(i int, n *goquery.Selection) {

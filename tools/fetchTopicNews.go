@@ -51,9 +51,9 @@ func main() {
 	for i := 0; i < len(total); i++ {
 		log.Printf("news:%+v", total[i])
 		ns := total[i]
-		_, err := db.Exec("INSERT IGNORE INTO news(title, img1, img2, img3, dst, source, md5, ctime, origin, stype, dtime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+		_, err := db.Exec("INSERT INTO news(title, img1, img2, img3, dst, source, md5, ctime, origin, stype, dtime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE ctime = ?",
 			ns.Title, ns.Pics[0], ns.Pics[1], ns.Pics[2], ns.URL, ns.Author, ns.Md5,
-			ns.Date, ns.Origin, 19)
+			ns.Date, ns.Origin, 19, ns.Date)
 		if err != nil {
 			log.Printf("insert failed:%v", err)
 		}
