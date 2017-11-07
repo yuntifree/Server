@@ -39,6 +39,26 @@ service Config{
     rpc GetOnlineLoginImg(common.CommRequest) returns (LoginImgReply) {}
     rpc AckLoginImg(common.CommRequest) returns (common.CommReply) {}
     rpc SubmitUnitInfo(UnitRequest) returns (common.CommReply) {}
+    rpc GetWxMpInfo(common.CommRequest) returns (WxMpReply) {}
+    rpc AddWxMpInfo(WxMpRequest) returns (common.CommReply) {}
+}
+
+message WxMpInfo {
+    int64 id = 1;
+    string appid = 2;
+    string shopid = 3;
+    string secret = 4;
+    string title = 5;
+}
+
+message WxMpRequest {
+    common.Head head = 1;
+    WxMpInfo info = 2;
+}
+
+message WxMpReply {
+    common.Head head = 1;
+    repeated WxMpInfo infos = 2;
 }
 
 message UnitRequest {

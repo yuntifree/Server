@@ -47,10 +47,55 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		addTravelAd(w, r)
 	case "mod_travel_ad":
 		modTravelAd(w, r)
+	case "get_wxmp_info":
+		getWxMpInfo(w, r)
+	case "add_wxmp_info":
+		addWxMpInfo(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
 	return nil
+}
+
+func getWxMpInfo(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetWxMpInfo",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetWxMpInfo")
+	res := resp.Interface().(*config.WxMpReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetWxMpInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+func addWxMpInfo(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	appid := req.GetParamString("appid")
+	secret := req.GetParamString("secret")
+	shopid := req.GetParamString("shopid")
+	title := req.GetParamString("title")
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "AddWxMpInfo",
+		&config.WxMpRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid},
+			Info: &config.WxMpInfo{Appid: appid, Secret: secret,
+				Shopid: shopid, Title: title}})
+	httpserver.CheckRPCErr(rpcerr, "AddWxMpInfo")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "AddWxMpInfo")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
 }
 
 func getAdBanner(w http.ResponseWriter, r *http.Request) {

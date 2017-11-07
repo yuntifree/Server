@@ -475,6 +475,11 @@ CREATE TABLE IF NOT EXISTS ac_info
     type    int unsigned NOT NULL,
     name    varchar(32) NOT NULL,
     ip      varchar(32) NOT NULL,
+    -- 1:微信公众号 2:淘宝登录 3:APP登录
+    logintype tinyint unsigned NOT NULL DEFAULT 0,
+    wxid    int unsigned NOT NULL DEFAULT 0,
+    cover   varchar(256) NOT NULL DEFAULT '',
+    dst     varchar(256) NOT NULL DEFAULT '',
     ctime   datetime NOT NULL DEFAULT '2016-01-01',
     PRIMARY KEY(id),
     KEY(type),
