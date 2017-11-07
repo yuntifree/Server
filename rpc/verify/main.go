@@ -965,6 +965,40 @@ func checkSpareTime(stime, etime int64) bool {
 	return false
 }
 
+func getUnitWxinfo(db *sql.DB, apmac string) (loginConf, bool) {
+	var conf loginConf
+	err := db.QueryRow(`SELECT appid, secret, shopid, authurl 
+	FROM wx_appinfo w, ap_info a WHERE w.unid = a.unid AND a.mac = ?`, apmac).
+		Scan(&conf.Appid, &conf.Secret, &conf.Shopid, &conf.Authurl)
+	if err != nil {
+		log.Printf("getUnitWxinfo failed:%v", err)
+		return conf, false
+	}
+	conf.Logintype = wxLogin
+	return conf, true
+}
+
+func getSpecApWxinfo(db *sql.DB, apmac string) (loginConf, bool) {
+	var conf loginConf
+	var def int64
+	if apmac == "a85840ccf960" {
+		def = 8
+	} else if apmac == "a85840ccf1a0" {
+		def = 7
+	} else {
+		return conf, false
+	}
+	err := db.QueryRow(`SELECT appid, secret, shopid, authurl FROM wx_appinfo
+	WHERE def = ? LIMIT 1`, def).Scan(&conf.Appid, &conf.Secret, &conf.Shopid,
+		&conf.Authurl)
+	if err != nil {
+		log.Printf("getWxAppinfo get default failed:%v", err)
+		return conf, false
+	}
+	conf.Logintype = wxLogin
+	return conf, true
+}
+
 func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, authurl string) {
 	var stime, etime int64
 	err := db.QueryRow(`SELECT appid, secret, shopid, authurl, w.stime, w.etime 
@@ -1122,42 +1156,62 @@ func recordAdView(db *sql.DB, apmac, usermac string, ads []*verify.AdBanner) {
 	}
 }
 
+type loginConf struct {
+	Logintype                      int64
+	Appid, Secret, Shopid, Authurl string
+	Cover, Dst                     string
+}
+
+const (
+	wxLogin     = 1
+	taobaoLogin = 2
+)
+
+func getLoginConf(db *sql.DB, acname string) loginConf {
+	var conf loginConf
+	var wxid int64
+	err := db.QueryRow("SELECT logintype, wxid, cover, dst FROM ac_info WHERE name = ?", acname).
+		Scan(&conf.Logintype, &wxid, &conf.Cover, &conf.Dst)
+	if err != nil {
+		log.Printf("getLoginConf failed:%v", err)
+		return conf
+	}
+	if conf.Logintype == wxLogin {
+		err = db.QueryRow("SELECT appid, secret, shopid, authurl FROM wx_appinfo WHERE id = ?", wxid).
+			Scan(&conf.Appid, &conf.Secret, &conf.Shopid, &conf.Authurl)
+		if err != nil {
+			log.Printf("getLoginConf query wxinfo failed:%v", err)
+			return conf
+		}
+	}
+	return conf
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
 	stype := getAcSys(db, in.Info.Acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
 	img := getLoginImg(db, in.Info.Acname, in.Info.Apmac, in.Info.Usermac)
-	var appid, secret, shopid, authurl string
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
 		ad := getAdImg(db, adtype)
 		if ad != "" {
 			img = ad
 		}
-		appid, secret, shopid, authurl = getWxAppinfo(db, in.Info.Acname,
-			in.Info.Apmac)
-
-		log.Printf("acname:%s apmac:%s usermac:%s shopid:%s", in.Info.Acname,
-			in.Info.Apmac, in.Info.Usermac, shopid)
 	}
-	var taobao, logintype int64
-	var cover, dst string
-	logintype = 1
-	if in.Info.Acname == "AC_SSH_A_09" ||
-		(util.IsWjjAcname(in.Info.Acname) && isTaobaoTime()) {
+	var taobao int64
+	var conf loginConf
+	var flag bool
+	conf, flag = getSpecApWxinfo(db, in.Info.Apmac)
+	if !flag {
+		conf, flag = getUnitWxinfo(db, in.Info.Apmac)
+		if !flag {
+			conf = getLoginConf(db, in.Info.Acname)
+		}
+	}
+	if conf.Logintype == taobaoLogin {
 		taobao = 1
-		logintype = 2
-		cover, dst = getTaobaoInfo(db)
-	}
-	if !util.IsKongguAcname(in.Info.Acname) && isSpecTaobaoTime() {
-		taobao = 1
-		logintype = 2
-		cover, dst = getSpecTaobaoInfo(db)
-	}
-	if util.IsLzfAcname(in.Info.Acname) {
-		logintype = 3
-		dst = appDst
 	}
 	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
@@ -1166,9 +1220,9 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,
-		Img: img, Wxappid: appid, Wxsecret: secret, Wxshopid: shopid,
-		Wxauthurl: authurl, Taobao: taobao, Cover: cover, Ads: ads,
-		Logintype: logintype, Dst: dst}, nil
+		Img: img, Wxappid: conf.Appid, Wxsecret: conf.Secret,
+		Wxshopid: conf.Shopid, Wxauthurl: conf.Authurl, Taobao: taobao,
+		Cover: conf.Cover, Ads: ads, Logintype: conf.Logintype, Dst: conf.Dst}, nil
 }
 
 func genPortalDst(db *sql.DB, openid string) string {
