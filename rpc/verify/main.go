@@ -989,9 +989,9 @@ func getWxAppinfo(db *sql.DB, acname, apmac string) (appid, secret, shopid, auth
 		} else if util.IsKongguAcname(acname) {
 			def = 5
 		} else if util.IsLzfAcname(acname) {
-			def = 11 //3
+			def = 4 //3
 		} else if util.IsTestAcname(acname) {
-			def = 2
+			def = 12
 		} else {
 			def = 11 //1
 		}
@@ -1158,13 +1158,6 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	if util.IsLzfAcname(in.Info.Acname) {
 		logintype = 3
 		dst = appDst
-	}
-	if in.Info.Acname == "AC_SSH_A_04" {
-		//logintype = 3
-		//dst = appDst
-		taobao = 1
-		logintype = 2
-		cover, dst = getSpecTaobaoInfo(db)
 	}
 	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
