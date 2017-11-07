@@ -41,6 +41,31 @@ service Config{
     rpc SubmitUnitInfo(UnitRequest) returns (common.CommReply) {}
     rpc GetWxMpInfo(common.CommRequest) returns (WxMpReply) {}
     rpc AddWxMpInfo(WxMpRequest) returns (common.CommReply) {}
+    rpc GetAcConf(common.CommRequest) returns (AcConfReply) {}
+}
+
+message TaobaoInfo {
+    string cover = 1;
+    string dst = 2;
+}
+
+message AppInfo {
+    string dst = 1;
+}
+
+message AcConf {
+    int64 id = 1;
+    string acname = 2;
+    int64 actype = 3;
+    int64 logintype = 4;
+    WxMpInfo wxinfo = 5;
+    TaobaoInfo tbinfo = 6;
+    AppInfo appinfo = 7;
+}
+
+message AcConfReply {
+    common.Head head = 1;
+    repeated AcConf infos = 2;
 }
 
 message WxMpInfo {

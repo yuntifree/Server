@@ -51,10 +51,29 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		getWxMpInfo(w, r)
 	case "add_wxmp_info":
 		addWxMpInfo(w, r)
+	case "get_ac_conf":
+		getAcConf(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
 	return nil
+}
+
+func getAcConf(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "GetAcConf",
+		&common.CommRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}})
+	httpserver.CheckRPCErr(rpcerr, "GetAcConf")
+	res := resp.Interface().(*config.AcConfReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "GetAcConf")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
 }
 
 func getWxMpInfo(w http.ResponseWriter, r *http.Request) {

@@ -10,6 +10,63 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	wxLogin     = 1
+	taobaoLogin = 2
+	appLogin    = 3
+)
+
+func (s *server) GetAcConf(ctx context.Context, in *common.CommRequest) (*config.AcConfReply, error) {
+	util.PubRPCRequest(w, "config", "GetAcConf")
+	infos := getAcConf(db)
+	util.PubRPCSuccRsp(w, "config", "GetAcConf")
+	return &config.AcConfReply{
+		Head:  &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Infos: infos}, nil
+}
+
+func getAcConf(db *sql.DB) []*config.AcConf {
+	rows, err := db.Query(`SELECT ac.id, ac.type, ac.name, ac.logintype,
+	ac.cover, ac.dst, wx.id, wx.appid, wx.secret, wx.shopid, wx.title 
+	FROM ac_info ac LEFT JOIN
+	wx_appinfo wx ON ac.wxid = wx.id`)
+	if err != nil {
+		log.Printf("getAcConf failed:%v", err)
+		return nil
+	}
+	defer rows.Close()
+	var infos []*config.AcConf
+	for rows.Next() {
+		var ac config.AcConf
+		var cover, dst string
+		var info config.WxMpInfo
+		err = rows.Scan(&ac.Id, &ac.Actype, &ac.Acname, &ac.Logintype,
+			&cover, &dst, &info.Id, &info.Appid, &info.Secret, &info.Shopid,
+			&info.Title)
+		if err != nil {
+			log.Printf("scan failed:%v", err)
+			if ac.Logintype == wxLogin {
+				continue
+			}
+		}
+		switch ac.Logintype {
+		case wxLogin:
+			ac.Wxinfo = &info
+		case taobaoLogin:
+			var tb config.TaobaoInfo
+			tb.Cover = cover
+			tb.Dst = dst
+			ac.Tbinfo = &tb
+		case appLogin:
+			var app config.AppInfo
+			app.Dst = dst
+			ac.Appinfo = &app
+		}
+		infos = append(infos, &ac)
+	}
+	return infos
+}
+
 func (s *server) GetWxMpInfo(ctx context.Context, in *common.CommRequest) (*config.WxMpReply, error) {
 	util.PubRPCRequest(w, "config", "GetWxMpInfo")
 	infos := getWxMpInfo(db)
