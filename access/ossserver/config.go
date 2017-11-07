@@ -53,6 +53,8 @@ func configHandler(w http.ResponseWriter, r *http.Request) (apperr *util.AppErro
 		addWxMpInfo(w, r)
 	case "get_ac_conf":
 		getAcConf(w, r)
+	case "mod_ac_conf":
+		modAcConf(w, r)
 	default:
 		panic(util.AppError{101, "unknown action", ""})
 	}
@@ -70,6 +72,51 @@ func getAcConf(w http.ResponseWriter, r *http.Request) {
 	httpserver.CheckRPCErr(rpcerr, "GetAcConf")
 	res := resp.Interface().(*config.AcConfReply)
 	httpserver.CheckRPCCode(res.Head.Retcode, "GetAcConf")
+
+	body := httpserver.GenResponseBody(res, false)
+	w.Write(body)
+	httpserver.ReportSuccResp(r.RequestURI)
+}
+
+const (
+	wxLogin     = 1
+	taobaoLogin = 2
+	appLogin    = 3
+)
+
+func modAcConf(w http.ResponseWriter, r *http.Request) {
+	var req httpserver.Request
+	req.InitCheckOss(r)
+	uid := req.GetParamInt("uid")
+	id := req.GetParamInt("id")
+	logintype := req.GetParamInt("logintype")
+	wxid := req.GetParamIntDef("wxid", 0)
+	cover := req.GetParamStringDef("cover", "")
+	dst := req.GetParamStringDef("dst", "")
+
+	var ac config.AcConf
+	ac.Id = id
+	ac.Logintype = logintype
+	if logintype == wxLogin {
+		var info config.WxMpInfo
+		info.Id = wxid
+		ac.Wxinfo = &info
+	} else if logintype == taobaoLogin {
+		var info config.TaobaoInfo
+		info.Cover = cover
+		info.Dst = dst
+	} else if logintype == appLogin {
+		var info config.AppInfo
+		info.Dst = dst
+	}
+
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, uid, "ModAcConf",
+		&config.AcConfRequest{
+			Head: &common.Head{Sid: uuid, Uid: uid}, Info: &ac})
+	httpserver.CheckRPCErr(rpcerr, "ModAcConf")
+	res := resp.Interface().(*common.CommReply)
+	httpserver.CheckRPCCode(res.Head.Retcode, "ModAcConf")
 
 	body := httpserver.GenResponseBody(res, false)
 	w.Write(body)

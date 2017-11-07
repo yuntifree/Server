@@ -16,6 +16,38 @@ const (
 	appLogin    = 3
 )
 
+func (s *server) ModAcConf(ctx context.Context, in *config.AcConfRequest) (*common.CommReply, error) {
+	util.PubRPCRequest(w, "config", "ModAcConf")
+	err := modAcConf(db, in.Info)
+	if err != nil {
+		log.Printf("ModAcConf failed:%v", err)
+		return &common.CommReply{
+			Head: &common.Head{Retcode: 1, Uid: in.Head.Uid}}, nil
+	}
+
+	util.PubRPCSuccRsp(w, "config", "ModAcConf")
+	return &common.CommReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}}, nil
+}
+
+func modAcConf(db *sql.DB, info *config.AcConf) error {
+	var cover, dst string
+	var wxid int64
+	switch info.Logintype {
+	case wxLogin:
+		wxid = info.Wxinfo.Id
+	case taobaoLogin:
+		cover = info.Tbinfo.Cover
+		dst = info.Tbinfo.Dst
+	case appLogin:
+		dst = info.Appinfo.Dst
+	}
+	_, err := db.Exec(`UPDATE ac_info SET logintype = ?, wxid = ?, 
+	cover = ?, dst = ? WHERE id = ?`, info.Logintype,
+		wxid, cover, dst, info.Id)
+	return err
+}
+
 func (s *server) GetAcConf(ctx context.Context, in *common.CommRequest) (*config.AcConfReply, error) {
 	util.PubRPCRequest(w, "config", "GetAcConf")
 	infos := getAcConf(db)
