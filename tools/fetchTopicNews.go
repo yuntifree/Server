@@ -21,7 +21,10 @@ var targets = []string{"http://cpc.people.com.cn/GB/67481/412690/414402/index.ht
 	"http://cpc.people.com.cn/GB/67481/412690/413654/index.html",
 	"http://cpc.people.com.cn/GB/67481/412690/413308/index.html",
 	"http://cpc.people.com.cn/GB/67481/412690/413943/index.html",
-	"http://cpc.people.com.cn/GB/67481/412690/414240/index.html"}
+	"http://cpc.people.com.cn/GB/67481/412690/414240/index.html",
+	"http://cpc.people.com.cn/19th/GB/414531/index.html",
+	"http://cpc.people.com.cn/19th/GB/414540/index.html",
+	"http://cpc.people.com.cn/19th/GB/414538/index.html"}
 
 type sortNews []juhe.News
 
