@@ -105,9 +105,11 @@ func modAcConf(w http.ResponseWriter, r *http.Request) {
 		var info config.TaobaoInfo
 		info.Cover = cover
 		info.Dst = dst
+		ac.Tbinfo = &info
 	} else if logintype == appLogin {
 		var info config.AppInfo
 		info.Dst = dst
+		ac.Appinfo = &info
 	}
 
 	uuid := util.GenUUID()
