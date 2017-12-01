@@ -440,6 +440,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 	usermac := req.GetParamString("wlanusermac")
 	acname := req.GetParamString("wlanacname")
 	apmac := req.GetParamStringDef("wlanapmac", "")
+	ssid := req.GetParamStringDef("ssid", "")
 	apmac = strings.Replace(strings.ToLower(apmac), ":", "", -1)
 	log.Printf("checkLogin usermac:%s acname:%s apmac:%s", usermac, acname, apmac)
 
@@ -449,7 +450,7 @@ func checkLogin(w http.ResponseWriter, r *http.Request) (apperr *util.AppError) 
 		&verify.AccessRequest{
 			Head: &common.Head{Sid: uuid},
 			Info: &verify.PortalInfo{Usermac: usermac, Acname: acname,
-				Apmac: apmac}})
+				Apmac: apmac, Ssid: ssid}})
 	httpserver.CheckRPCErrCallback(rpcerr, "CheckLogin", req.Callback)
 	res := resp.Interface().(*verify.CheckReply)
 	httpserver.CheckRPCCodeCallback(res.Head.Retcode, "CheckLogin",

@@ -1187,12 +1187,25 @@ func getLoginConf(db *sql.DB, acname string) loginConf {
 	return conf
 }
 
+func convertAcname(acname, apmac, ssid string) string {
+	ac := acname
+	if apmac == "4cfaca22aca0" {
+		if ssid == "TEST-YL" {
+			ac = "AC_SSH_A_01"
+		} else if ssid == "TEST-GG" {
+			ac = "AC_120_A_01"
+		}
+	}
+	return ac
+}
+
 func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*verify.CheckReply, error) {
 	util.PubRPCRequest(w, "verify", "CheckLogin")
-	stype := getAcSys(db, in.Info.Acname)
+	acname := convertAcname(in.Info.Acname, in.Info.Apmac, in.Info.Ssid)
+	stype := getAcSys(db, acname)
 	ret := checkLoginMac(db, in.Info.Usermac, stype)
 	log.Printf("CheckLogin mac:%s ret:%d", in.Info.Usermac, ret)
-	img := getLoginImg(db, in.Info.Acname, in.Info.Apmac, in.Info.Usermac)
+	img := getLoginImg(db, acname, in.Info.Apmac, in.Info.Usermac)
 	if in.Info.Apmac != "" {
 		adtype := util.GetAdType(db, in.Info.Apmac)
 		ad := getAdImg(db, adtype)
@@ -1207,16 +1220,15 @@ func (s *server) CheckLogin(ctx context.Context, in *verify.AccessRequest) (*ver
 	if !flag {
 		conf, flag = getUnitWxinfo(db, in.Info.Apmac)
 		if !flag {
-			conf = getLoginConf(db, in.Info.Acname)
+			conf = getLoginConf(db, acname)
 		}
 	}
 	if conf.Logintype == taobaoLogin {
 		taobao = 1
 	}
-	adtype := getLoginAdType(db, in.Info.Acname, in.Info.Apmac)
+	adtype := getLoginAdType(db, acname, in.Info.Apmac)
 	ads := getLoginAds(db, adtype)
 	recordAdView(db, in.Info.Apmac, in.Info.Usermac, ads)
-	//log.Printf("adtype:%d logintype:%d dst:%s ads:%+v", adtype, logintype, dst, ads)
 	util.PubRPCSuccRsp(w, "verify", "CheckLogin")
 	return &verify.CheckReply{
 		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid}, Autologin: ret,

@@ -132,6 +132,7 @@ message PortalInfo {
     string phone = 5;
     string code = 6;
     string apmac = 7;
+    string ssid = 8;
 }
 
 message PortalLoginRequest {
