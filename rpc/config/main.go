@@ -531,6 +531,46 @@ func (s *server) GetPortalDir(ctx context.Context, in *config.PortalDirRequest) 
 		Dir:  dir}, nil
 }
 
+func getYLLogin(db *sql.DB) string {
+	host := util.GetWjjHost()
+	dir, _ := util.GetPortalDir(db, util.WjjLoginType)
+	return host + dir
+}
+
+func getSHLogin(db *sql.DB) string {
+	host := util.GetSshHost()
+	dir, _ := util.GetPortalDir(db, util.LoginType)
+	return host + dir
+}
+
+func getTestPortalDir(db *sql.DB, ptype int64, acname, apmac, ssid string) string {
+	log.Printf("acname:%s apmac:%s ssid:%s", acname, apmac, ssid)
+	if apmac == "4cfaca22aca0" {
+		if ssid == "TEST-YL" {
+			return getYLLogin(db)
+		} else if ssid == "TEST-GG" {
+			return getSHLogin(db)
+		}
+	}
+
+	portaltype := util.GetPortalType(db, apmac)
+	if ptype == util.PortalType {
+		return util.GetPortalPath(db, acname, portaltype)
+	}
+	return util.GetLoginPath(db, acname, portaltype)
+}
+
+func (s *server) GetTestPortalDir(ctx context.Context, in *config.PortalDirRequest) (*config.PortalDirReply, error) {
+	util.PubRPCRequest(w, "config", "GetPortalDir")
+	log.Printf("GetTestPortalDir request:%+v", in)
+	dir := getTestPortalDir(db, in.Type, in.Acname, in.Apmac, in.Ssid)
+	util.PubRPCSuccRsp(w, "config", "GetPortalDir")
+	log.Printf("GetTestPortalDir request:%v dir:%s", in, dir)
+	return &config.PortalDirReply{
+		Head: &common.Head{Retcode: 0, Uid: in.Head.Uid},
+		Dir:  dir}, nil
+}
+
 func extractTermContent(menulist []*config.PortalMenuInfo, flag bool) []*config.PortalMenuInfo {
 	for i := 0; i < len(menulist); i++ {
 		arr := strings.Split(menulist[i].Url, ";")

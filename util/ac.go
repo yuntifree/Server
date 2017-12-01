@@ -131,6 +131,16 @@ func IsTestUsermac(usermac string) bool {
 	return false
 }
 
+//GetWjjHost get wjj host
+func GetWjjHost() string {
+	return innerWjjHost
+}
+
+//GetSshHost get ssh host
+func GetSshHost() string {
+	return innerSshHost
+}
+
 //GetPortalHost get portal host
 func GetPortalHost(acname string) string {
 	host := portalDir

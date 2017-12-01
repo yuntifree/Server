@@ -1762,6 +1762,22 @@ func jump(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dst, http.StatusMovedPermanently)
 }
 
+func getTestPortalDir(acname, apmac, ssid string) string {
+	uuid := util.GenUUID()
+	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "GetTestPortalDir",
+		&config.PortalDirRequest{Head: &common.Head{Sid: uuid},
+			Type: util.LoginType, Acname: acname, Apmac: apmac,
+			Ssid: ssid})
+	if rpcerr.Interface() != nil {
+		return defLoginURL
+	}
+	res := resp.Interface().(*config.PortalDirReply)
+	if res.Head.Retcode != 0 {
+		return defLoginURL
+	}
+	return res.Dir
+}
+
 func getPortalDir(acname, apmac string) string {
 	uuid := util.GenUUID()
 	resp, rpcerr := httpserver.CallRPC(util.ConfigServerType, 0, "GetPortalDir",
@@ -1842,10 +1858,11 @@ func redirectShop(w http.ResponseWriter, r *http.Request) {
 func portal(w http.ResponseWriter, r *http.Request) {
 	httpserver.ReportRequest(r.RequestURI)
 	r.ParseForm()
-	var acname, usermac, apmac string
+	var acname, usermac, apmac, ssid string
 	names := r.Form["wlanacname"]
 	macs := r.Form["wlanusermac"]
 	aps := r.Form["wlanapmac"]
+	ssids := r.Form["ssid"]
 	if len(names) > 0 {
 		acname = names[0]
 	}
@@ -1855,7 +1872,10 @@ func portal(w http.ResponseWriter, r *http.Request) {
 	if len(aps) > 0 {
 		apmac = aps[0]
 	}
-	log.Printf("acname:%s usermac:%s apmac:%s", acname, usermac, apmac)
+	if len(ssids) > 0 {
+		ssid = ssids[0]
+	}
+	log.Printf("acname:%s usermac:%s apmac:%s ssid:%s", acname, usermac, apmac, ssid)
 	pos := strings.Index(r.RequestURI, "?")
 	var postfix string
 	if pos != -1 {
@@ -1871,11 +1891,13 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
 	} else if acname == "AC_SSH_A_09" {
 		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
+	} else if apmac == "a85840ccf960" {
+		dst = "http://120.76.236.185:9898/static/login201708311552/" + postfix
 	} else if util.IsWjjAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
 	} else if util.IsTestAcname(acname) {
-		dir := getPortalDir(acname, apmac)
+		dir := getTestPortalDir(acname, apmac, ssid)
 		dst = dir + postfix
 	} else if util.IsSshAcname(acname) {
 		dir := getPortalDir(acname, apmac)
