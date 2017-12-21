@@ -1892,8 +1892,6 @@ func portal(w http.ResponseWriter, r *http.Request) {
 		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
 	} else if acname == "AC_SSH_A_09" {
 		dst = "http://192.168.100.4:8080/login201706021429/" + postfix
-	} else if apmac == "a85840ccf960" {
-		dst = "http://120.76.236.185:9898/static/login201708311552/" + postfix
 	} else if util.IsWjjAcname(acname) {
 		dir := getPortalDir(acname, apmac)
 		dst = dir + postfix
